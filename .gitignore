@@ -61,5 +61,6 @@ typings/
 .next
 
 networks/*.geojson
+networks/*.json
 
 .idea

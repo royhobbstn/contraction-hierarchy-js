@@ -12,12 +12,14 @@ const { runBiDijkstra } = require('../js/bidirectional-dijkstra.js');
 const { toAdjacencyList, toEdgeHash, toIdList } = require('../js/common.js');
 
 // load contraction hierarchy version bidirectional dijkstra
-// const { runBiDijkstra, toIdList } = require('./bi-di-ch.js');
+const {
+  queryContractionHierarchy
+} = require('../js/run-contraction-hierarchy');
 
 // load contraction hierarchy output
-// const new_adj = require('../networks/ch.json');
-// const new_edge = require('../networks/ne.json');
-// const node_rank = require('../networks/nr.json');
+const new_adj = require('../networks/ch.json');
+const new_edge = require('../networks/ne.json');
+const node_rank = require('../networks/nr.json');
 
 main();
 
@@ -83,15 +85,15 @@ async function main() {
       pair[1],
       'MILES'
     );
-    // ch[index] = runContractionHierarchy(
-    //   new_adj,
-    //   new_edge,
-    //   pair[0],
-    //   pair[1],
-    //   'MILES',
-    //   node_rank,
-    //   id_list
-    // );
+    ch[index] = queryContractionHierarchy(
+      new_adj,
+      new_edge,
+      pair[0],
+      pair[1],
+      'MILES',
+      node_rank,
+      id_list
+    );
     correct[index] = toCorrectPath(
       alt_graph,
       edge_list,
@@ -115,7 +117,7 @@ async function main() {
     const values = [
       dijkstra[i].distance,
       bidirectional[i].distance,
-      // ch[i].distance,
+      ch[i].distance,
       correct[i].distance,
       correct2[i].distance
     ];
@@ -141,8 +143,8 @@ async function main() {
         dijkstra[i].distance.toFixed(5),
         bidirectional[i].segments.length,
         bidirectional[i].distance.toFixed(5),
-        // ch[i].segments.length,
-        // ch[i].distance.toFixed(5),
+        ch[i].segments.length,
+        ch[i].distance.toFixed(5),
         correct[i].segments.length,
         correct[i].distance.toFixed(5),
         correct2[i].segments.length,
