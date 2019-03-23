@@ -1,0 +1,45 @@
+
+
+bothers me that bidirectional dijkstra slower than normal.  change graph to entire USA and see if that holds.
+
+
+still not fast enough
+(havent checked to make sure it still works)
+
+make contraction hierarchy building process faster
+-limit hops speed up contraction hierarchy?
+
+
+
+
+
+- speedwise would help a bit if edge hash distance lookup could be replaced by storing cost in adjacency list
+
+Directed graph options
+
+ArcFlags
+
+
+after: golang
+
+---------
+
+API Design
+
+import {runContraction, Chase} from 'chase-js'
+const {runContraction, runValidation, Chase} = require('chase-js');
+
+
+ reference to my geojson cleanup library in Docs
+
+ runContraction options: { (debug) }
+ runValidation (looping segments or otherwise bad geojson)
+
+ return Chase object
+
+ new Chase()
+
+ .saveHierarchy - this is just geojson w extra edges, + arc-flags + options metadata
+ .loadHierarchy -
+ .query({geojson=true, segmentIds=true, distance=true})
+
