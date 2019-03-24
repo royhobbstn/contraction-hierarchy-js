@@ -25,13 +25,15 @@
   },
   "homepage": "https://github.com/royhobbstn/chase-js#readme",
   "dependencies": {
+    "@turf/turf": "^5.1.6",
     "@tyriar/fibonacci-heap": "^2.0.9",
     "geojson-id-disconnected-networks": "^1.0.2",
     "geojson-linestring-join-alike": "^1.1.3",
     "geojson-network-node-lookup": "^1.0.1",
     "geojson-network-node-snap": "^1.0.2",
     "geojson-split-crossing-lines": "^1.0.2",
-    "geojson-trim-network": "^1.0.0"
+    "geojson-trim-network": "^1.0.0",
+    "skmeans": "^0.10.0"
   },
   "devDependencies": {
     "dijkstrajs": "^1.0.1",

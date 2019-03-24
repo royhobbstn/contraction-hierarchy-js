@@ -1,12 +1,7 @@
 //
 
 const fs = require('fs');
-const {
-  toBestRoute,
-  getComparator,
-  toIdList,
-  getShortestPath
-} = require('./common.js');
+const { toBestRoute, getComparator } = require('./common.js');
 const FibonacciHeap = require('@tyriar/fibonacci-heap').FibonacciHeap;
 
 const debug = false;
@@ -97,11 +92,6 @@ function queryContractionHierarchy(
     edge_hash
   );
 
-  // const shortest_common_node = getShortestPath(start, forward.dist, forward.prev, forward.visited, end, backward.dist, backward.prev, backward.visited);
-  //
-  // const geojson_forward = toBestRoute(shortest_common_node, forward.prev, edge_hash);
-  // const geojson_backward = toBestRoute(shortest_common_node, backward.prev, edge_hash);
-
   const ff = geojson_forward.features.reduce((acc, g) => {
     const id = g.properties.ID;
     if (typeof id === 'string') {
@@ -134,8 +124,110 @@ function queryContractionHierarchy(
     features: bb.map(d => id_list[d])
   };
 
-  // fs.writeFileSync('./path1.geojson', JSON.stringify(fc), 'utf8');
-  // fs.writeFileSync('./path2.geojson', JSON.stringify(bc), 'utf8');
+  if (save_output) {
+    fs.writeFileSync(
+      '../output/ch-forward-path.geojson',
+      JSON.stringify(fc),
+      'utf8'
+    );
+    fs.writeFileSync(
+      '../output/ch-backward-path.geojson',
+      JSON.stringify(bc),
+      'utf8'
+    );
+
+    const forward_visited_pts = Object.keys(forward.dist).map(key => {
+      const coords = key.split(',').map(d => Number(d));
+      return {
+        type: 'Feature',
+        properties: { dist: forward.dist[key] },
+        geometry: {
+          type: 'Point',
+          coordinates: coords
+        }
+      };
+    });
+
+    const backward_visited_pts = Object.keys(backward.dist).map(key => {
+      const coords = key.split(',').map(d => Number(d));
+      return {
+        type: 'Feature',
+        properties: { dist: backward.dist[key] },
+        geometry: {
+          type: 'Point',
+          coordinates: coords
+        }
+      };
+    });
+
+    const forward_visited_pts_collection = {
+      type: 'FeatureCollection',
+      features: forward_visited_pts
+    };
+
+    const backward_visited_pts_collection = {
+      type: 'FeatureCollection',
+      features: backward_visited_pts
+    };
+
+    fs.writeFileSync(
+      '../output/ch-forward_visited_pts.geojson',
+      JSON.stringify(forward_visited_pts_collection),
+      'utf8'
+    );
+    fs.writeFileSync(
+      '../output/ch-backward_visited_pts.geojson',
+      JSON.stringify(backward_visited_pts_collection),
+      'utf8'
+    );
+
+    // settled nodes visualization
+
+    const forward_settled_pts = Object.keys(forward.visited).map(key => {
+      const coords = key.split(',').map(d => Number(d));
+      return {
+        type: 'Feature',
+        properties: { dist: forward.dist[key] },
+        geometry: {
+          type: 'Point',
+          coordinates: coords
+        }
+      };
+    });
+
+    const backward_settled_pts = Object.keys(backward.visited).map(key => {
+      const coords = key.split(',').map(d => Number(d));
+      return {
+        type: 'Feature',
+        properties: { dist: backward.dist[key] },
+        geometry: {
+          type: 'Point',
+          coordinates: coords
+        }
+      };
+    });
+
+    const forward_settled_pts_collection = {
+      type: 'FeatureCollection',
+      features: forward_settled_pts
+    };
+
+    const backward_settled_pts_collection = {
+      type: 'FeatureCollection',
+      features: backward_settled_pts
+    };
+
+    fs.writeFileSync(
+      '../output/ch-forward_settled_pts.geojson',
+      JSON.stringify(forward_settled_pts_collection),
+      'utf8'
+    );
+    fs.writeFileSync(
+      '../output/ch-backward_settled_pts.geojson',
+      JSON.stringify(backward_settled_pts_collection),
+      'utf8'
+    );
+  }
 
   const raw_combined = [
     ...geojson_forward.features,
@@ -154,6 +246,7 @@ function queryContractionHierarchy(
     type: 'FeatureCollection',
     features: geojson_combined
   };
+
   return { distance, segments, route, raw_segments };
 
   function* doDijkstra(

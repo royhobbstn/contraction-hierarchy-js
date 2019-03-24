@@ -1,17 +1,11 @@
 
 
-bothers me that bidirectional dijkstra slower than normal.  change graph to entire USA and see if that holds.
-
-
-still not fast enough
-(havent checked to make sure it still works)
 
 make contraction hierarchy building process faster
 -limit hops speed up contraction hierarchy?
 
 
-
-
+size of contraction hierarchy is 2x original
 
 - speedwise would help a bit if edge hash distance lookup could be replaced by storing cost in adjacency list
 
