@@ -19,11 +19,8 @@ function clustersKmeans(points, options) {
   // collect points coordinates
   var data = turf.coordAll(points);
 
-  // create seed to avoid skmeans to drift
-  var initialCentroids = data.slice(0, options.numberOfClusters);
-
   // create skmeans clusters
-  var skmeansResult = skmeans(data, options.numberOfClusters, initialCentroids);
+  var skmeansResult = skmeans(data, options.numberOfClusters, 'kmpp');
 
   // store centroids {clusterId: [number, number]}
   var centroids = {};
