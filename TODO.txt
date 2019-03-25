@@ -1,5 +1,8 @@
 
-
+validation:
+has coordinates.
+has valid value for edge weight
+coordinate precision match - where is the responsibility?
 
 make contraction hierarchy building process faster
 -limit hops speed up contraction hierarchy?
