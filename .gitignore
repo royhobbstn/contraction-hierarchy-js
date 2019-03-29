@@ -63,6 +63,9 @@ typings/
 networks/*.geojson
 networks/*.json
 arc_flag_output/*.geojson
+arc_flag_output/*.json
 output/*.geojson
+demo/*.json
+demo/*.geojson
 
 .idea

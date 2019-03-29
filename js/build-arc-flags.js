@@ -4,8 +4,11 @@ const fs = require('fs').promises;
 const turf = require('@turf/turf');
 const dissolve = require('geojson-dissolve');
 const geojsonRbush = require('geojson-rbush').default;
-
+const { runArcFlagsDijkstra } = require('./arc-flags-dijkstra.js');
 const { clustersKmeans } = require('./turf-kmeans-mod.js');
+const { toAdjacencyList, toEdgeHash } = require('./common.js');
+
+const NUMBER_OF_REGIONS = 20;
 
 main();
 
@@ -16,21 +19,40 @@ async function main() {
 
   const pts = new Set();
 
-  geojson.features.forEach((feature, index) => {
-    if (!feature.geometry.coordinates.length) {
-      console.log(index);
-    }
-    const start = feature.geometry.coordinates[0]
-      .map(d => d.toFixed(5))
-      .join(',');
+  // clean geojson of missing coordinates and no cost field TODO MILES hardcoded
+  geojson.features = geojson.features.filter(feature => {
+    return (
+      feature.geometry &&
+      feature.geometry.coordinates &&
+      feature.geometry.coordinates.length &&
+      feature.properties.MILES
+    );
+  });
+
+  // mutate coordinate precision to 5 decimal places
+  geojson.features.forEach(feature => {
+    const length = feature.geometry.coordinates.length;
+    feature.geometry.coordinates[0] = feature.geometry.coordinates[0].map(d =>
+      Number(d.toFixed(5))
+    );
+    feature.geometry.coordinates[length - 1] = feature.geometry.coordinates[
+      length - 1
+    ].map(d => Number(d.toFixed(5)));
+  });
+
+  // add stringified coordinates to master list
+  geojson.features.forEach(feature => {
+    const start = feature.geometry.coordinates[0].join(',');
     const end = feature.geometry.coordinates[
       feature.geometry.coordinates.length - 1
-    ]
-      .map(d => d.toFixed(5))
-      .join(',');
+    ].join(',');
+
     pts.add(start);
     pts.add(end);
   });
+
+  const adj_list = toAdjacencyList(geojson);
+  const edge_hash = toEdgeHash(geojson);
 
   const point_collection = [];
 
@@ -53,12 +75,40 @@ async function main() {
   };
 
   const clustered = clustersKmeans(pt_feature_collection, {
-    numberOfClusters: 20
+    numberOfClusters: NUMBER_OF_REGIONS
   });
 
   await fs.writeFile(
     '../arc_flag_output/clustered_points.geojson',
     JSON.stringify(clustered),
+    'utf8'
+  );
+
+  // create lookup, pt to region
+  // and list of pts per region
+
+  const pt_region_lookup = {};
+  const region_list = {};
+  clustered.features.forEach(f => {
+    const region = f.properties.cluster;
+    const pt = f.properties.pt;
+    pt_region_lookup[f.properties.pt] = region;
+    if (!region_list[region]) {
+      region_list[region] = [pt];
+    } else {
+      region_list[region].push(pt);
+    }
+  });
+
+  await fs.writeFile(
+    '../arc_flag_output/pt_region_lookup.json',
+    JSON.stringify(pt_region_lookup),
+    'utf8'
+  );
+
+  await fs.writeFile(
+    '../arc_flag_output/region_list.json',
+    JSON.stringify(region_list),
     'utf8'
   );
 
@@ -220,4 +270,47 @@ async function main() {
       boundary_pt_set[region].push(point);
     }
   });
+
+  await fs.writeFile(
+    '../arc_flag_output/boundary_pt_set.geojson',
+    JSON.stringify(boundary_pt_set),
+    'utf8'
+  );
+
+  // TODO build miniature version
+  process.exit();
+
+  // initialize arc flags on edge hash
+  Object.keys(edge_hash).forEach(key => {
+    edge_hash[key].properties.arcFlags = Array(NUMBER_OF_REGIONS).fill(0);
+  });
+
+  // assign arc flags
+  Object.keys(boundary_pt_set).forEach(region => {
+    console.log(region);
+    boundary_pt_set[region].forEach((pt, i) => {
+      console.log(i / boundary_pt_set[region].length);
+      const prev = runArcFlagsDijkstra(adj_list, edge_hash, pt, 'MILES');
+      //
+      Array.from(pts).forEach((p, i) => {
+        while (prev[p]) {
+          edge_hash[`${p}|${prev[p]}`].properties.arcFlags[region] = 1;
+          p = prev[p];
+        }
+      });
+      //
+    });
+  });
+
+  await fs.writeFile(
+    '../arc_flag_output/edge_hash.geojson',
+    JSON.stringify(edge_hash),
+    'utf8'
+  );
+
+  await fs.writeFile(
+    '../arc_flag_output/adj_list.geojson',
+    JSON.stringify(adj_list),
+    'utf8'
+  );
 }

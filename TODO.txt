@@ -1,8 +1,6 @@
 
-validation:
-has coordinates.
-has valid value for edge weight
-coordinate precision match - where is the responsibility?
+
+
 
 make contraction hierarchy building process faster
 -limit hops speed up contraction hierarchy?
@@ -14,10 +12,12 @@ size of contraction hierarchy is 2x original
 
 Directed graph options
 
+store edge hash once for each node pair.  forward and reverse flag for arc flags.
+
 ArcFlags
 
 
-after: golang
+after: golang ??
 
 ---------
 
