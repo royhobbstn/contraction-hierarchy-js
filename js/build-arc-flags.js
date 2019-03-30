@@ -4,11 +4,12 @@ const fs = require('fs').promises;
 const turf = require('@turf/turf');
 const dissolve = require('geojson-dissolve');
 const geojsonRbush = require('geojson-rbush').default;
-const { runArcFlagsDijkstra } = require('./arc-flags-dijkstra.js');
+const { runArcFlagsDijkstraPreProcess } = require('./arc-flags-dijkstra.js');
 const { clustersKmeans } = require('./turf-kmeans-mod.js');
 const { toAdjacencyList, toEdgeHash } = require('./common.js');
 
 const NUMBER_OF_REGIONS = 20;
+const COST_FIELD = 'MILES';
 
 main();
 
@@ -19,13 +20,13 @@ async function main() {
 
   const pts = new Set();
 
-  // clean geojson of missing coordinates and no cost field TODO MILES hardcoded
+  // clean geojson of missing coordinates and no cost field
   geojson.features = geojson.features.filter(feature => {
     return (
       feature.geometry &&
       feature.geometry.coordinates &&
       feature.geometry.coordinates.length &&
-      feature.properties.MILES
+      feature.properties[COST_FIELD]
     );
   });
 
@@ -85,30 +86,16 @@ async function main() {
   );
 
   // create lookup, pt to region
-  // and list of pts per region
-
   const pt_region_lookup = {};
-  const region_list = {};
   clustered.features.forEach(f => {
     const region = f.properties.cluster;
     const pt = f.properties.pt;
     pt_region_lookup[f.properties.pt] = region;
-    if (!region_list[region]) {
-      region_list[region] = [pt];
-    } else {
-      region_list[region].push(pt);
-    }
   });
 
   await fs.writeFile(
     '../arc_flag_output/pt_region_lookup.json',
     JSON.stringify(pt_region_lookup),
-    'utf8'
-  );
-
-  await fs.writeFile(
-    '../arc_flag_output/region_list.json',
-    JSON.stringify(region_list),
     'utf8'
   );
 
@@ -272,13 +259,10 @@ async function main() {
   });
 
   await fs.writeFile(
-    '../arc_flag_output/boundary_pt_set.geojson',
+    '../arc_flag_output/boundary_pt_set.json',
     JSON.stringify(boundary_pt_set),
     'utf8'
   );
-
-  // TODO build miniature version
-  process.exit();
 
   // initialize arc flags on edge hash
   Object.keys(edge_hash).forEach(key => {
@@ -287,29 +271,47 @@ async function main() {
 
   // assign arc flags
   Object.keys(boundary_pt_set).forEach(region => {
-    console.log(region);
-    boundary_pt_set[region].forEach((pt, i) => {
-      console.log(i / boundary_pt_set[region].length);
-      const prev = runArcFlagsDijkstra(adj_list, edge_hash, pt, 'MILES');
+    console.log('region: ' + region);
+    const region_pts = boundary_pt_set[region].length;
+    console.log(` boundary pts: ${region_pts}`);
+    let count = 0;
+    boundary_pt_set[region].forEach(pt => {
+      if (count % 10 === 0) {
+        console.log((count / region_pts) * 100);
+      }
+      count++;
+
+      const prev = runArcFlagsDijkstraPreProcess(
+        adj_list,
+        edge_hash,
+        pt,
+        COST_FIELD
+      );
       //
-      Array.from(pts).forEach((p, i) => {
-        while (prev[p]) {
-          edge_hash[`${p}|${prev[p]}`].properties.arcFlags[region] = 1;
-          p = prev[p];
-        }
+      Object.keys(boundary_pt_set).forEach(reg => {
+        boundary_pt_set[reg].forEach(p => {
+          if (region === reg) {
+            // don't bother setting arcFlags within same region
+            return;
+          }
+          while (prev[p]) {
+            edge_hash[`${p}|${prev[p]}`].properties.arcFlags[region] = 1;
+            p = prev[p];
+          }
+        });
+        //
       });
-      //
     });
   });
 
   await fs.writeFile(
-    '../arc_flag_output/edge_hash.geojson',
+    '../arc_flag_output/edge_hash.json',
     JSON.stringify(edge_hash),
     'utf8'
   );
 
   await fs.writeFile(
-    '../arc_flag_output/adj_list.geojson',
+    '../arc_flag_output/adj_list.json',
     JSON.stringify(adj_list),
     'utf8'
   );

@@ -1,6 +1,8 @@
 
 
-
+I don't think I need any of the geo other than clustering!!
+- good
+because validation.js doesnt work because coords are fundamentally different
 
 make contraction hierarchy building process faster
 -limit hops speed up contraction hierarchy?

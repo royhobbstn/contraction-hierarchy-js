@@ -16,10 +16,18 @@ const {
   queryContractionHierarchy
 } = require('../js/run-contraction-hierarchy');
 
+// load arcFlags dijkstra
+const { runArcFlagsDijkstra } = require('../js/arc-flags-dijkstra');
+
 // load contraction hierarchy output
 const new_adj = require('../networks/ch.json');
 const new_edge = require('../networks/ne.json');
 const node_rank = require('../networks/nr.json');
+
+// load arcFlag output
+const arc_adj = require('../arc_flag_output/adj_list.json');
+const arc_edge = require('../arc_flag_output/edge_hash.json');
+const arc_region_lookup = require('../arc_flag_output/pt_region_lookup');
 
 main();
 
@@ -58,6 +66,8 @@ async function main() {
   const ch = [];
   const correct = [];
   const correct2 = [];
+  const af = [];
+
   const nodeDijkstra = new Graph(alt_graph);
 
   coords.forEach((pair, index) => {
@@ -108,9 +118,15 @@ async function main() {
       pair[1],
       'MILES'
     );
+    af[index] = runArcFlagsDijkstra(
+      arc_adj,
+      arc_edge,
+      'A',
+      'Z',
+      'MILES',
+      arc_region_lookup
+    );
   });
-
-  console.log(`index`, `Dijkstra`, `BiDirectional`, `ContractionHierarchy`);
 
   let error_count = 0;
   for (let i = 0; i < coords.length; i++) {
@@ -148,7 +164,9 @@ async function main() {
         correct[i].segments.length,
         correct[i].distance.toFixed(5),
         correct2[i].segments.length,
-        correct2[i].distance.toFixed(5)
+        correct2[i].distance.toFixed(5),
+        // af[i].segments.length,
+        af[i].distance.toFixed(5)
       );
     }
   }
