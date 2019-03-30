@@ -1,25 +1,27 @@
 
+Add segments calc on ArcFlags
 
-I don't think I need any of the geo other than clustering!!
-- good
-because validation.js doesnt work because coords are fundamentally different
+ArcFlags no speedup?
+
+?? dont store arc flags on every arc, only boundary arcs
+
+use the same edge hash - don't do
+ - Directed graph options
+ - store edge hash once for each node pair.  forward and reverse flag for arc flags.
+
+michigan non-contiguous -is this a problem?
 
 make contraction hierarchy building process faster
 -limit hops speed up contraction hierarchy?
 
 
-size of contraction hierarchy is 2x original
+speedwise would help a bit if edge hash distance lookup could be replaced by storing cost in adjacency list
+- may not be practical
 
-- speedwise would help a bit if edge hash distance lookup could be replaced by storing cost in adjacency list
-
-Directed graph options
-
-store edge hash once for each node pair.  forward and reverse flag for arc flags.
-
-ArcFlags
+Integrate CH with ArcFlags
 
 
-after: golang ??
+after: WebAssembly
 
 ---------
 

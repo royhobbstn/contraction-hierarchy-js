@@ -53,11 +53,11 @@ async function main() {
 
   const coords = [];
 
-  for (let i = 0; i < 1; i++) {
+  for (let i = 0; i < 10; i++) {
     const rnd1 = Math.floor(Math.random() * adj_length);
     const rnd2 = Math.floor(Math.random() * adj_length);
-    //const coord = [adj_keys[rnd1], adj_keys[rnd2]];
-    const coord = ['-106.347572,31.965919', '-74.192773,40.688109'];
+    const coord = [adj_keys[rnd1], adj_keys[rnd2]];
+    //const coord = ['-106.347572,31.965919', '-74.192773,40.688109'];
     coords.push(coord);
   }
 
@@ -121,8 +121,8 @@ async function main() {
     af[index] = runArcFlagsDijkstra(
       arc_adj,
       arc_edge,
-      'A',
-      'Z',
+      pair[0],
+      pair[1],
       'MILES',
       arc_region_lookup
     );

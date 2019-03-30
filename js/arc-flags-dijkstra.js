@@ -104,7 +104,6 @@ function runArcFlagsDijkstra(
         const flags = segment.properties.arcFlags;
 
         if (!flags[target_region]) {
-          console.log('return early');
           return;
         }
       }

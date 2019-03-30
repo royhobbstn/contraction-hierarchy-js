@@ -3,6 +3,11 @@ const new_adj = require('../networks/ch.json');
 const new_edge = require('../networks/ne.json');
 const node_rank = require('../networks/nr.json');
 
+// load arcFlag output
+const arc_adj = require('../arc_flag_output/adj_list.json');
+const arc_edge = require('../arc_flag_output/edge_hash.json');
+const arc_region_lookup = require('../arc_flag_output/pt_region_lookup');
+
 // load traditional dijkstra and utilities
 const { runDijkstra } = require('../js/dijkstra.js');
 
@@ -16,6 +21,9 @@ const {
   queryContractionHierarchy
 } = require('../js/run-contraction-hierarchy');
 
+// load arcFlags dijkstra
+const { runArcFlagsDijkstra } = require('../js/arc-flags-dijkstra');
+
 main();
 
 async function main() {
@@ -28,21 +36,23 @@ async function main() {
       return true;
     }
   });
-
-  const adjacency = toAdjacencyList(geojson);
-
-  const edge_list = toEdgeHash(geojson);
+  //
+  // const adjacency = toAdjacencyList(geojson);
+  //
+  // const edge_list = toEdgeHash(geojson);
   const id_list = toIdList(geojson);
 
   setTimeout(function() {
     // performance test
-    const adj_keys = Object.keys(adjacency);
-    const adj_length = adj_keys.length;
+    // const adj_keys = Object.keys(adjacency);
+    // const adj_length = adj_keys.length;
     const new_adj_keys = Object.keys(new_adj);
     const new_adj_length = new_adj_keys.length;
-    //
+    // const arc_adj_keys = Object.keys(arc_adj);
+    // const arc_adj_length = arc_adj_keys.length;
+
     // console.time('Dijkstra');
-    // for (let i = 0; i < 100; i++) {
+    // for (let i = 0; i < 1000; i++) {
     //   let rnd1 = Math.floor(Math.random() * adj_length);
     //   let rnd2 = Math.floor(Math.random() * adj_length);
     //   // console.time('test: ' + i);
@@ -59,7 +69,7 @@ async function main() {
     // console.timeEnd('Dijkstra');
     //
     // console.time('BiDijkstra');
-    // for (let i = 0; i < 100; i++) {
+    // for (let i = 0; i < 1000; i++) {
     //   let rnd1 = Math.floor(Math.random() * adj_length);
     //   let rnd2 = Math.floor(Math.random() * adj_length);
     //   // console.log();
@@ -77,11 +87,11 @@ async function main() {
     // console.timeEnd('BiDijkstra');
 
     console.time('ContractionHierarchy');
-    for (let i = 0; i < 100; i++) {
+    for (let i = 0; i < 1000; i++) {
       let rnd1 = Math.floor(Math.random() * new_adj_length);
       let rnd2 = Math.floor(Math.random() * new_adj_length);
       console.time('test: ' + i);
-      console.log(adj_keys[rnd1], adj_keys[rnd2]);
+      console.log(new_adj_keys[rnd1], new_adj_keys[rnd2]);
       const test = queryContractionHierarchy(
         new_adj,
         new_edge,
@@ -94,5 +104,23 @@ async function main() {
       console.timeEnd('test: ' + i);
     }
     console.timeEnd('ContractionHierarchy');
+
+    // console.time('ArcFlags');
+    // for (let i = 0; i < 1000; i++) {
+    //   let rnd1 = Math.floor(Math.random() * arc_adj_length);
+    //   let rnd2 = Math.floor(Math.random() * arc_adj_length);
+    //   // console.time('test: ' + i);
+    //   // console.log(arc_adj_keys[rnd1], arc_adj_keys[rnd2]);
+    //   const test = runArcFlagsDijkstra(
+    //     arc_adj,
+    //     arc_edge,
+    //     arc_adj_keys[rnd1],
+    //     arc_adj_keys[rnd2],
+    //     'MILES',
+    //     arc_region_lookup
+    //   );
+    //   // console.timeEnd('test: ' + i);
+    // }
+    // console.timeEnd('ArcFlags');
   }, 3000);
 }
