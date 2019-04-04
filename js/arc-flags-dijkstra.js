@@ -2,6 +2,7 @@
 
 const fs = require('fs').promises;
 const FibonacciHeap = require('@tyriar/fibonacci-heap').FibonacciHeap;
+const { performance } = require('perf_hooks');
 
 const { getComparator, toBestRoute } = require('./common.js');
 
@@ -63,7 +64,6 @@ function runArcFlagsDijkstra(
   cost_field,
   pt_region_lookup
 ) {
-  // quick exit for start === end
   if (start === end) {
     return {
       distance: 0,
@@ -85,31 +85,29 @@ function runArcFlagsDijkstra(
   dist[start] = 0;
 
   const target_region = pt_region_lookup[end];
+  let perfsum = 0;
 
   do {
-    const current_region = pt_region_lookup[current];
-
     adj_list[current].forEach(node => {
       // this optimization may not hold true for directed graphs
       if (visited[node]) {
         return;
       }
 
-      const node_region = pt_region_lookup[node];
+      const a = performance.now();
+      const str = `${current}|${node}`;
+      const segment = edge_hash[str];
+      const b = performance.now();
+      perfsum += b - a;
 
-      // use arcFlags to rule out non-shortests paths
-      if (current_region !== node_region) {
-        const segment = edge_hash[`${current}|${node}`];
+      // use arcFlags to rule out non-shortest paths
+      const flags = segment.properties.arcFlags;
 
-        const flags = segment.properties.arcFlags;
-
-        if (!flags[target_region]) {
-          return;
-        }
+      if (!flags[target_region]) {
+        return;
       }
 
-      const segment_distance =
-        edge_hash[`${current}|${node}`].properties[cost_field];
+      const segment_distance = segment.properties[cost_field];
       const proposed_distance = dist[current] + segment_distance;
 
       if (proposed_distance < getComparator(dist[node])) {
@@ -124,7 +122,6 @@ function runArcFlagsDijkstra(
     });
     visited[current] = true;
 
-    // get lowest value from heap
     const elem = heap.extractMinimum();
 
     if (elem) {
@@ -133,17 +130,17 @@ function runArcFlagsDijkstra(
       current = '';
     }
 
-    // exit early if current node becomes end node
     if (current === end) {
       current = '';
     }
   } while (current);
+  console.log(perfsum);
 
   const route = toBestRoute(end, prev, edge_hash);
-
+  const segments = route.features.map(f => f.properties.ID);
   const distance = route.features.reduce((acc, feat) => {
     return acc + feat.properties[cost_field];
   }, 0);
 
-  return { distance, route };
+  return { distance, segments, route };
 }

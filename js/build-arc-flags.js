@@ -5,7 +5,7 @@ const { runArcFlagsDijkstraPreProcess } = require('./arc-flags-dijkstra.js');
 const { clustersKmeans } = require('./turf-kmeans-mod.js');
 const { toAdjacencyList, toEdgeHash } = require('./common.js');
 
-const NUMBER_OF_REGIONS = 20;
+const NUMBER_OF_REGIONS = 60;
 const COST_FIELD = 'MILES';
 
 main();
@@ -140,18 +140,12 @@ async function main() {
         pt,
         COST_FIELD
       );
-      //
-      Object.keys(boundary_pt_set).forEach(reg => {
-        boundary_pt_set[reg].forEach(p => {
-          if (region === reg) {
-            // don't bother setting arcFlags within same region
-            return;
-          }
-          while (prev[p]) {
-            edge_hash[`${p}|${prev[p]}`].properties.arcFlags[region] = 1;
-            p = prev[p];
-          }
-        });
+      // TODO experiment
+      Object.keys(pt_region_lookup).forEach(p => {
+        while (prev[p]) {
+          edge_hash[`${p}|${prev[p]}`].properties.arcFlags[region] = 1;
+          p = prev[p];
+        }
         //
       });
     });

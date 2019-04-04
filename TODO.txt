@@ -1,5 +1,8 @@
 
-Add segments calc on ArcFlags
+// run these on cloud!
+
+// ArcFlags Dijkstra discrepancy
+0 [ '-71.254013,41.632221', '-71.646275,42.817374' ] 69 '99.23461' 73 '101.92070'
 
 ArcFlags no speedup?
 
