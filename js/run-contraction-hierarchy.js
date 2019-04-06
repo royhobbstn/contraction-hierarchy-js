@@ -1,14 +1,8 @@
 //
 
-const fs = require('fs');
 const { toBestRoute, getComparator } = require('./common.js');
 const FibonacciHeap = require('@tyriar/fibonacci-heap').FibonacciHeap;
 
-var readlineSync = require('readline-sync');
-
-
-const debug = false;
-const save_output = false;
 
 exports.queryContractionHierarchy = queryContractionHierarchy;
 
@@ -131,111 +125,6 @@ function queryContractionHierarchy(
     features: bb.map(d => id_list[d])
   };
 
-  if (save_output) {
-    fs.writeFileSync(
-      '../output/ch-forward-path.geojson',
-      JSON.stringify(fc),
-      'utf8'
-    );
-    fs.writeFileSync(
-      '../output/ch-backward-path.geojson',
-      JSON.stringify(bc),
-      'utf8'
-    );
-
-    const forward_visited_pts = Object.keys(forward.dist).map(key => {
-      const coords = key.split(',').map(d => Number(d));
-      return {
-        type: 'Feature',
-        properties: { dist: forward.dist[key] },
-        geometry: {
-          type: 'Point',
-          coordinates: coords
-        }
-      };
-    });
-
-    const backward_visited_pts = Object.keys(backward.dist).map(key => {
-      const coords = key.split(',').map(d => Number(d));
-      return {
-        type: 'Feature',
-        properties: { dist: backward.dist[key] },
-        geometry: {
-          type: 'Point',
-          coordinates: coords
-        }
-      };
-    });
-
-    const forward_visited_pts_collection = {
-      type: 'FeatureCollection',
-      features: forward_visited_pts
-    };
-
-    const backward_visited_pts_collection = {
-      type: 'FeatureCollection',
-      features: backward_visited_pts
-    };
-
-    fs.writeFileSync(
-      '../output/ch-forward_visited_pts.geojson',
-      JSON.stringify(forward_visited_pts_collection),
-      'utf8'
-    );
-    fs.writeFileSync(
-      '../output/ch-backward_visited_pts.geojson',
-      JSON.stringify(backward_visited_pts_collection),
-      'utf8'
-    );
-
-    // settled nodes visualization
-
-    const forward_settled_pts = Object.keys(forward.visited).map(key => {
-      const coords = key.split(',').map(d => Number(d));
-      return {
-        type: 'Feature',
-        properties: { dist: forward.dist[key] },
-        geometry: {
-          type: 'Point',
-          coordinates: coords
-        }
-      };
-    });
-
-    const backward_settled_pts = Object.keys(backward.visited).map(key => {
-      const coords = key.split(',').map(d => Number(d));
-      return {
-        type: 'Feature',
-        properties: { dist: backward.dist[key] },
-        geometry: {
-          type: 'Point',
-          coordinates: coords
-        }
-      };
-    });
-
-    const forward_settled_pts_collection = {
-      type: 'FeatureCollection',
-      features: forward_settled_pts
-    };
-
-    const backward_settled_pts_collection = {
-      type: 'FeatureCollection',
-      features: backward_settled_pts
-    };
-
-    fs.writeFileSync(
-      '../output/ch-forward_settled_pts.geojson',
-      JSON.stringify(forward_settled_pts_collection),
-      'utf8'
-    );
-    fs.writeFileSync(
-      '../output/ch-backward_settled_pts.geojson',
-      JSON.stringify(backward_settled_pts_collection),
-      'utf8'
-    );
-  }
-
   const raw_combined = [
     ...geojson_forward.features,
     ...geojson_backward.features
@@ -274,53 +163,14 @@ function queryContractionHierarchy(
     ref.dist[current] = 0;
 
     do {
-      const current_rank = node_rank[current];
-
-      if (debug) {
-        console.log('');
-        console.log('');
-        console.log(`starting new ${direction.toUpperCase()} loop`);
-        // console.log({current, current_rank});
-        console.time('bi-di-ch');
-        console.log('edge count:', graph[current].length);
-        console.log('for each edge from current node:');
-        console.log('');
-      }
-
       graph[current].forEach(node => {
-        if (debug) {
-          console.log('processing edge:', { node, current_rank, node_rank: node_rank[node] });
-        }
 
         const segment_distance =
           edge_hash[`${current}|${node}`].properties[cost_field];
         const proposed_distance = ref.dist[current] + segment_distance;
 
-        if (debug) {
-          console.log(
-            'the distance to the current node is: ',
-            ref.dist[current]
-          );
-          console.log(
-            `edge has an id of: ${
-              edge_hash[`${current}|${node}`].properties.ID
-            }`
-          );
-          console.log('edge has cost of :', { segment_distance });
-          console.log('so the distance to the end of the edge would be:', {
-            proposed_distance
-          });
-          console.log(
-            'the current estimated distance to the end of the edge via another path is: ',
-            ref.dist[node]
-          );
-        }
-
         if (proposed_distance < getComparator(ref.dist[node])) {
-          if (debug) {
-            console.log('the new route is smaller!');
-            console.log('');
-          }
+
           if (ref.dist[node] !== undefined) {
             heap.decreaseKey(key_to_nodes[node], proposed_distance);
           }
@@ -337,12 +187,7 @@ function queryContractionHierarchy(
           ref.dist[node] = proposed_distance;
           ref.prev[node] = current;
         }
-        else {
-          if (debug) {
-            console.log('but the new route was not smaller');
-            console.log('');
-          }
-        }
+
       });
       ref.visited[current] = true;
 
@@ -351,30 +196,14 @@ function queryContractionHierarchy(
 
       if (elem) {
         current = elem.value;
-        if (debug) {
-          console.log(
-            `next on heap,   key: ${elem.key}  value: ${elem.value}  rank: ${
-              node_rank[elem.value]
-            }`
-          );
-        }
       }
       else {
         current = '';
         return '';
       }
 
-      if (debug) {
-        console.log('end of loop');
-        console.log('heap size', heap.size());
-        console.timeEnd('bi-di-ch');
-        console.log('------');
-      }
-
-      // var userName = readlineSync.question('May I have your name? ');
-      
-
       yield current;
+
     } while (true);
   }
 }
