@@ -1,5 +1,4 @@
 const fs = require('fs').promises;
-const dj3rd = require('dijkstrajs');
 const Graph = require('node-dijkstra');
 
 // load traditional dijkstra and utilities
@@ -64,7 +63,6 @@ async function main() {
   const dijkstra = [];
   const bidirectional = [];
   const ch = [];
-  const correct = [];
   const correct2 = [];
   const af = [];
 
@@ -108,15 +106,7 @@ async function main() {
       id_list
     );
     console.timeEnd('ch');
-    console.time('control 1');
-    correct[index] = toCorrectPath(
-      alt_graph,
-      edge_list,
-      pair[0],
-      pair[1],
-      'MILES'
-    );
-    console.timeEnd('control 1');
+
     console.time('control 2');
     correct2[index] = toCorrectPath2(
       nodeDijkstra,
@@ -126,6 +116,7 @@ async function main() {
       'MILES'
     );
     console.timeEnd('control 2');
+
     console.time('arc flags');
     af[index] = runArcFlagsDijkstra(
       arc_adj,
@@ -147,7 +138,6 @@ async function main() {
       dijkstra[i].distance,
       bidirectional[i].distance,
       ch[i].distance,
-      correct[i].distance,
       correct2[i].distance,
       af[i].distance
     ];
@@ -175,8 +165,6 @@ async function main() {
         bidirectional[i].distance.toFixed(5),
         ch[i].segments.length,
         ch[i].distance.toFixed(5),
-        correct[i].segments.length,
-        correct[i].distance.toFixed(5),
         correct2[i].segments.length,
         correct2[i].distance.toFixed(5),
         af[i].segments.length,
@@ -218,37 +206,6 @@ function createDijkstraJsGraph(geojson, cost_field) {
     graph[end][start] = cost;
   });
   return graph;
-}
-
-function toCorrectPath(graph, edge_list, start, end, cost_field) {
-  const path = dj3rd.find_path(graph, start, end);
-
-  const geojson_features = [];
-  let distance = 0;
-  const segments = [];
-
-  if (start !== end) {
-    path.forEach((node, i) => {
-      if (!path[i + 1]) {
-        return;
-      }
-      const feature = edge_list[`${node}|${path[i + 1]}`];
-      if (!feature) {
-        console.log('ERROR: No edge feature found');
-        return;
-      }
-      geojson_features.push(feature);
-      distance += feature.properties[cost_field];
-      segments.push(feature.properties.ID);
-    });
-  }
-
-  const route = {
-    type: 'FeatureCollection',
-    features: geojson_features
-  };
-
-  return { distance, segments, route };
 }
 
 function toCorrectPath2(graph, edge_list, start, end, cost_field) {
