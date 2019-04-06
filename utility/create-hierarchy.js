@@ -9,7 +9,7 @@ async function main() {
   const geojson = JSON.parse(geojson_raw);
 
   geojson.features = geojson.features.filter(feat => {
-    if (feat.properties.MILES && feat.geometry.coordinates) {
+    if (feat.properties.MILES && feat.geometry.coordinates && feat.properties.STFIPS === 6) {
       return true;
     }
   });

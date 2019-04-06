@@ -1,8 +1,6 @@
 //
 let debug = false;
 
-const fs = require('fs');
-
 const FibonacciHeap = require('@tyriar/fibonacci-heap').FibonacciHeap;
 
 const { toAdjacencyList, toEdgeHash, getComparator } = require('./common.js');
@@ -86,37 +84,7 @@ function contractGraph(geojson, options) {
     console.timeEnd('loop');
   }
 
-  // const viz = {
-  //   "type": "FeatureCollection",
-  //   "features": links
-  // };
-  //
-  // fs.writeFileSync('./geohash.geojson', JSON.stringify(viz), 'utf8');
-
-  // const features = Object.keys(contracted_nodes).map(key => {
-  //   return {
-  //     "type": "Feature",
-  //     "properties": {
-  //       "rank": contracted_nodes[key],
-  //       "coords": key,
-  //     },
-  //     "geometry": {
-  //       "type": "Point",
-  //       "coordinates": key.split(',').map(k => Number(k))
-  //     }
-  //   };
-  // });
-  //
-  //
-  // const viz2 = {
-  //   "type": "FeatureCollection",
-  //   "features": features
-  // };
-  //
-  // fs.writeFileSync('./rankspts.geojson', JSON.stringify(viz2), 'utf8');
-
   // remove links to lower ranked nodes
-  // TODO count these
   Object.keys(adjacency_list).forEach(from_coords => {
     const from_rank = contracted_nodes[from_coords];
     adjacency_list[from_coords] = adjacency_list[from_coords].filter(
@@ -202,25 +170,9 @@ function contractGraph(geojson, options) {
 
           if (!get_count_only) {
             adjacency_list[u].push(w);
-            // adjacency_list[w].push(u);
 
             const seg1_id = edge_hash[`${u}|${v}`].properties.ID;
             const seg2_id = edge_hash[`${v}|${w}`].properties.ID;
-
-            // const link = {
-            //   "type": "Feature",
-            //   "properties": {
-            //     "distance": total,
-            //     "coords1": seg1_id,
-            //     "coords2": seg2_id,
-            //   },
-            //   "geometry": {
-            //     "type": "LineString",
-            //     "coordinates": [u.split(',').map(k => Number(k)), w.split(',').map(k => Number(k))]
-            //   }
-            // };
-            //
-            // links.push(link);
 
             edge_hash[`${u}|${w}`] = {
               properties: {
@@ -299,7 +251,8 @@ function contractGraph(geojson, options) {
           if (proposed_distance < getComparator(dist[node])) {
             if (dist[node] !== undefined) {
               heap.decreaseKey(key_to_nodes[node], proposed_distance);
-            } else {
+            }
+            else {
               key_to_nodes[node] = heap.insert(proposed_distance, node);
             }
             dist[node] = proposed_distance;
@@ -315,7 +268,8 @@ function contractGraph(geojson, options) {
       if (elem) {
         current = elem.value;
         current_key = elem.key;
-      } else {
+      }
+      else {
         current = '';
       }
 

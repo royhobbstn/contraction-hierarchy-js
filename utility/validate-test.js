@@ -20,9 +20,9 @@ const {
 const { runArcFlagsDijkstra } = require('../js/arc-flags-dijkstra');
 
 // load contraction hierarchy output
-// const new_adj = require('../networks/ch.json');
-// const new_edge = require('../networks/ne.json');
-// const node_rank = require('../networks/nr.json');
+const new_adj = require('../networks/ch.json');
+const new_edge = require('../networks/ne.json');
+const node_rank = require('../networks/nr.json');
 
 // load arcFlag output
 const arc_adj = require('../arc_flag_output/adj_list.json');
@@ -46,7 +46,7 @@ async function main() {
 
   const adjacency = toAdjacencyList(geojson);
   const edge_list = toEdgeHash(geojson);
-  // const id_list = toIdList(geojson);
+  const id_list = toIdList(geojson);
 
   const adj_keys = Object.keys(adjacency);
   const adj_length = adj_keys.length;
@@ -62,8 +62,8 @@ async function main() {
   }
 
   const dijkstra = [];
-  // const bidirectional = [];
-  // const ch = [];
+  const bidirectional = [];
+  const ch = [];
   const correct = [];
   const correct2 = [];
   const af = [];
@@ -89,31 +89,33 @@ async function main() {
       'MILES'
     );
     console.timeEnd('Dijkstra');
-    // bidirectional[index] = runBiDijkstra(
-    //   adjacency,
-    //   edge_list,
-    //   pair[0],
-    //   pair[1],
-    //   'MILES'
-    // );
-    // ch[index] = queryContractionHierarchy(
-    //   new_adj,
-    //   new_edge,
-    //   pair[0],
-    //   pair[1],
-    //   'MILES',
-    //   node_rank,
-    //   id_list
-    // );
-    // console.time('control 1');
-    // correct[index] = toCorrectPath(
-    //   alt_graph,
-    //   edge_list,
-    //   pair[0],
-    //   pair[1],
-    //   'MILES'
-    // );
-    // console.timeEnd('control 1');
+    bidirectional[index] = runBiDijkstra(
+      adjacency,
+      edge_list,
+      pair[0],
+      pair[1],
+      'MILES'
+    );
+    console.time('ch');
+    ch[index] = queryContractionHierarchy(
+      new_adj,
+      new_edge,
+      pair[0],
+      pair[1],
+      'MILES',
+      node_rank,
+      id_list
+    );
+    console.timeEnd('ch');
+    console.time('control 1');
+    correct[index] = toCorrectPath(
+      alt_graph,
+      edge_list,
+      pair[0],
+      pair[1],
+      'MILES'
+    );
+    console.timeEnd('control 1');
     console.time('control 2');
     correct2[index] = toCorrectPath2(
       nodeDijkstra,
@@ -142,9 +144,9 @@ async function main() {
   for (let i = 0; i < coords.length; i++) {
     const values = [
       dijkstra[i].distance,
-      // bidirectional[i].distance,
-      // ch[i].distance,
-      // correct[i].distance,
+      bidirectional[i].distance,
+      ch[i].distance,
+      correct[i].distance,
       correct2[i].distance,
       af[i].distance
     ];
@@ -168,12 +170,12 @@ async function main() {
         coords[i],
         dijkstra[i].segments.length,
         dijkstra[i].distance.toFixed(5),
-        // bidirectional[i].segments.length,
-        // bidirectional[i].distance.toFixed(5),
-        // ch[i].segments.length,
-        // ch[i].distance.toFixed(5),
-        // correct[i].segments.length,
-        // correct[i].distance.toFixed(5),
+        bidirectional[i].segments.length,
+        bidirectional[i].distance.toFixed(5),
+        ch[i].segments.length,
+        ch[i].distance.toFixed(5),
+        correct[i].segments.length,
+        correct[i].distance.toFixed(5),
         correct2[i].segments.length,
         correct2[i].distance.toFixed(5),
         af[i].segments.length,
@@ -183,18 +185,6 @@ async function main() {
   }
   console.log(`There were ${error_count} errors.`);
 
-  // console.log(ch[0].raw_segments);
-  // console.log(correct2[0].segments);
-
-  // fs.writeFile(
-  //   './comparison_dijkstra.geojson',
-  //   JSON.stringify(dijkstra[0].route)
-  // );
-  // fs.writeFile('./comparison_bidirectional.geojson', JSON.stringify(bidirectional[0].route));
-  // fs.writeFile('./comparison_ch.geojson', JSON.stringify(ch[0].route));
-  // fs.writeFile('./comparison_correct.geojson', JSON.stringify(correct[0].route));
-  // fs.writeFile('./comparison_correct2.geojson', JSON.stringify(correct2[0].route));
-  // fs.writeFile('./comparison_arcflags.geojson', JSON.stringify(af[0].route));
 }
 
 function createDijkstraJsGraph(geojson, cost_field) {

@@ -5,7 +5,7 @@ const { runArcFlagsDijkstraPreProcess } = require('./arc-flags-dijkstra.js');
 const { clustersKmeans } = require('./turf-kmeans-mod.js');
 const { toAdjacencyList, toEdgeHash } = require('./common.js');
 
-const NUMBER_OF_REGIONS = 50;
+const NUMBER_OF_REGIONS = 500;
 const COST_FIELD = 'MILES';
 
 main();
