@@ -1,31 +1,35 @@
 
-THIS IS PRIORITY 1
 
-27 [ '-122.192391,39.385356', '-122.148643,39.167018' ] 1 '15.62172' 33 '106.73414' 1 '15.62172' 1 '15.62172'
-395 [ '-121.509827,38.568477', '-121.471855,38.598144' ] 11 '3.58704' 13 '4.25374' 11 '3.58704' 11 '3.58704'
-520 [ '-121.430131,38.500656', '-121.434708,38.510448' ] 1 '0.72864' 1 '0.72864' 5 '2.77098' 1 '0.72864' 1 '0.72864' 1 '0.72864'
-907 [ '-118.04512,33.84621', '-118.081421,33.876342' ] 3 '3.57900' 3 '3.57900' 17 '12.79360' 3 '3.57900' 3 '3.57900' 3 '3.57900'
-
-SEEMS LIKE YOU COULD DRASTICALLY CUT ARCFLAGS PROCESSING TIME IF CALCULATING SHORTEST PATHS THROUGH CONTRACTION HIERARCHIES
-
-2 tiered arcFlags??
+DATA OPTIMIZATIONS
+------------------
 
 use the same edge hash - don't do
  - Directed graph options
  - store edge hash once for each node pair.  forward and reverse flag for arc flags.
 
-michigan non-contiguous kmeans -is this a problem?
-
-make contraction hierarchy building process faster
--limit hops speed up contraction hierarchy?
-
 
 speedwise would help a bit if edge hash distance lookup could be replaced by storing cost in adjacency list
 - may not be practical
 
+benchmark vs ngraph?
+
+
+BUILDING CH && ARCFLAGS (probably defer to the golang implementation)
+---------------------------
+michigan non-contiguous kmeans -is this a problem?  Research METIS
+
+make contraction hierarchy building process faster
+-limit hops speed up contraction hierarchy?
+
+SEEMS LIKE YOU COULD DRASTICALLY CUT ARCFLAGS PROCESSING TIME IF CALCULATING SHORTEST PATHS THROUGH CONTRACTION HIERARCHIES
+
+2 tiered arcFlags??
+
+
+BIG PICTURE
+--------------
+
 Integrate CH with ArcFlags
-
-
 
 golang build-hierarchy and build-arcflags
 

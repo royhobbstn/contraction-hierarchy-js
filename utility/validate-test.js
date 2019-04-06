@@ -53,11 +53,11 @@ async function main() {
 
   const coords = [];
 
-  for (let i = 0; i < 1000; i++) {
+  for (let i = 0; i < 100; i++) {
     const rnd1 = Math.floor(Math.random() * adj_length);
     const rnd2 = Math.floor(Math.random() * adj_length);
     const coord = [adj_keys[rnd1], adj_keys[rnd2]];
-    //const coord = ['-71.254013,41.632221', '-71.646275,42.817374'];
+    //const coord = ['-118.04512,33.84621', '-118.081421,33.876342'];
     coords.push(coord);
   }
 
@@ -71,15 +71,16 @@ async function main() {
   const nodeDijkstra = new Graph(alt_graph);
 
   coords.forEach((pair, index) => {
-    process.stdout.write(
-      'Processing ' +
-      ((index / coords.length) * 100).toFixed(2) +
-      '% complete... ' +
-      index +
-      '  ' +
-      pair +
-      '                 \r'
-    );
+    // process.stdout.write(
+    //   'Processing ' +
+    //   ((index / coords.length) * 100).toFixed(2) +
+    //   '% complete... ' +
+    //   index +
+    //   '  ' +
+    //   pair +
+    //   '                 \r'
+    // );
+    console.log('----');
     console.time('Dijkstra');
     dijkstra[index] = runDijkstra(
       adjacency,

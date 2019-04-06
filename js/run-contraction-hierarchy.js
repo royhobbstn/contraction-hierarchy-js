@@ -4,6 +4,9 @@ const fs = require('fs');
 const { toBestRoute, getComparator } = require('./common.js');
 const FibonacciHeap = require('@tyriar/fibonacci-heap').FibonacciHeap;
 
+var readlineSync = require('readline-sync');
+
+
 const debug = false;
 const save_output = false;
 
@@ -32,8 +35,10 @@ function queryContractionHierarchy(
 
   const forward = {};
   forward.dist = {};
+  forward.dist[start] = 0;
   const backward = {};
   backward.dist = {};
+  backward.dist[end] = 0;
 
   const searchForward = doDijkstra(
     adj_list,
@@ -97,7 +102,8 @@ function queryContractionHierarchy(
     if (typeof id === 'string') {
       const nums = id.split(',');
       acc = [...acc, ...nums];
-    } else if (typeof id === 'number') {
+    }
+    else if (typeof id === 'number') {
       acc.push(String(id));
     }
     return acc;
@@ -108,7 +114,8 @@ function queryContractionHierarchy(
     if (typeof id === 'string') {
       const nums = id.split(',');
       acc = [...acc, ...nums];
-    } else if (typeof id === 'number') {
+    }
+    else if (typeof id === 'number') {
       acc.push(String(id));
     }
     return acc;
@@ -267,7 +274,7 @@ function queryContractionHierarchy(
     ref.dist[current] = 0;
 
     do {
-      // const current_rank = node_rank[current];
+      const current_rank = node_rank[current];
 
       if (debug) {
         console.log('');
@@ -282,7 +289,7 @@ function queryContractionHierarchy(
 
       graph[current].forEach(node => {
         if (debug) {
-          // console.log('processing edge:', {node, current_rank, node_rank: node_rank[node]});
+          console.log('processing edge:', { node, current_rank, node_rank: node_rank[node] });
         }
 
         const segment_distance =
@@ -316,7 +323,8 @@ function queryContractionHierarchy(
           }
           if (ref.dist[node] !== undefined) {
             heap.decreaseKey(key_to_nodes[node], proposed_distance);
-          } else {
+          }
+          else {
             key_to_nodes[node] = heap.insert(proposed_distance, node);
           }
           if (reverse_ref.dist[node] >= 0) {
@@ -328,7 +336,8 @@ function queryContractionHierarchy(
           }
           ref.dist[node] = proposed_distance;
           ref.prev[node] = current;
-        } else {
+        }
+        else {
           if (debug) {
             console.log('but the new route was not smaller');
             console.log('');
@@ -349,7 +358,8 @@ function queryContractionHierarchy(
             }`
           );
         }
-      } else {
+      }
+      else {
         current = '';
         return '';
       }
@@ -360,6 +370,9 @@ function queryContractionHierarchy(
         console.timeEnd('bi-di-ch');
         console.log('------');
       }
+
+      // var userName = readlineSync.question('May I have your name? ');
+      
 
       yield current;
     } while (true);
