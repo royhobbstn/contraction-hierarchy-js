@@ -5,7 +5,7 @@ const { runArcFlagsDijkstraPreProcess } = require('./arc-flags-dijkstra.js');
 const { clustersKmeans } = require('./turf-kmeans-mod.js');
 const { toAdjacencyList, toEdgeHash } = require('./common.js');
 
-const NUMBER_OF_REGIONS = 60;
+const NUMBER_OF_REGIONS = 50;
 const COST_FIELD = 'MILES';
 
 main();
@@ -23,7 +23,7 @@ async function main() {
       feature.geometry &&
       feature.geometry.coordinates &&
       feature.geometry.coordinates.length &&
-      feature.properties[COST_FIELD]
+      feature.properties[COST_FIELD] && feature.properties.STFIPS === 6
     );
   });
 
@@ -55,6 +55,8 @@ async function main() {
       }
     });
   });
+
+  console.log(point_collection.length);
 
   const pt_feature_collection = {
     type: 'FeatureCollection',
@@ -100,12 +102,14 @@ async function main() {
       // add boundary points to appropriate region
       if (!boundary_pt_set[start_region]) {
         boundary_pt_set[start_region] = [start];
-      } else {
+      }
+      else {
         boundary_pt_set[start_region].push(start);
       }
       if (!boundary_pt_set[end_region]) {
         boundary_pt_set[end_region] = [end];
-      } else {
+      }
+      else {
         boundary_pt_set[end_region].push(end);
       }
     }
@@ -120,6 +124,11 @@ async function main() {
   // initialize arc flags on edge hash
   Object.keys(edge_hash).forEach(key => {
     edge_hash[key].properties.arcFlags = Array(NUMBER_OF_REGIONS).fill(0);
+    const pts = key.split('|');
+    const start_region = pt_region_lookup[pts[0]];
+    const end_region = pt_region_lookup[pts[1]];
+    edge_hash[key].properties.arcFlags[start_region] = 1;
+    edge_hash[key].properties.arcFlags[end_region] = 1;
   });
 
   // assign arc flags
@@ -140,14 +149,20 @@ async function main() {
         pt,
         COST_FIELD
       );
-      // TODO experiment
+      //
+
       Object.keys(pt_region_lookup).forEach(p => {
+        if (pt_region_lookup[p] === region) {
+          return;
+        }
         while (prev[p]) {
+          //edge_hash[`${prev[p]}|${p}`].properties.arcFlags[region] = 1;
           edge_hash[`${p}|${prev[p]}`].properties.arcFlags[region] = 1;
           p = prev[p];
         }
         //
       });
+
     });
   });
 

@@ -1,0 +1,46 @@
+
+
+using skmeans for clusters:
+
+California
+total points: 5905
+control regular dijkstra: 108000
+
+ArcFlags (per cluster count)
+
+clu   pctOfTtl  Pts/clu  Time
+--------
+50:   0.008467  118.1    84452
+100:  0.016934   59.1    77863
+500:  0.084674   11.8    65077
+1000: 0.169348    5.9    61758
+2000: 0.338696    2.95   61375
+
+
+Colorado
+total points: 1252
+control regular dijkstra: 18000
+
+ArcFlags (per cluster count)
+
+clu   pctOfTtl  Pts/clu  Time
+--------
+50:   0.039936   25.04   14117
+100:  0.079872   12.52   12947
+500:  0.399361    2.50   10178
+1000: 0.798722    1.25    9105
+
+
+USA
+total points: 77431
+control regular dijkstra: 
+
+ArcFlags (per cluster count)
+
+clu   pctOfTtl  Pts/clu  Time
+--------
+50: 
+100: 
+500: 
+1000: 
+2000: 

@@ -2,7 +2,6 @@
 
 const fs = require('fs').promises;
 const FibonacciHeap = require('@tyriar/fibonacci-heap').FibonacciHeap;
-const { performance } = require('perf_hooks');
 
 const { getComparator, toBestRoute } = require('./common.js');
 
@@ -34,7 +33,8 @@ function runArcFlagsDijkstraPreProcess(adj_list, edge_hash, start, cost_field) {
       if (proposed_distance < getComparator(dist[node])) {
         if (dist[node] !== undefined) {
           heap.decreaseKey(key_to_nodes[node], proposed_distance);
-        } else {
+        }
+        else {
           key_to_nodes[node] = heap.insert(proposed_distance, node);
         }
         dist[node] = proposed_distance;
@@ -48,7 +48,8 @@ function runArcFlagsDijkstraPreProcess(adj_list, edge_hash, start, cost_field) {
 
     if (elem) {
       current = elem.value;
-    } else {
+    }
+    else {
       current = '';
     }
   } while (current);
@@ -85,7 +86,6 @@ function runArcFlagsDijkstra(
   dist[start] = 0;
 
   const target_region = pt_region_lookup[end];
-  let perfsum = 0;
 
   do {
     adj_list[current].forEach(node => {
@@ -94,11 +94,8 @@ function runArcFlagsDijkstra(
         return;
       }
 
-      const a = performance.now();
       const str = `${current}|${node}`;
       const segment = edge_hash[str];
-      const b = performance.now();
-      perfsum += b - a;
 
       // use arcFlags to rule out non-shortest paths
       const flags = segment.properties.arcFlags;
@@ -113,7 +110,8 @@ function runArcFlagsDijkstra(
       if (proposed_distance < getComparator(dist[node])) {
         if (dist[node] !== undefined) {
           heap.decreaseKey(key_to_nodes[node], proposed_distance);
-        } else {
+        }
+        else {
           key_to_nodes[node] = heap.insert(proposed_distance, node);
         }
         dist[node] = proposed_distance;
@@ -126,7 +124,8 @@ function runArcFlagsDijkstra(
 
     if (elem) {
       current = elem.value;
-    } else {
+    }
+    else {
       current = '';
     }
 
@@ -134,7 +133,6 @@ function runArcFlagsDijkstra(
       current = '';
     }
   } while (current);
-  console.log(perfsum);
 
   const route = toBestRoute(end, prev, edge_hash);
   const segments = route.features.map(f => f.properties.ID);

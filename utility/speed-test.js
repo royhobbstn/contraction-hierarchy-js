@@ -32,7 +32,7 @@ async function main() {
   const geojson = JSON.parse(geojson_raw);
 
   geojson.features = geojson.features.filter(feat => {
-    if (feat.properties.MILES && feat.geometry.coordinates) {
+    if (feat.properties.MILES && feat.geometry.coordinates && feat.properties.STFIPS === 6) {
       return true;
     }
   });
@@ -52,7 +52,7 @@ async function main() {
     const arc_adj_length = arc_adj_keys.length;
 
     console.time('Dijkstra');
-    for (let i = 0; i < 100; i++) {
+    for (let i = 0; i < 10000; i++) {
       let rnd1 = Math.floor(Math.random() * adj_length);
       let rnd2 = Math.floor(Math.random() * adj_length);
       // console.time('test: ' + i);
@@ -106,7 +106,7 @@ async function main() {
     // console.timeEnd('ContractionHierarchy');
 
     console.time('ArcFlags');
-    for (let i = 0; i < 100; i++) {
+    for (let i = 0; i < 10000; i++) {
       let rnd1 = Math.floor(Math.random() * arc_adj_length);
       let rnd2 = Math.floor(Math.random() * arc_adj_length);
       // console.time('test: ' + i);

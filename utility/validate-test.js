@@ -37,7 +37,7 @@ async function main() {
 
   // clean network
   geojson.features = geojson.features.filter(feat => {
-    if (feat.properties.MILES && feat.geometry.coordinates) {
+    if (feat.properties.MILES && feat.geometry.coordinates && feat.properties.STFIPS === 6) {
       return true;
     }
   });
@@ -53,11 +53,11 @@ async function main() {
 
   const coords = [];
 
-  for (let i = 0; i < 1; i++) {
+  for (let i = 0; i < 1000; i++) {
     const rnd1 = Math.floor(Math.random() * adj_length);
     const rnd2 = Math.floor(Math.random() * adj_length);
-    // const coord = [adj_keys[rnd1], adj_keys[rnd2]];
-    const coord = ['-71.254013,41.632221', '-71.646275,42.817374'];
+    const coord = [adj_keys[rnd1], adj_keys[rnd2]];
+    //const coord = ['-71.254013,41.632221', '-71.646275,42.817374'];
     coords.push(coord);
   }
 
@@ -73,12 +73,12 @@ async function main() {
   coords.forEach((pair, index) => {
     process.stdout.write(
       'Processing ' +
-        ((index / coords.length) * 100).toFixed(2) +
-        '% complete... ' +
-        index +
-        '  ' +
-        pair +
-        '                 \r'
+      ((index / coords.length) * 100).toFixed(2) +
+      '% complete... ' +
+      index +
+      '  ' +
+      pair +
+      '                 \r'
     );
     console.time('Dijkstra');
     dijkstra[index] = runDijkstra(
@@ -133,211 +133,9 @@ async function main() {
       arc_region_lookup
     );
     console.timeEnd('arc flags');
-    console.time('Dijkstra');
-    dijkstra[index] = runDijkstra(
-      adjacency,
-      edge_list,
-      pair[0],
-      pair[1],
-      'MILES'
-    );
-    console.timeEnd('Dijkstra');
-    console.time('control 2');
-    correct2[index] = toCorrectPath2(
-      nodeDijkstra,
-      edge_list,
-      pair[0],
-      pair[1],
-      'MILES'
-    );
-    console.timeEnd('control 2');
-    console.time('arc flags');
-    af[index] = runArcFlagsDijkstra(
-      arc_adj,
-      arc_edge,
-      pair[0],
-      pair[1],
-      'MILES',
-      arc_region_lookup
-    );
-    console.timeEnd('arc flags');
-    console.time('Dijkstra');
-    dijkstra[index] = runDijkstra(
-      adjacency,
-      edge_list,
-      pair[0],
-      pair[1],
-      'MILES'
-    );
-    console.timeEnd('Dijkstra');
-    console.time('control 2');
-    correct2[index] = toCorrectPath2(
-      nodeDijkstra,
-      edge_list,
-      pair[0],
-      pair[1],
-      'MILES'
-    );
-    console.timeEnd('control 2');
-    console.time('arc flags');
-    af[index] = runArcFlagsDijkstra(
-      arc_adj,
-      arc_edge,
-      pair[0],
-      pair[1],
-      'MILES',
-      arc_region_lookup
-    );
-    console.timeEnd('arc flags');
-    console.time('Dijkstra');
-    dijkstra[index] = runDijkstra(
-      adjacency,
-      edge_list,
-      pair[0],
-      pair[1],
-      'MILES'
-    );
-    console.timeEnd('Dijkstra');
-    console.time('control 2');
-    correct2[index] = toCorrectPath2(
-      nodeDijkstra,
-      edge_list,
-      pair[0],
-      pair[1],
-      'MILES'
-    );
-    console.timeEnd('control 2');
-    console.time('arc flags');
-    af[index] = runArcFlagsDijkstra(
-      arc_adj,
-      arc_edge,
-      pair[0],
-      pair[1],
-      'MILES',
-      arc_region_lookup
-    );
-    console.timeEnd('arc flags');
-    console.time('Dijkstra');
-    dijkstra[index] = runDijkstra(
-      adjacency,
-      edge_list,
-      pair[0],
-      pair[1],
-      'MILES'
-    );
-    console.timeEnd('Dijkstra');
-    console.time('control 2');
-    correct2[index] = toCorrectPath2(
-      nodeDijkstra,
-      edge_list,
-      pair[0],
-      pair[1],
-      'MILES'
-    );
-    console.timeEnd('control 2');
-    console.time('arc flags');
-    af[index] = runArcFlagsDijkstra(
-      arc_adj,
-      arc_edge,
-      pair[0],
-      pair[1],
-      'MILES',
-      arc_region_lookup
-    );
-    console.timeEnd('arc flags');
-    console.time('Dijkstra');
-    dijkstra[index] = runDijkstra(
-      adjacency,
-      edge_list,
-      pair[0],
-      pair[1],
-      'MILES'
-    );
-    console.timeEnd('Dijkstra');
-    console.time('control 2');
-    correct2[index] = toCorrectPath2(
-      nodeDijkstra,
-      edge_list,
-      pair[0],
-      pair[1],
-      'MILES'
-    );
-    console.timeEnd('control 2');
-    console.time('arc flags');
-    af[index] = runArcFlagsDijkstra(
-      arc_adj,
-      arc_edge,
-      pair[0],
-      pair[1],
-      'MILES',
-      arc_region_lookup
-    );
-    console.timeEnd('arc flags');
-    console.time('Dijkstra');
-    dijkstra[index] = runDijkstra(
-      adjacency,
-      edge_list,
-      pair[0],
-      pair[1],
-      'MILES'
-    );
-    console.timeEnd('Dijkstra');
-    console.time('control 2');
-    correct2[index] = toCorrectPath2(
-      nodeDijkstra,
-      edge_list,
-      pair[0],
-      pair[1],
-      'MILES'
-    );
-    console.timeEnd('control 2');
-    console.time('arc flags');
-    af[index] = runArcFlagsDijkstra(
-      arc_adj,
-      arc_edge,
-      pair[0],
-      pair[1],
-      'MILES',
-      arc_region_lookup
-    );
-    console.timeEnd('arc flags');
-    console.time('Dijkstra');
-    dijkstra[index] = runDijkstra(
-      adjacency,
-      edge_list,
-      pair[0],
-      pair[1],
-      'MILES'
-    );
-    console.timeEnd('Dijkstra');
-    console.time('control 2');
-    correct2[index] = toCorrectPath2(
-      nodeDijkstra,
-      edge_list,
-      pair[0],
-      pair[1],
-      'MILES'
-    );
-    console.timeEnd('control 2');
-    console.time('arc flags');
-    af[index] = runArcFlagsDijkstra(
-      arc_adj,
-      arc_edge,
-      pair[0],
-      pair[1],
-      'MILES',
-      arc_region_lookup
-    );
-    console.timeEnd('arc flags');
-    console.time('Dijkstra');
-    dijkstra[index] = runDijkstra(
-      adjacency,
-      edge_list,
-      pair[0],
-      pair[1],
-      'MILES'
-    );
-    console.timeEnd('Dijkstra');
+
+
+
   });
 
   let error_count = 0;
@@ -346,7 +144,7 @@ async function main() {
       dijkstra[i].distance,
       // bidirectional[i].distance,
       // ch[i].distance,
-      correct[i].distance,
+      // correct[i].distance,
       correct2[i].distance,
       af[i].distance
     ];
@@ -374,8 +172,8 @@ async function main() {
         // bidirectional[i].distance.toFixed(5),
         // ch[i].segments.length,
         // ch[i].distance.toFixed(5),
-        correct[i].segments.length,
-        correct[i].distance.toFixed(5),
+        // correct[i].segments.length,
+        // correct[i].distance.toFixed(5),
         correct2[i].segments.length,
         correct2[i].distance.toFixed(5),
         af[i].segments.length,
