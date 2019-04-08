@@ -28,6 +28,9 @@ const arc_adj = require('../arc_flag_output/adj_list.json');
 const arc_edge = require('../arc_flag_output/edge_hash.json');
 const arc_region_lookup = require('../arc_flag_output/pt_region_lookup');
 
+const runDijkstra2 = require("../js/dijkstra-alt.js").runDijkstra;
+const toGraph = require("../js/dijkstra-alt.js").toGraph;
+
 main();
 
 async function main() {
@@ -41,6 +44,73 @@ async function main() {
     }
   });
 
+  // set up cost field
+  geojson.features.forEach(feat => {
+    feat.properties._cost = feat.properties.MILES;
+  });
+
+  // get rid of duplicate edges (same origin to dest)
+  const inventory = {};
+  geojson.features.forEach(feature => {
+    const start = feature.geometry.coordinates[0].join(',');
+    const end = feature.geometry.coordinates[feature.geometry.coordinates.length - 1].join(',');
+    const id = `${start}|${end}`;
+
+    const reverse_id = `${end}|${start}`;
+
+    if (!feature.properties._direction || feature.properties._direction === 'all') {
+      // default; set backwards and forwards
+      if (!inventory[id]) {
+        // new segment
+        inventory[id] = feature;
+      }
+      else {
+        // a segment with the same origin/dest exists.  choose shortest.
+        const old_cost = inventory[id].properties._cost;
+        const new_cost = feature.properties._cost; // todo geojsonext
+        if (new_cost < old_cost) {
+          // mark old segment for deletion
+          inventory[id].properties.__markDelete = true;
+          // rewrite old segment because this one is shorter
+          inventory[id] = feature;
+        }
+        else {
+          // instead mark new feature for deletion
+          feature.properties.__markDelete = true;
+        }
+      }
+      // now reverse
+      if (!inventory[reverse_id]) {
+        // new segment
+        inventory[reverse_id] = feature;
+      }
+      else {
+        // a segment with the same origin/dest exists.  choose shortest.
+        const old_cost = inventory[reverse_id].properties._cost;
+        const new_cost = feature.properties._cost; // todo geojsonext
+        if (new_cost < old_cost) {
+          // mark old segment for deletion
+          inventory[reverse_id].properties.__markDelete = true;
+          // rewrite old segment because this one is shorter
+          inventory[reverse_id] = feature;
+        }
+        else {
+          // instead mark new feature for deletion
+          feature.properties.__markDelete = true;
+        }
+      }
+    }
+
+    // todo geojson extension logic
+
+  });
+
+
+  // filter out marked items
+  geojson.features = geojson.features.filter(feature => {
+    return !feature.properties.__markDelete;
+  });
+
   const alt_graph = createDijkstraJsGraph(geojson, 'MILES');
 
   const adjacency = toAdjacencyList(geojson);
@@ -50,35 +120,41 @@ async function main() {
   const adj_keys = Object.keys(adjacency);
   const adj_length = adj_keys.length;
 
+  const graph = toGraph(geojson);
+
+
+
   const coords = [];
 
-  for (let i = 0; i < 100; i++) {
+  for (let i = 0; i < 1000; i++) {
     const rnd1 = Math.floor(Math.random() * adj_length);
     const rnd2 = Math.floor(Math.random() * adj_length);
     const coord = [adj_keys[rnd1], adj_keys[rnd2]];
-    //const coord = ['-118.04512,33.84621', '-118.081421,33.876342'];
+    //const coord = ['-118.277145,34.021101', '-118.332832,34.035054'];
     coords.push(coord);
   }
 
   const dijkstra = [];
+  const dijkstra2 = [];
   const bidirectional = [];
-  const ch = [];
+  // const ch = [];
   const correct2 = [];
-  const af = [];
+  // const af = [];
 
   const nodeDijkstra = new Graph(alt_graph);
 
   coords.forEach((pair, index) => {
-    // process.stdout.write(
-    //   'Processing ' +
-    //   ((index / coords.length) * 100).toFixed(2) +
-    //   '% complete... ' +
-    //   index +
-    //   '  ' +
-    //   pair +
-    //   '                 \r'
-    // );
+    process.stdout.write(
+      'Processing ' +
+      ((index / coords.length) * 100).toFixed(2) +
+      '% complete... ' +
+      index +
+      '  ' +
+      pair +
+      '                 \r\n'
+    );
     console.log('----');
+
     console.time('Dijkstra');
     dijkstra[index] = runDijkstra(
       adjacency,
@@ -88,6 +164,16 @@ async function main() {
       'MILES'
     );
     console.timeEnd('Dijkstra');
+
+    console.time('Dijkstra2');
+    dijkstra2[index] = runDijkstra2(
+      graph,
+      pair[0],
+      pair[1]
+    );
+    console.timeEnd('Dijkstra2');
+
+    console.time('Bidirectional');
     bidirectional[index] = runBiDijkstra(
       adjacency,
       edge_list,
@@ -95,17 +181,19 @@ async function main() {
       pair[1],
       'MILES'
     );
-    console.time('ch');
-    ch[index] = queryContractionHierarchy(
-      new_adj,
-      new_edge,
-      pair[0],
-      pair[1],
-      'MILES',
-      node_rank,
-      id_list
-    );
-    console.timeEnd('ch');
+    console.timeEnd('Bidirectional');
+
+    // console.time('ch');
+    // ch[index] = queryContractionHierarchy(
+    //   new_adj,
+    //   new_edge,
+    //   pair[0],
+    //   pair[1],
+    //   'MILES',
+    //   node_rank,
+    //   id_list
+    // );
+    // console.timeEnd('ch');
 
     console.time('control 2');
     correct2[index] = toCorrectPath2(
@@ -117,16 +205,16 @@ async function main() {
     );
     console.timeEnd('control 2');
 
-    console.time('arc flags');
-    af[index] = runArcFlagsDijkstra(
-      arc_adj,
-      arc_edge,
-      pair[0],
-      pair[1],
-      'MILES',
-      arc_region_lookup
-    );
-    console.timeEnd('arc flags');
+    // console.time('arc flags');
+    // af[index] = runArcFlagsDijkstra(
+    //   arc_adj,
+    //   arc_edge,
+    //   pair[0],
+    //   pair[1],
+    //   'MILES',
+    //   arc_region_lookup
+    // );
+    // console.timeEnd('arc flags');
 
 
 
@@ -136,10 +224,11 @@ async function main() {
   for (let i = 0; i < coords.length; i++) {
     const values = [
       dijkstra[i].distance,
+      dijkstra2[i].distance,
       bidirectional[i].distance,
-      ch[i].distance,
+      // ch[i].distance,
       correct2[i].distance,
-      af[i].distance
+      // af[i].distance
     ];
 
     let min = Infinity;
@@ -161,14 +250,16 @@ async function main() {
         coords[i],
         dijkstra[i].segments.length,
         dijkstra[i].distance.toFixed(5),
+        dijkstra2[i].segments.length,
+        dijkstra2[i].distance.toFixed(5),
         bidirectional[i].segments.length,
         bidirectional[i].distance.toFixed(5),
-        ch[i].segments.length,
-        ch[i].distance.toFixed(5),
+        // ch[i].segments.length,
+        // ch[i].distance.toFixed(5),
         correct2[i].segments.length,
         correct2[i].distance.toFixed(5),
-        af[i].segments.length,
-        af[i].distance.toFixed(5)
+        // af[i].segments.length,
+        // af[i].distance.toFixed(5)
       );
     }
   }

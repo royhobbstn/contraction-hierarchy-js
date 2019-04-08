@@ -24,7 +24,11 @@ const {
 // load arcFlags dijkstra
 const { runArcFlagsDijkstra } = require('../js/arc-flags-dijkstra');
 
-const ITERATIONS = 10000;
+
+const runDijkstra2 = require("../js/dijkstra-alt.js").runDijkstra;
+const toGraph = require("../js/dijkstra-alt.js").toGraph;
+
+const ITERATIONS = 100;
 
 main();
 
@@ -38,6 +42,13 @@ async function main() {
       return true;
     }
   });
+
+  // set up cost field
+  geojson.features.forEach(feat => {
+    feat.properties._cost = feat.properties.MILES;
+  });
+
+  const graph = toGraph(geojson);
 
   const adjacency = toAdjacencyList(geojson);
 
@@ -66,6 +77,18 @@ async function main() {
       );
     }
     console.timeEnd('Dijkstra');
+
+    console.time('Dijkstra2');
+    for (let i = 0; i < ITERATIONS; i++) {
+      let rnd1 = Math.floor(Math.random() * adj_length);
+      let rnd2 = Math.floor(Math.random() * adj_length);
+      runDijkstra2(
+        graph,
+        adj_keys[rnd1],
+        adj_keys[rnd2]
+      );
+    }
+    console.timeEnd('Dijkstra2');
 
     console.time('BiDijkstra');
     for (let i = 0; i < ITERATIONS; i++) {

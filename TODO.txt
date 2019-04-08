@@ -3,25 +3,29 @@
 DATA OPTIMIZATIONS
 ------------------
 
-use the same edge hash - don't do
- - Directed graph options
- - store edge hash once for each node pair.  forward and reverse flag for arc flags.
+Officialize geojson w/extension cleaning
 
+OMG are you not recalculating distances when you split lines???!?!?!?!
 
-speedwise would help a bit if edge hash distance lookup could be replaced by storing cost in adjacency list
-- may not be practical
+manual graph creation api
+
+TEST directed graph
 
 benchmark vs ngraph?
 
+faster-dijkstra package
 
-BUILDING CH && ARCFLAGS (probably defer to the golang implementation)
+tailor new dijkstra to all alternate uses (contraction hierarchy and arcflags)
+
+
+BUILDING CH && ARCFLAGS
 ---------------------------
 michigan non-contiguous kmeans -is this a problem?  Research METIS
 
 make contraction hierarchy building process faster
 -limit hops speed up contraction hierarchy?
 
-SEEMS LIKE YOU COULD DRASTICALLY CUT ARCFLAGS PROCESSING TIME IF CALCULATING SHORTEST PATHS THROUGH CONTRACTION HIERARCHIES
+Cut ArcFlags processing time by using contraction hierarchy instead of std dijkstra
 
 2 tiered arcFlags??
 
@@ -31,6 +35,6 @@ BIG PICTURE
 
 Integrate CH with ArcFlags
 
-golang build-hierarchy and build-arcflags
+golang or native node addon build-hierarchy and build-arcflags
 
 C++ implementation for runDijkstra webAssembly

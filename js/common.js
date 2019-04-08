@@ -39,13 +39,15 @@ function toAdjacencyList(geo) {
 
     if (!adjacency_list[start_vertex]) {
       adjacency_list[start_vertex] = [end_vertex];
-    } else {
+    }
+    else {
       adjacency_list[start_vertex].push(end_vertex);
     }
 
     if (!adjacency_list[end_vertex]) {
       adjacency_list[end_vertex] = [start_vertex];
-    } else {
+    }
+    else {
       adjacency_list[end_vertex].push(start_vertex);
     }
   });
