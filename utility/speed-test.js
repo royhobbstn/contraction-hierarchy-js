@@ -15,7 +15,7 @@ const { runDijkstra } = require('../js/dijkstra.js');
 const { runBiDijkstra } = require('../js/bidirectional-dijkstra.js');
 
 // load utility functions
-const { toAdjacencyList, toEdgeHash, toIdList } = require('../js/common.js');
+const { toAdjacencyList, toEdgeHash, toIdList, readyNetwork, cleanseNetwork } = require('../js/common.js');
 
 const {
   queryContractionHierarchy
@@ -33,20 +33,10 @@ const ITERATIONS = 100;
 main();
 
 async function main() {
-  const geojson_raw = await fs.readFile('../networks/full_network.geojson'); // full_network
 
-  const geojson = JSON.parse(geojson_raw);
+  const geofile = await readyNetwork();
 
-  geojson.features = geojson.features.filter(feat => {
-    if (feat.properties.MILES && feat.geometry.coordinates && feat.properties.STFIPS === 6) {
-      return true;
-    }
-  });
-
-  // set up cost field
-  geojson.features.forEach(feat => {
-    feat.properties._cost = feat.properties.MILES;
-  });
+  const geojson = cleanseNetwork(geofile);
 
   const graph = toGraph(geojson);
 

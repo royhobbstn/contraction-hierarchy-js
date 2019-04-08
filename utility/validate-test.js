@@ -8,7 +8,7 @@ const { runDijkstra } = require('../js/dijkstra.js');
 const { runBiDijkstra } = require('../js/bidirectional-dijkstra.js');
 
 // load utility functions
-const { toAdjacencyList, toEdgeHash, toIdList } = require('../js/common.js');
+const { toAdjacencyList, toEdgeHash, toIdList, readyNetwork, cleanseNetwork } = require('../js/common.js');
 
 // load contraction hierarchy version bidirectional dijkstra
 const {
@@ -34,82 +34,10 @@ const toGraph = require("../js/dijkstra-alt.js").toGraph;
 main();
 
 async function main() {
-  const geojson_raw = await fs.readFile('../networks/full_network.geojson'); // full_network
-  const geojson = JSON.parse(geojson_raw);
 
-  // clean network
-  geojson.features = geojson.features.filter(feat => {
-    if (feat.properties.MILES && feat.geometry.coordinates && feat.properties.STFIPS === 6) {
-      return true;
-    }
-  });
+  const geofile = await readyNetwork();
 
-  // set up cost field
-  geojson.features.forEach(feat => {
-    feat.properties._cost = feat.properties.MILES;
-  });
-
-  // get rid of duplicate edges (same origin to dest)
-  const inventory = {};
-  geojson.features.forEach(feature => {
-    const start = feature.geometry.coordinates[0].join(',');
-    const end = feature.geometry.coordinates[feature.geometry.coordinates.length - 1].join(',');
-    const id = `${start}|${end}`;
-
-    const reverse_id = `${end}|${start}`;
-
-    if (!feature.properties._direction || feature.properties._direction === 'all') {
-      // default; set backwards and forwards
-      if (!inventory[id]) {
-        // new segment
-        inventory[id] = feature;
-      }
-      else {
-        // a segment with the same origin/dest exists.  choose shortest.
-        const old_cost = inventory[id].properties._cost;
-        const new_cost = feature.properties._cost; // todo geojsonext
-        if (new_cost < old_cost) {
-          // mark old segment for deletion
-          inventory[id].properties.__markDelete = true;
-          // rewrite old segment because this one is shorter
-          inventory[id] = feature;
-        }
-        else {
-          // instead mark new feature for deletion
-          feature.properties.__markDelete = true;
-        }
-      }
-      // now reverse
-      if (!inventory[reverse_id]) {
-        // new segment
-        inventory[reverse_id] = feature;
-      }
-      else {
-        // a segment with the same origin/dest exists.  choose shortest.
-        const old_cost = inventory[reverse_id].properties._cost;
-        const new_cost = feature.properties._cost; // todo geojsonext
-        if (new_cost < old_cost) {
-          // mark old segment for deletion
-          inventory[reverse_id].properties.__markDelete = true;
-          // rewrite old segment because this one is shorter
-          inventory[reverse_id] = feature;
-        }
-        else {
-          // instead mark new feature for deletion
-          feature.properties.__markDelete = true;
-        }
-      }
-    }
-
-    // todo geojson extension logic
-
-  });
-
-
-  // filter out marked items
-  geojson.features = geojson.features.filter(feature => {
-    return !feature.properties.__markDelete;
-  });
+  const geojson = cleanseNetwork(geofile);
 
   const alt_graph = createDijkstraJsGraph(geojson, 'MILES');
 
@@ -122,11 +50,9 @@ async function main() {
 
   const graph = toGraph(geojson);
 
-
-
   const coords = [];
 
-  for (let i = 0; i < 1000; i++) {
+  for (let i = 0; i < 100; i++) {
     const rnd1 = Math.floor(Math.random() * adj_length);
     const rnd2 = Math.floor(Math.random() * adj_length);
     const coord = [adj_keys[rnd1], adj_keys[rnd2]];
@@ -137,9 +63,9 @@ async function main() {
   const dijkstra = [];
   const dijkstra2 = [];
   const bidirectional = [];
-  // const ch = [];
+  const ch = [];
   const correct2 = [];
-  // const af = [];
+  const af = [];
 
   const nodeDijkstra = new Graph(alt_graph);
 
@@ -183,17 +109,17 @@ async function main() {
     );
     console.timeEnd('Bidirectional');
 
-    // console.time('ch');
-    // ch[index] = queryContractionHierarchy(
-    //   new_adj,
-    //   new_edge,
-    //   pair[0],
-    //   pair[1],
-    //   'MILES',
-    //   node_rank,
-    //   id_list
-    // );
-    // console.timeEnd('ch');
+    console.time('ch');
+    ch[index] = queryContractionHierarchy(
+      new_adj,
+      new_edge,
+      pair[0],
+      pair[1],
+      'MILES',
+      node_rank,
+      id_list
+    );
+    console.timeEnd('ch');
 
     console.time('control 2');
     correct2[index] = toCorrectPath2(
@@ -205,18 +131,16 @@ async function main() {
     );
     console.timeEnd('control 2');
 
-    // console.time('arc flags');
-    // af[index] = runArcFlagsDijkstra(
-    //   arc_adj,
-    //   arc_edge,
-    //   pair[0],
-    //   pair[1],
-    //   'MILES',
-    //   arc_region_lookup
-    // );
-    // console.timeEnd('arc flags');
-
-
+    console.time('arc flags');
+    af[index] = runArcFlagsDijkstra(
+      arc_adj,
+      arc_edge,
+      pair[0],
+      pair[1],
+      'MILES',
+      arc_region_lookup
+    );
+    console.timeEnd('arc flags');
 
   });
 
@@ -226,9 +150,9 @@ async function main() {
       dijkstra[i].distance,
       dijkstra2[i].distance,
       bidirectional[i].distance,
-      // ch[i].distance,
+      ch[i].distance,
       correct2[i].distance,
-      // af[i].distance
+      af[i].distance
     ];
 
     let min = Infinity;
@@ -254,12 +178,12 @@ async function main() {
         dijkstra2[i].distance.toFixed(5),
         bidirectional[i].segments.length,
         bidirectional[i].distance.toFixed(5),
-        // ch[i].segments.length,
-        // ch[i].distance.toFixed(5),
+        ch[i].segments.length,
+        ch[i].distance.toFixed(5),
         correct2[i].segments.length,
         correct2[i].distance.toFixed(5),
-        // af[i].segments.length,
-        // af[i].distance.toFixed(5)
+        af[i].segments.length,
+        af[i].distance.toFixed(5)
       );
     }
   }

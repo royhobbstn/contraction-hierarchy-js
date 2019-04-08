@@ -1,18 +1,15 @@
 const fs = require('fs').promises;
 const { contractGraph } = require('../js/build-contraction-hierarchy.js');
+const { readyNetwork, cleanseNetwork } = require('../js/common.js');
 
 main();
 
 async function main() {
-  const geojson_raw = await fs.readFile('../networks/full_network.geojson'); // full_network
 
-  const geojson = JSON.parse(geojson_raw);
+  const geofile = await readyNetwork();
 
-  geojson.features = geojson.features.filter(feat => {
-    if (feat.properties.MILES && feat.geometry.coordinates && feat.properties.STFIPS === 6) {
-      return true;
-    }
-  });
+  const geojson = cleanseNetwork(geofile);
+
 
   console.time('contractTime');
   const contracted_graph = contractGraph(geojson, { cost_field: 'MILES' });

@@ -3,13 +3,13 @@
 DATA OPTIMIZATIONS
 ------------------
 
-Officialize geojson w/extension cleaning
-
 OMG are you not recalculating distances when you split lines???!?!?!?!
 
-manual graph creation api
+function for cost field (probably set this up to calculate _cost)
 
 TEST directed graph
+
+manual graph creation api (as alternative to creating adjacency list from geojson)
 
 benchmark vs ngraph?
 
@@ -20,10 +20,11 @@ tailor new dijkstra to all alternate uses (contraction hierarchy and arcflags)
 
 BUILDING CH && ARCFLAGS
 ---------------------------
-michigan non-contiguous kmeans -is this a problem?  Research METIS
 
 make contraction hierarchy building process faster
 -limit hops speed up contraction hierarchy?
+
+michigan non-contiguous kmeans -is this a problem?  Research METIS
 
 Cut ArcFlags processing time by using contraction hierarchy instead of std dijkstra
 

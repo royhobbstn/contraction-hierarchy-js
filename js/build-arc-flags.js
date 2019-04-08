@@ -3,7 +3,7 @@
 const fs = require('fs').promises;
 const { runArcFlagsDijkstraPreProcess } = require('./arc-flags-dijkstra.js');
 const { clustersKmeans } = require('./turf-kmeans-mod.js');
-const { toAdjacencyList, toEdgeHash } = require('./common.js');
+const { toAdjacencyList, toEdgeHash, readyNetwork, cleanseNetwork } = require('./common.js');
 
 const NUMBER_OF_REGIONS = 500;
 const COST_FIELD = 'MILES';
@@ -11,9 +11,11 @@ const COST_FIELD = 'MILES';
 main();
 
 async function main() {
-  //
-  const geojson_raw = await fs.readFile('../networks/full_network.geojson');
-  const geojson = JSON.parse(geojson_raw);
+
+  const geofile = await readyNetwork();
+
+  const geojson = cleanseNetwork(geofile);
+
 
   const pts = new Set();
 
