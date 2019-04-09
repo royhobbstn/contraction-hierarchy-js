@@ -1,6 +1,7 @@
 console.time('programTime');
 
 const fs = require('fs').promises;
+const turf = require('@turf/turf');
 
 const joinAlike = require('geojson-linestring-join-alike');
 const snapNearby = require('geojson-network-node-snap');
@@ -38,8 +39,11 @@ async function main() {
   console.log('splitting intersecting lines');
   const crossing_lines = splitLines(reformatted);
 
+  console.log('recompute length');
+  const recomputed_length = recomputeLength(crossing_lines);
+
   console.log('tagging subnetwork areas');
-  const tagged = idAreas(crossing_lines);
+  const tagged = idAreas(recomputed_length);
 
   console.log('removing separated subnetworks');
   const filtered_by_tag = tagged.features.filter(f => {
@@ -65,4 +69,27 @@ async function main() {
   );
 
   console.timeEnd('programTime');
+}
+
+
+function recomputeLength(geojson) {
+
+  const features = geojson.features.map(feature => {
+    const feature_length = turf.length(feature, { units: 'miles' });
+    const updated_feature = {
+      type: 'Feature',
+      properties: Object.assign({}, feature.properties, { 'MILES': feature_length }),
+      geometry: Object.assign({}, feature.geometry),
+      bbox: [...feature.bbox],
+      id: feature.id
+    };
+    return updated_feature;
+  });
+
+  const collection = {
+    type: 'FeatureCollection',
+    features: features
+  };
+
+  return collection;
 }

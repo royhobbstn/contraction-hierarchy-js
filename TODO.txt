@@ -3,13 +3,11 @@
 DATA OPTIMIZATIONS
 ------------------
 
-OMG are you not recalculating distances when you split lines???!?!?!?!
-
-function for cost field (probably set this up to calculate _cost)
+manual graph creation api (as alternative to creating adjacency list from geojson)
 
 TEST directed graph
 
-manual graph creation api (as alternative to creating adjacency list from geojson)
+TEST directed graph from geojson
 
 benchmark vs ngraph?
 

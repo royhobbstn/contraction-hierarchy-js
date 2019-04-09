@@ -12,7 +12,7 @@ async function main() {
 
 
   console.time('contractTime');
-  const contracted_graph = contractGraph(geojson, { cost_field: 'MILES' });
+  const contracted_graph = contractGraph(geojson, { cost_field: '_cost' });
   console.timeEnd('contractTime');
 
   await fs.writeFile(

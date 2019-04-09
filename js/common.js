@@ -14,19 +14,39 @@ async function readyNetwork() {
   const geojson_raw = await fs.readFile('../networks/full_network.geojson'); // full_network
   const geojson = JSON.parse(geojson_raw);
 
+  // set up cost field
+  geojson.features.forEach(feat => {
+    const mph = getMPH(feat.properties.NHS);
+    feat.properties._cost = (feat.properties.MILES / 60) * mph;
+  });
+
   // clean network
   geojson.features = geojson.features.filter(feat => {
-    if (feat.properties.MILES && feat.geometry.coordinates && feat.properties.STFIPS === 6) {
+    if (feat.properties._cost && feat.geometry.coordinates && feat.properties.STFIPS === 6) {
       return true;
     }
   });
 
-  // set up cost field
-  geojson.features.forEach(feat => {
-    feat.properties._cost = feat.properties.MILES;
-  });
-
   return geojson;
+}
+
+function getMPH(nhs) {
+  switch (nhs) {
+    case 1:
+      return 70;
+    case 2:
+      return 60;
+    case 3:
+      return 50;
+    case 4:
+      return 40;
+    case 7:
+      return 30;
+    case 8:
+      return 20;
+    default:
+      return 10;
+  }
 }
 
 function cleanseNetwork(geojson) {
@@ -122,8 +142,8 @@ function toAdjacencyList(geo) {
       console.log('no features adj');
       return;
     }
-    if (!feature.properties.MILES) {
-      console.log('NO MILES adj');
+    if (!feature.properties._cost) {
+      console.log('NO _cost adj');
       return;
     }
     const start_vertex = coordinates[0].join(',');
@@ -158,8 +178,8 @@ function toEdgeHash(geo) {
       console.log('No Coords eh');
       return;
     }
-    if (!feature.properties.MILES) {
-      console.log('NO MILES eh');
+    if (!feature.properties._cost) {
+      console.log('NO _cost eh');
     }
     const start_vertex = coordinates[0].join(',');
     const end_vertex = coordinates[coordinates.length - 1].join(',');

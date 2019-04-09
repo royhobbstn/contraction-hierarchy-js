@@ -63,7 +63,7 @@ async function main() {
         edge_list,
         adj_keys[rnd1],
         adj_keys[rnd2],
-        'MILES'
+        '_cost'
       );
     }
     console.timeEnd('Dijkstra');
@@ -89,7 +89,7 @@ async function main() {
         edge_list,
         adj_keys[rnd1],
         adj_keys[rnd2],
-        'MILES'
+        '_cost'
       );
     }
     console.timeEnd('BiDijkstra');
@@ -103,7 +103,7 @@ async function main() {
         new_edge,
         new_adj_keys[rnd1],
         new_adj_keys[rnd2],
-        'MILES',
+        '_cost',
         node_rank,
         id_list
       );
@@ -119,7 +119,7 @@ async function main() {
         arc_edge,
         arc_adj_keys[rnd1],
         arc_adj_keys[rnd2],
-        'MILES',
+        '_cost',
         arc_region_lookup
       );
     }

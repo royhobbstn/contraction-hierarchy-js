@@ -6,7 +6,7 @@ const { clustersKmeans } = require('./turf-kmeans-mod.js');
 const { toAdjacencyList, toEdgeHash, readyNetwork, cleanseNetwork } = require('./common.js');
 
 const NUMBER_OF_REGIONS = 500;
-const COST_FIELD = 'MILES';
+const COST_FIELD = '_cost';
 
 main();
 
@@ -15,7 +15,6 @@ async function main() {
   const geofile = await readyNetwork();
 
   const geojson = cleanseNetwork(geofile);
-
 
   const pts = new Set();
 

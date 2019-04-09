@@ -39,7 +39,7 @@ async function main() {
 
   const geojson = cleanseNetwork(geofile);
 
-  const alt_graph = createDijkstraJsGraph(geojson, 'MILES');
+  const alt_graph = createDijkstraJsGraph(geojson, '_cost');
 
   const adjacency = toAdjacencyList(geojson);
   const edge_list = toEdgeHash(geojson);
@@ -87,7 +87,7 @@ async function main() {
       edge_list,
       pair[0],
       pair[1],
-      'MILES'
+      '_cost'
     );
     console.timeEnd('Dijkstra');
 
@@ -105,7 +105,7 @@ async function main() {
       edge_list,
       pair[0],
       pair[1],
-      'MILES'
+      '_cost'
     );
     console.timeEnd('Bidirectional');
 
@@ -115,7 +115,7 @@ async function main() {
       new_edge,
       pair[0],
       pair[1],
-      'MILES',
+      '_cost',
       node_rank,
       id_list
     );
@@ -127,7 +127,7 @@ async function main() {
       edge_list,
       pair[0],
       pair[1],
-      'MILES'
+      '_cost'
     );
     console.timeEnd('control 2');
 
@@ -137,7 +137,7 @@ async function main() {
       arc_edge,
       pair[0],
       pair[1],
-      'MILES',
+      '_cost',
       arc_region_lookup
     );
     console.timeEnd('arc flags');
