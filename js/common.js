@@ -8,6 +8,8 @@ exports.toAdjacencyList = toAdjacencyList;
 exports.toIdList = toIdList;
 exports.readyNetwork = readyNetwork;
 exports.cleanseNetwork = cleanseNetwork;
+exports.getNGraphDist = getNGraphDist;
+exports.populateNGraph = populateNGraph;
 
 async function readyNetwork() {
 
@@ -18,6 +20,7 @@ async function readyNetwork() {
   geojson.features.forEach(feat => {
     const mph = getMPH(feat.properties.NHS);
     feat.properties._cost = (feat.properties.MILES / 60) * mph;
+    feat.properties._id = feat.properties.ID;
   });
 
   // clean network
@@ -216,4 +219,36 @@ function getComparator(dist_node) {
   }
 
   return dist_node;
+}
+
+
+
+function populateNGraph(ngraph, geojson) {
+
+  geojson.features.forEach(feature => {
+    const start = feature.geometry.coordinates[0];
+    const end = feature.geometry.coordinates[feature.geometry.coordinates.length - 1];
+
+    ngraph.addLink(String(start), String(end), feature.properties);
+    ngraph.addLink(String(end), String(start), feature.properties);
+  });
+
+}
+
+function getNGraphDist(path) {
+  const edge_ids = [];
+  let distance = 0;
+
+  for (let i = 0; i < path.length - 1; i++) {
+    const start_node = path[i].id;
+    const end_node = path[i + 1].id;
+    path[i]['links'].forEach(link => {
+      if ((link.fromId === start_node && link.toId === end_node)) {
+        edge_ids.push(link.data.ID);
+        distance += link.data._cost;
+      }
+    });
+  }
+
+  return { edgelist: edge_ids.reverse(), distance };
 }

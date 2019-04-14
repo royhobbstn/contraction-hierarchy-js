@@ -1,5 +1,10 @@
 const fs = require('fs').promises;
 const Graph = require('node-dijkstra');
+const createGraph = require('ngraph.graph');
+const pathNGraph = require('ngraph.path');
+
+const G = require('../../faster-dijkstra/index.js').Graph;
+const { buildEdgeIdList, buildGeoJsonPath } = require('../../faster-dijkstra/index.js');
 
 // load traditional dijkstra and utilities
 const { runDijkstra } = require('../js/dijkstra.js');
@@ -8,7 +13,7 @@ const { runDijkstra } = require('../js/dijkstra.js');
 const { runBiDijkstra } = require('../js/bidirectional-dijkstra.js');
 
 // load utility functions
-const { toAdjacencyList, toEdgeHash, toIdList, readyNetwork, cleanseNetwork } = require('../js/common.js');
+const { toAdjacencyList, toEdgeHash, toIdList, readyNetwork, cleanseNetwork, getNGraphDist, populateNGraph } = require('../js/common.js');
 
 // load contraction hierarchy version bidirectional dijkstra
 const {
@@ -44,11 +49,23 @@ async function main() {
   const adjacency = toAdjacencyList(geojson);
   const edge_list = toEdgeHash(geojson);
   const id_list = toIdList(geojson);
+  const ngraph = createGraph();
+  populateNGraph(ngraph, geojson);
+
+  const pathFinder = pathNGraph.aStar(ngraph, {
+    distance(fromNode, toNode, link) {
+      return link.data._cost;
+    }
+  });
+
 
   const adj_keys = Object.keys(adjacency);
   const adj_length = adj_keys.length;
 
   const graph = toGraph(geojson);
+
+  const fasterDijkstra = new G();
+  fasterDijkstra.loadFromGeoJson(geojson);
 
   const coords = [];
 
@@ -66,6 +83,8 @@ async function main() {
   const ch = [];
   const correct2 = [];
   const af = [];
+  const fd = [];
+  const ng = [];
 
   const nodeDijkstra = new Graph(alt_graph);
 
@@ -98,6 +117,17 @@ async function main() {
       pair[1]
     );
     console.timeEnd('Dijkstra2');
+
+    console.time('fasterDijkstra');
+    fd[index] = fasterDijkstra.runDijkstra(
+      pair[0],
+      pair[1], [buildEdgeIdList, buildGeoJsonPath]
+    );
+    console.timeEnd('fasterDijkstra');
+
+    console.time('nGraph');
+    ng[index] = getNGraphDist(pathFinder.find(pair[0], pair[1]));
+    console.timeEnd('nGraph');
 
     console.time('Bidirectional');
     bidirectional[index] = runBiDijkstra(
@@ -149,6 +179,8 @@ async function main() {
     const values = [
       dijkstra[i].distance,
       dijkstra2[i].distance,
+      fd[i].total_cost,
+      ng[i].distance,
       bidirectional[i].distance,
       ch[i].distance,
       correct2[i].distance,
@@ -176,6 +208,10 @@ async function main() {
         dijkstra[i].distance.toFixed(5),
         dijkstra2[i].segments.length,
         dijkstra2[i].distance.toFixed(5),
+        fd[i].edgelist.length,
+        fd[i].total_cost.toFixed(5),
+        ng[i].edgelist.length,
+        ng[i].distance.toFixed(5),
         bidirectional[i].segments.length,
         bidirectional[i].distance.toFixed(5),
         ch[i].segments.length,
@@ -188,7 +224,6 @@ async function main() {
     }
   }
   console.log(`There were ${error_count} errors.`);
-
 }
 
 function createDijkstraJsGraph(geojson, cost_field) {

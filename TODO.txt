@@ -3,17 +3,51 @@
 DATA OPTIMIZATIONS
 ------------------
 
-manual graph creation api (as alternative to creating adjacency list from geojson)
+options:
+
+ngraph significantly faster.  revisit data model.  benchmark all the things.
+ - seems like maybe make ngraphs data model but with keyed lookup instead of array for links.
+  - maybe the adjacency list has an array of nodes for iterating faster, and a keyed object for selecting?
+ 
+WHAT IF NGRAPH HAD TO CARRY AROUND GEOJSON TOO!
+
+
+faster dijkstra maybe benchmark with lookups again
+(see current implementation of dijkstra in chaseJS)
 
 TEST directed graph
+ -- TEST directed graph from geojson extension
 
-TEST directed graph from geojson
+add filter criteria extension
+ -- research how CH and AF modify traditional dijkstra
+      for both build steps and execute steps
+ -- what modifications would be needed for bidirectional dijkstra?
 
-benchmark vs ngraph?
 
-faster-dijkstra package
+chaseJS as a plugin for faster-dijkstra
+ -- probably want to roughly implement this before publishing faster-dijkstra 
+
+faster-dijkstra package - if its not faster, might want to just call it geojson-dijkstra
+ -- fancy documentation
+
+
+-- other repos -- 
 
 tailor new dijkstra to all alternate uses (contraction hierarchy and arcflags)
+
+distance speedup heuristic for real-distance networks
+
+spatial community link
+
+
+
+OTHER
+------
+
+join alike and cut at intersections should have a recompute line length option
+
+find nearest helper method - geojson api
+
 
 
 BUILDING CH && ARCFLAGS

@@ -2,6 +2,12 @@ const fs = require('fs').promises;
 const new_adj = require('../networks/ch.json');
 const new_edge = require('../networks/ne.json');
 const node_rank = require('../networks/nr.json');
+const createGraph = require('ngraph.graph');
+const pathNGraph = require('ngraph.path');
+
+// faster-dijkstra
+const G = require('../../faster-dijkstra/index.js').Graph;
+const { buildEdgeIdList, buildGeoJsonPath } = require('../../faster-dijkstra/index.js');
 
 // load arcFlag output
 const arc_adj = require('../arc_flag_output/adj_list.json');
@@ -15,7 +21,7 @@ const { runDijkstra } = require('../js/dijkstra.js');
 const { runBiDijkstra } = require('../js/bidirectional-dijkstra.js');
 
 // load utility functions
-const { toAdjacencyList, toEdgeHash, toIdList, readyNetwork, cleanseNetwork } = require('../js/common.js');
+const { toAdjacencyList, toEdgeHash, toIdList, readyNetwork, cleanseNetwork, getNGraphDist, populateNGraph } = require('../js/common.js');
 
 const {
   queryContractionHierarchy
@@ -28,7 +34,7 @@ const { runArcFlagsDijkstra } = require('../js/arc-flags-dijkstra');
 const runDijkstra2 = require("../js/dijkstra-alt.js").runDijkstra;
 const toGraph = require("../js/dijkstra-alt.js").toGraph;
 
-const ITERATIONS = 100;
+const ITERATIONS = 1000;
 
 main();
 
@@ -40,10 +46,21 @@ async function main() {
 
   const graph = toGraph(geojson);
 
+  const fasterDijkstra = new G();
+  fasterDijkstra.loadFromGeoJson(geojson);
+
   const adjacency = toAdjacencyList(geojson);
 
   const edge_list = toEdgeHash(geojson);
   const id_list = toIdList(geojson);
+  const ngraph = createGraph();
+  populateNGraph(ngraph, geojson);
+
+  const pathFinder = pathNGraph.aStar(ngraph, {
+    distance(fromNode, toNode, link) {
+      return link.data._cost;
+    }
+  });
 
   setTimeout(function() {
     // performance test
@@ -79,6 +96,25 @@ async function main() {
       );
     }
     console.timeEnd('Dijkstra2');
+
+    console.time('fasterDijkstra');
+    for (let i = 0; i < ITERATIONS; i++) {
+      let rnd1 = Math.floor(Math.random() * adj_length);
+      let rnd2 = Math.floor(Math.random() * adj_length);
+      fasterDijkstra.runDijkstra(
+        adj_keys[rnd1],
+        adj_keys[rnd2], [buildEdgeIdList, buildGeoJsonPath]
+      );
+    }
+    console.timeEnd('fasterDijkstra');
+
+    console.time('ngraph');
+    for (let i = 0; i < ITERATIONS; i++) {
+      let rnd1 = Math.floor(Math.random() * adj_length);
+      let rnd2 = Math.floor(Math.random() * adj_length);
+      getNGraphDist(pathFinder.find(adj_keys[rnd1], adj_keys[rnd2]));
+    }
+    console.timeEnd('ngraph');
 
     console.time('BiDijkstra');
     for (let i = 0; i < ITERATIONS; i++) {
