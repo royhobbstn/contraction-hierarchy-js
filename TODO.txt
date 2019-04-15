@@ -3,17 +3,9 @@
 DATA OPTIMIZATIONS
 ------------------
 
-options:
-
-ngraph significantly faster.  revisit data model.  benchmark all the things.
- - seems like maybe make ngraphs data model but with keyed lookup instead of array for links.
-  - maybe the adjacency list has an array of nodes for iterating faster, and a keyed object for selecting?
- 
-WHAT IF NGRAPH HAD TO CARRY AROUND GEOJSON TOO!
-
-
-faster dijkstra maybe benchmark with lookups again
-(see current implementation of dijkstra in chaseJS)
+object pool
+use a-star, isGeoJson to auto swap on coordinate compare
+minifier - uglify-js
 
 TEST directed graph
  -- TEST directed graph from geojson extension

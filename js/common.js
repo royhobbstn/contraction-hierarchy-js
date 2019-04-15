@@ -228,9 +228,10 @@ function populateNGraph(ngraph, geojson) {
   geojson.features.forEach(feature => {
     const start = feature.geometry.coordinates[0];
     const end = feature.geometry.coordinates[feature.geometry.coordinates.length - 1];
+    const properties = Object.assign({}, feature.properties, { _geometry: feature.geometry.coordinates });
 
-    ngraph.addLink(String(start), String(end), feature.properties);
-    ngraph.addLink(String(end), String(start), feature.properties);
+    ngraph.addLink(String(start), String(end), properties);
+    ngraph.addLink(String(end), String(start), properties);
   });
 
 }
