@@ -1,9 +1,0 @@
-
-
-    input geojson properties:
-              _direction: 'f' : forward only
-              _direction: 'b' : backward only
-              _direction: 'all': forward and backward (default)
-              _cost (assumed cost)
-              _forward_cost: (overrides cost) cost in forward direction
-              _backward_cost: (overrides cost) cost in backward direction

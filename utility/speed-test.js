@@ -1,4 +1,3 @@
-const fs = require('fs').promises;
 const new_adj = require('../networks/ch.json');
 const new_edge = require('../networks/ne.json');
 const node_rank = require('../networks/nr.json');
@@ -6,16 +5,7 @@ const createGraph = require('ngraph.graph');
 const pathNGraph = require('ngraph.path');
 
 // faster-dijkstra
-const G = require('../../faster-dijkstra/index.js').Graph;
-const { buildEdgeIdList, buildGeoJsonPath } = require('../../faster-dijkstra/index.js');
-
-// load arcFlag output
-const arc_adj = require('../arc_flag_output/adj_list.json');
-const arc_edge = require('../arc_flag_output/edge_hash.json');
-const arc_region_lookup = require('../arc_flag_output/pt_region_lookup');
-
-// load traditional dijkstra and utilities
-const { runDijkstra } = require('../js/dijkstra.js');
+const { Graph, buildEdgeIdList, buildGeoJsonPath } = require('geojson-dijkstra');
 
 // load standard bidirectional dijkstra
 const { runBiDijkstra } = require('../js/bidirectional-dijkstra.js');
@@ -27,12 +17,6 @@ const {
   queryContractionHierarchy
 } = require('../js/run-contraction-hierarchy');
 
-// load arcFlags dijkstra
-const { runArcFlagsDijkstra } = require('../js/arc-flags-dijkstra');
-
-
-const runDijkstra2 = require("../js/dijkstra-alt.js").runDijkstra;
-const toGraph = require("../js/dijkstra-alt.js").toGraph;
 
 const ITERATIONS = 1000;
 
@@ -44,9 +28,7 @@ async function main() {
 
   const geojson = cleanseNetwork(geofile);
 
-  const graph = toGraph(geojson);
-
-  const fasterDijkstra = new G();
+  const fasterDijkstra = new Graph();
   fasterDijkstra.loadFromGeoJson(geojson);
 
   const adjacency = toAdjacencyList(geojson);
@@ -59,6 +41,13 @@ async function main() {
   const pathFinder = pathNGraph.aStar(ngraph, {
     distance(fromNode, toNode, link) {
       return link.data._cost;
+    },
+    heuristic(fromNode, toNode) {
+      const fromData = fromNode.data;
+      const toData = toNode.data;
+      var dx = fromData.lng - toData.lng;
+      var dy = fromData.lat - toData.lat;
+      return (Math.abs(dx) + Math.abs(dy)) * 7;
     }
   });
 
@@ -68,42 +57,18 @@ async function main() {
     const adj_length = adj_keys.length;
     const new_adj_keys = Object.keys(new_adj);
     const new_adj_length = new_adj_keys.length;
-    const arc_adj_keys = Object.keys(arc_adj);
-    const arc_adj_length = arc_adj_keys.length;
+    const fd_keys = Object.keys(adjacency).map(key => {
+      return key.split(',').map(d => Number(d));
+    });
 
-    console.time('Dijkstra');
-    for (let i = 0; i < ITERATIONS; i++) {
-      let rnd1 = Math.floor(Math.random() * adj_length);
-      let rnd2 = Math.floor(Math.random() * adj_length);
-      runDijkstra(
-        adjacency,
-        edge_list,
-        adj_keys[rnd1],
-        adj_keys[rnd2],
-        '_cost'
-      );
-    }
-    console.timeEnd('Dijkstra');
-
-    console.time('Dijkstra2');
-    for (let i = 0; i < ITERATIONS; i++) {
-      let rnd1 = Math.floor(Math.random() * adj_length);
-      let rnd2 = Math.floor(Math.random() * adj_length);
-      runDijkstra2(
-        graph,
-        adj_keys[rnd1],
-        adj_keys[rnd2]
-      );
-    }
-    console.timeEnd('Dijkstra2');
 
     console.time('fasterDijkstra');
     for (let i = 0; i < ITERATIONS; i++) {
       let rnd1 = Math.floor(Math.random() * adj_length);
       let rnd2 = Math.floor(Math.random() * adj_length);
-      fasterDijkstra.runDijkstra(
-        adj_keys[rnd1],
-        adj_keys[rnd2], [buildEdgeIdList, buildGeoJsonPath]
+      fasterDijkstra.findPath(
+        fd_keys[rnd1],
+        fd_keys[rnd2], [buildEdgeIdList, buildGeoJsonPath]
       );
     }
     console.timeEnd('fasterDijkstra');
@@ -146,19 +111,5 @@ async function main() {
     }
     console.timeEnd('ContractionHierarchy');
 
-    console.time('ArcFlags');
-    for (let i = 0; i < ITERATIONS; i++) {
-      let rnd1 = Math.floor(Math.random() * arc_adj_length);
-      let rnd2 = Math.floor(Math.random() * arc_adj_length);
-      runArcFlagsDijkstra(
-        arc_adj,
-        arc_edge,
-        arc_adj_keys[rnd1],
-        arc_adj_keys[rnd2],
-        '_cost',
-        arc_region_lookup
-      );
-    }
-    console.timeEnd('ArcFlags');
   }, 3000);
 }

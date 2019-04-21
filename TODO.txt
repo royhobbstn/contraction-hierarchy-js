@@ -3,33 +3,13 @@
 DATA OPTIMIZATIONS
 ------------------
 
-object pool
-use a-star, isGeoJson to auto swap on coordinate compare
-minifier - uglify-js
+tailor new dijkstra to all alternate uses (contraction hierarchy and arcflags)
+ - fix bidirectional
+ - fix contraction hierarchy
 
 TEST directed graph
  -- TEST directed graph from geojson extension
 
-add filter criteria extension
- -- research how CH and AF modify traditional dijkstra
-      for both build steps and execute steps
- -- what modifications would be needed for bidirectional dijkstra?
-
-
-chaseJS as a plugin for faster-dijkstra
- -- probably want to roughly implement this before publishing faster-dijkstra 
-
-faster-dijkstra package - if its not faster, might want to just call it geojson-dijkstra
- -- fancy documentation
-
-
--- other repos -- 
-
-tailor new dijkstra to all alternate uses (contraction hierarchy and arcflags)
-
-distance speedup heuristic for real-distance networks
-
-spatial community link
 
 
 
@@ -37,9 +17,6 @@ OTHER
 ------
 
 join alike and cut at intersections should have a recompute line length option
-
-find nearest helper method - geojson api
-
 
 
 BUILDING CH && ARCFLAGS
@@ -58,7 +35,7 @@ Cut ArcFlags processing time by using contraction hierarchy instead of std dijks
 BIG PICTURE
 --------------
 
-Integrate CH with ArcFlags
+Integrate CH with ArcFlags - if it doesnt immediately improve performance... can it!
 
 golang or native node addon build-hierarchy and build-arcflags
 

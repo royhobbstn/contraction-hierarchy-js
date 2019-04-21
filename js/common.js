@@ -230,6 +230,8 @@ function populateNGraph(ngraph, geojson) {
     const end = feature.geometry.coordinates[feature.geometry.coordinates.length - 1];
     const properties = Object.assign({}, feature.properties, { _geometry: feature.geometry.coordinates });
 
+    ngraph.addNode(String(start), { lng: start[0], lat: start[1] });
+    ngraph.addNode(String(end), { lng: end[0], lat: end[1] });
     ngraph.addLink(String(start), String(end), properties);
     ngraph.addLink(String(end), String(start), properties);
   });
