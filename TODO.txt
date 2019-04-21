@@ -3,6 +3,10 @@
 DATA OPTIMIZATIONS
 ------------------
 
+TIME TO BUILD - Colorado, New Mexico, Wyoming only: 
+  - BEFORE: 13.3s
+  - AFTER:  
+
 tailor new dijkstra to all alternate uses (contraction hierarchy and arcflags)
  - fix bidirectional
  - fix contraction hierarchy

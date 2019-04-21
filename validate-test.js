@@ -4,17 +4,17 @@ const pathNGraph = require('ngraph.path');
 const { Graph, buildEdgeIdList, buildGeoJsonPath } = require('geojson-dijkstra');
 
 // load utility functions
-const { toAdjacencyList, toIdList, readyNetwork, cleanseNetwork, getNGraphDist, populateNGraph } = require('../js/common.js');
+const { toAdjacencyList, toIdList, readyNetwork, cleanseNetwork, getNGraphDist, populateNGraph } = require('./common.js');
 
 // load contraction hierarchy version bidirectional dijkstra
 const {
   queryContractionHierarchy
-} = require('../js/run-contraction-hierarchy');
+} = require('./run-contraction-hierarchy');
 
 // load contraction hierarchy output
-const new_adj = require('../networks/ch.json');
-const new_edge = require('../networks/ne.json');
-const node_rank = require('../networks/nr.json');
+const new_adj = require('./networks/ch.json');
+const new_edge = require('./networks/ne.json');
+const node_rank = require('./networks/nr.json');
 
 
 main();

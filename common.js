@@ -13,7 +13,7 @@ exports.populateNGraph = populateNGraph;
 
 async function readyNetwork() {
 
-  const geojson_raw = await fs.readFile('../networks/full_network.geojson'); // full_network
+  const geojson_raw = await fs.readFile('./networks/full_network.geojson'); // full_network
   const geojson = JSON.parse(geojson_raw);
 
   // set up cost field
@@ -25,7 +25,8 @@ async function readyNetwork() {
 
   // clean network
   geojson.features = geojson.features.filter(feat => {
-    if (feat.properties._cost && feat.geometry.coordinates && feat.properties.STFIPS === 6) {
+    // todo only colorado
+    if (feat.properties._cost && feat.geometry.coordinates && (feat.properties.STFIPS === 8 || feat.properties.STFIPS === 35 || feat.properties.STFIPS === 56)) {
       return true;
     }
   });

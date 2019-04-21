@@ -1,6 +1,6 @@
-const new_adj = require('../networks/ch.json');
-const new_edge = require('../networks/ne.json');
-const node_rank = require('../networks/nr.json');
+const new_adj = require('./networks/ch.json');
+const new_edge = require('./networks/ne.json');
+const node_rank = require('./networks/nr.json');
 const createGraph = require('ngraph.graph');
 const pathNGraph = require('ngraph.path');
 
@@ -8,14 +8,14 @@ const pathNGraph = require('ngraph.path');
 const { Graph, buildEdgeIdList, buildGeoJsonPath } = require('geojson-dijkstra');
 
 // load utility functions
-const { toAdjacencyList, toIdList, readyNetwork, cleanseNetwork, getNGraphDist, populateNGraph } = require('../js/common.js');
+const { toAdjacencyList, toIdList, readyNetwork, cleanseNetwork, getNGraphDist, populateNGraph } = require('./common.js');
 
 const {
   queryContractionHierarchy
-} = require('../js/run-contraction-hierarchy');
+} = require('./run-contraction-hierarchy');
 
 
-const ITERATIONS = 1000;
+const ITERATIONS = 10000;
 
 main();
 

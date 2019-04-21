@@ -12,12 +12,13 @@ main();
 
 async function main() {
   console.log('loading raw network geojson file');
-  const raw_geo = await fs.readFile('../networks/faf.geojson');
+  const raw_geo = await fs.readFile('./networks/faf.geojson');
 
   console.log('filter out ferry routes');
   const intermediate_geo = JSON.parse(raw_geo).features.filter(f => {
     // filter out STATUS = 2 (ferry route)
-    return f.properties.STATUS !== 2;
+    // todo also filterint to only Colorado
+    return f.properties.STATUS !== 2 && (f.properties.STFIPS === 8 || f.properties.STFIPS === 35 || f.properties.STFIPS === 56);
   });
 
   console.log('snapping nearby single-valency points');
@@ -63,7 +64,7 @@ async function main() {
   };
   console.log('saving full network as "full_network.geojson"');
   await fs.writeFile(
-    '../networks/full_network.geojson',
+    './networks/full_network.geojson',
     JSON.stringify(full),
     'utf8'
   );

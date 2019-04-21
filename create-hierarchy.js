@@ -1,6 +1,6 @@
 const fs = require('fs').promises;
-const { contractGraph } = require('../js/build-contraction-hierarchy.js');
-const { readyNetwork, cleanseNetwork } = require('../js/common.js');
+const { contractGraph } = require('./build-contraction-hierarchy.js');
+const { readyNetwork, cleanseNetwork } = require('./common.js');
 
 main();
 
@@ -16,17 +16,17 @@ async function main() {
   console.timeEnd('contractTime');
 
   await fs.writeFile(
-    '../networks/ch.json',
+    './networks/ch.json',
     JSON.stringify(contracted_graph[0]),
     'utf8'
   );
   await fs.writeFile(
-    '../networks/ne.json',
+    './networks/ne.json',
     JSON.stringify(contracted_graph[1]),
     'utf8'
   );
   await fs.writeFile(
-    '../networks/nr.json',
+    './networks/nr.json',
     JSON.stringify(contracted_graph[2]),
     'utf8'
   );
