@@ -1,4 +1,5 @@
-# CHASE-js
-**C**ontraction **H**ierarchy with **A**rc-Flag**S** Highway Nod**E** Routing
+# contraction-hierarchy-js
 
-A very informal interpretation of **CHASE** for NodeJS.
+A [Contraction Hierarchy](https://en.wikipedia.org/wiki/Contraction_hierarchies) implementation for NodeJS.
+
+In Progress
