@@ -7,11 +7,8 @@ const pathNGraph = require('ngraph.path');
 // faster-dijkstra
 const { Graph, buildEdgeIdList, buildGeoJsonPath } = require('geojson-dijkstra');
 
-// load standard bidirectional dijkstra
-const { runBiDijkstra } = require('../js/bidirectional-dijkstra.js');
-
 // load utility functions
-const { toAdjacencyList, toEdgeHash, toIdList, readyNetwork, cleanseNetwork, getNGraphDist, populateNGraph } = require('../js/common.js');
+const { toAdjacencyList, toIdList, readyNetwork, cleanseNetwork, getNGraphDist, populateNGraph } = require('../js/common.js');
 
 const {
   queryContractionHierarchy
@@ -33,7 +30,6 @@ async function main() {
 
   const adjacency = toAdjacencyList(geojson);
 
-  const edge_list = toEdgeHash(geojson);
   const id_list = toIdList(geojson);
   const ngraph = createGraph();
   populateNGraph(ngraph, geojson);
@@ -80,20 +76,6 @@ async function main() {
       getNGraphDist(pathFinder.find(adj_keys[rnd1], adj_keys[rnd2]));
     }
     console.timeEnd('ngraph');
-
-    console.time('BiDijkstra');
-    for (let i = 0; i < ITERATIONS; i++) {
-      let rnd1 = Math.floor(Math.random() * adj_length);
-      let rnd2 = Math.floor(Math.random() * adj_length);
-      runBiDijkstra(
-        adjacency,
-        edge_list,
-        adj_keys[rnd1],
-        adj_keys[rnd2],
-        '_cost'
-      );
-    }
-    console.timeEnd('BiDijkstra');
 
     console.time('ContractionHierarchy');
     for (let i = 0; i < ITERATIONS; i++) {

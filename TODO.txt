@@ -11,6 +11,7 @@ TEST directed graph
  -- TEST directed graph from geojson extension
 
 
+clean common.js
 
 
 OTHER

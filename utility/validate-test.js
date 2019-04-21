@@ -3,11 +3,8 @@ const pathNGraph = require('ngraph.path');
 
 const { Graph, buildEdgeIdList, buildGeoJsonPath } = require('geojson-dijkstra');
 
-// load standard bidirectional dijkstra
-const { runBiDijkstra } = require('../js/bidirectional-dijkstra.js');
-
 // load utility functions
-const { toAdjacencyList, toEdgeHash, toIdList, readyNetwork, cleanseNetwork, getNGraphDist, populateNGraph } = require('../js/common.js');
+const { toAdjacencyList, toIdList, readyNetwork, cleanseNetwork, getNGraphDist, populateNGraph } = require('../js/common.js');
 
 // load contraction hierarchy version bidirectional dijkstra
 const {
@@ -29,7 +26,6 @@ async function main() {
   const geojson = cleanseNetwork(geofile);
 
   const adjacency = toAdjacencyList(geojson);
-  const edge_list = toEdgeHash(geojson);
   const id_list = toIdList(geojson);
   const ngraph = createGraph();
   populateNGraph(ngraph, geojson);
@@ -61,7 +57,6 @@ async function main() {
     coordmatch.push(coord_match);
   }
 
-  const bidirectional = [];
   const ch = [];
   const fd = [];
   const ng = [];
@@ -90,16 +85,6 @@ async function main() {
     ng[index] = getNGraphDist(pathFinder.find(pair[0], pair[1]));
     console.timeEnd('nGraph');
 
-    console.time('Bidirectional');
-    bidirectional[index] = runBiDijkstra(
-      adjacency,
-      edge_list,
-      pair[0],
-      pair[1],
-      '_cost'
-    );
-    console.timeEnd('Bidirectional');
-
     console.time('ch');
     ch[index] = queryContractionHierarchy(
       new_adj,
@@ -119,7 +104,6 @@ async function main() {
     const values = [
       fd[i].total_cost,
       ng[i].distance,
-      bidirectional[i].distance,
       ch[i].distance,
     ];
 
@@ -144,8 +128,6 @@ async function main() {
         fd[i].total_cost.toFixed(5),
         ng[i].edgelist.length,
         ng[i].distance.toFixed(5),
-        bidirectional[i].segments.length,
-        bidirectional[i].distance.toFixed(5),
         ch[i].segments.length,
         ch[i].distance.toFixed(5)
       );

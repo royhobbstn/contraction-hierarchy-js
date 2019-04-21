@@ -1,29 +1,27 @@
 {
-  "name": "chase",
-  "version": "1.0.0",
-  "description": "Contraction Hierarchy with Arc-Flags",
+  "name": "contraction-hierarchy-js",
+  "version": "0.0.1",
+  "description": "Contraction Hierarchy",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/royhobbstn/chase-js.git"
+    "url": "git+https://github.com/royhobbstn/contraction-hierarchy-js.git"
   },
   "keywords": [
     "contraction",
     "hierarchy",
-    "arc",
-    "flags",
-    "chase",
-    "dijkstra"
+    "dijkstra",
+    "algorithm"
   ],
   "author": "Daniel Trone",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/royhobbstn/chase-js/issues"
+    "url": "https://github.com/royhobbstn/contraction-hierarchy-js/issues"
   },
-  "homepage": "https://github.com/royhobbstn/chase-js#readme",
+  "homepage": "https://github.com/royhobbstn/contraction-hierarchy-js#readme",
   "dependencies": {
     "@turf/turf": "^5.1.6",
     "@tyriar/fibonacci-heap": "^2.0.9",
@@ -37,13 +35,9 @@
     "geojson-split-crossing-lines": "^1.0.2",
     "geojson-trim-network": "^1.0.0",
     "ngraph.graph": "0.0.18",
-    "ngraph.path": "^1.1.0",
-    "readline-sync": "^1.4.9",
-    "skmeans": "^0.10.0"
+    "ngraph.path": "^1.1.0"
   },
   "devDependencies": {
-    "dijkstrajs": "^1.0.1",
-    "node-dijkstra": "^2.5.0",
     "prettier": "^1.16.4"
   }
 }
