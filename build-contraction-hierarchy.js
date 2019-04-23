@@ -8,7 +8,7 @@ const { toAdjacencyList, toEdgeHash, getComparator } = require('./common.js');
 exports.contractGraph = contractGraph;
 
 function contractGraph(geojson, options) {
-  const cost_field = options.cost_field;
+  const cost_field = '_cost' // options.cost_field;
 
   const adjacency_list = toAdjacencyList(geojson);
   const edge_hash = toEdgeHash(geojson);
@@ -20,8 +20,10 @@ function contractGraph(geojson, options) {
 
   const contracted_nodes = {};
 
+  const clen = Object.keys(adjacency_list).length;
   // create an additional node ordering
   Object.keys(adjacency_list).forEach((vertex, i) => {
+    // console.log(i / clen);
     const score = getVertexScore(vertex);
     key_to_nodes[vertex] = bh.insert(score, vertex);
     key_to_nodes_extra[vertex] = ih.insert(score, vertex);
@@ -46,13 +48,16 @@ function contractGraph(geojson, options) {
 
   // main contraction loop
   while (bh.size() > 0) {
+    // console.log(bh.size());
 
+    // console.time('loop');
     // recompute to make sure that first node in priority queue
     // is still best candidate to contract
     let found_lowest = false;
     let node_obj = bh.findMinimum();
     const old_score = node_obj.key;
 
+    // console.time('doWhile');
     do {
       const first_vertex = node_obj.value;
       const new_score = getVertexScore(first_vertex);
@@ -65,16 +70,18 @@ function contractGraph(geojson, options) {
         found_lowest = true;
       }
     } while (found_lowest === false);
+    // console.timeEnd('doWhile');
 
     // lowest found, pop it off the queue and contract it
     const v = bh.extractMinimum();
-
+    // console.time('innerLoop');
     contract(v.value, false);
-
+    // console.timeEnd('innerLoop');
     // keep a record of contraction level of each node
     contracted_nodes[v.value] = contraction_level;
     contraction_level++;
 
+    // console.timeEnd('loop');
   }
 
   // remove links to lower ranked nodes
@@ -184,7 +191,7 @@ function contractGraph(geojson, options) {
         }
       });
     });
-
+    console.log(shortcut_count)
     return shortcut_count;
   }
 

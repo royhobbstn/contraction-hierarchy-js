@@ -69,3 +69,5 @@ demo/*.json
 demo/*.geojson
 
 .idea
+
+networks/graphStructure/*.json

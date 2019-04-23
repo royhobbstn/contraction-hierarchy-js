@@ -1,5 +1,9 @@
 
 
+Do a 1 for 1, following alt-build-contraction-hierarchy
+&& regular build-contraction-hierarchy!
+
+
 DATA OPTIMIZATIONS
 ------------------
 
@@ -10,6 +14,11 @@ TIME TO BUILD - Colorado, New Mexico, Wyoming only:
 tailor new dijkstra to all alternate uses (contraction hierarchy and arcflags)
  - fix bidirectional
  - fix contraction hierarchy
+
+LOL - loadFromGeoJson should be replaced by new Graph(geojson)!
+mutate inputs documentation
+
+graph.properties, geometry should be array.  placement_index an integer.
 
 TEST directed graph
  -- TEST directed graph from geojson extension

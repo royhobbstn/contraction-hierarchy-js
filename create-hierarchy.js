@@ -1,6 +1,7 @@
 const fs = require('fs').promises;
 const { contractGraph } = require('./build-contraction-hierarchy.js');
 const { readyNetwork, cleanseNetwork } = require('./common.js');
+const { Graph } = require('geojson-dijkstra');
 
 main();
 
@@ -12,7 +13,13 @@ async function main() {
 
 
   console.time('contractTime');
+  const graph = new Graph();
+  graph.loadFromGeoJson(geojson);
+
+
+  // const contracted_graph = contractGraph(graph);
   const contracted_graph = contractGraph(geojson, { cost_field: '_cost' });
+
   console.timeEnd('contractTime');
 
   await fs.writeFile(
