@@ -13,23 +13,23 @@ exports.populateNGraph = populateNGraph;
 
 async function readyNetwork() {
 
-  const geojson_raw = await fs.readFile('./networks/full_network.geojson'); // full_network
+  const geojson_raw = await fs.readFile('./networks/sample-ch.geojson'); // full_network
   const geojson = JSON.parse(geojson_raw);
 
-  // set up cost field
-  geojson.features.forEach(feat => {
-    const mph = getMPH(feat.properties.NHS);
-    feat.properties._cost = (feat.properties.MILES / 60) * mph;
-    feat.properties._id = feat.properties.ID;
-  });
+  //set up cost field
+  // geojson.features.forEach(feat => {
+  //   const mph = getMPH(feat.properties.NHS);
+  //   feat.properties._cost = (feat.properties.MILES / 60) * mph;
+  //   feat.properties._id = feat.properties.ID;
+  // });
 
-  // clean network
-  geojson.features = geojson.features.filter(feat => {
-    // todo only colorado
-    if (feat.properties._cost && feat.geometry.coordinates && (feat.properties.STFIPS === 8 || feat.properties.STFIPS === 35 || feat.properties.STFIPS === 56)) {
-      return true;
-    }
-  });
+  //clean network
+  // geojson.features = geojson.features.filter(feat => {
+  //   // todo only colorado
+  //   if (feat.properties._cost && feat.geometry.coordinates && (feat.properties.STFIPS === 8 || feat.properties.STFIPS === 35 || feat.properties.STFIPS === 56)) {
+  //     return true;
+  //   }
+  // });
 
   return geojson;
 }

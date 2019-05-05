@@ -5,7 +5,7 @@ const createGraph = require('ngraph.graph');
 const pathNGraph = require('ngraph.path');
 
 // faster-dijkstra
-const { Graph, buildEdgeIdList, buildGeoJsonPath } = require('geojson-dijkstra');
+const { Graph, buildEdgeIdList, buildGeoJsonPath } = require('../geojson-dijkstra/index.js');
 
 // load utility functions
 const { toAdjacencyList, toIdList, readyNetwork, cleanseNetwork, getNGraphDist, populateNGraph } = require('./common.js');
@@ -15,7 +15,7 @@ const {
 } = require('./run-contraction-hierarchy');
 
 
-const ITERATIONS = 10000;
+const ITERATIONS = 1000;
 
 main();
 
@@ -53,15 +53,16 @@ async function main() {
     const adj_length = adj_keys.length;
     const new_adj_keys = Object.keys(new_adj);
     const new_adj_length = new_adj_keys.length;
-    const fd_keys = Object.keys(adjacency).map(key => {
+    const fd_keys = Object.keys(fasterDijkstra.adjacency_list).map(key => {
       return key.split(',').map(d => Number(d));
     });
+    const fd_keys_length = fd_keys.length;
 
 
     console.time('fasterDijkstra');
     for (let i = 0; i < ITERATIONS; i++) {
-      let rnd1 = Math.floor(Math.random() * adj_length);
-      let rnd2 = Math.floor(Math.random() * adj_length);
+      let rnd1 = Math.floor(Math.random() * fd_keys_length);
+      let rnd2 = Math.floor(Math.random() * fd_keys_length);
       fasterDijkstra.findPath(
         fd_keys[rnd1],
         fd_keys[rnd2], [buildEdgeIdList, buildGeoJsonPath]
@@ -77,21 +78,21 @@ async function main() {
     }
     console.timeEnd('ngraph');
 
-    console.time('ContractionHierarchy');
-    for (let i = 0; i < ITERATIONS; i++) {
-      let rnd1 = Math.floor(Math.random() * new_adj_length);
-      let rnd2 = Math.floor(Math.random() * new_adj_length);
-      queryContractionHierarchy(
-        new_adj,
-        new_edge,
-        new_adj_keys[rnd1],
-        new_adj_keys[rnd2],
-        '_cost',
-        node_rank,
-        id_list
-      );
-    }
-    console.timeEnd('ContractionHierarchy');
+    // console.time('ContractionHierarchy');
+    // for (let i = 0; i < ITERATIONS; i++) {
+    //   let rnd1 = Math.floor(Math.random() * new_adj_length);
+    //   let rnd2 = Math.floor(Math.random() * new_adj_length);
+    //   queryContractionHierarchy(
+    //     new_adj,
+    //     new_edge,
+    //     new_adj_keys[rnd1],
+    //     new_adj_keys[rnd2],
+    //     '_cost',
+    //     node_rank,
+    //     id_list
+    //   );
+    // }
+    // console.timeEnd('ContractionHierarchy');
 
   }, 3000);
 }

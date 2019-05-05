@@ -1,20 +1,19 @@
 const createGraph = require('ngraph.graph');
 const pathNGraph = require('ngraph.path');
 
-const { Graph, buildEdgeIdList, buildGeoJsonPath } = require('geojson-dijkstra');
+const { Graph } = require('../geojson-dijkstra/index.js');
 
 // load utility functions
-const { toAdjacencyList, toIdList, readyNetwork, cleanseNetwork, getNGraphDist, populateNGraph } = require('./common.js');
+const { readyNetwork, cleanseNetwork, getNGraphDist, populateNGraph } = require('./common.js');
 
 // load contraction hierarchy version bidirectional dijkstra
 const {
   queryContractionHierarchy
-} = require('./run-contraction-hierarchy');
+} = require('./alt-run-contraction-hierarchy');
 
-// load contraction hierarchy output
-const new_adj = require('./networks/ch.json');
-const new_edge = require('./networks/ne.json');
-const node_rank = require('./networks/nr.json');
+
+const { contractGraph } = require('./alt-build-contraction-hierarchy.js');
+
 
 
 main();
@@ -22,11 +21,16 @@ main();
 async function main() {
 
   const geofile = await readyNetwork();
-
   const geojson = cleanseNetwork(geofile);
 
-  const adjacency = toAdjacencyList(geojson);
-  const id_list = toIdList(geojson);
+  const fasterDijkstra = new Graph();
+  fasterDijkstra.loadFromGeoJson(geojson);
+
+  contractGraph(fasterDijkstra);
+
+  const adj_keys = Object.keys(fasterDijkstra.adjacency_list);
+  const adj_length = adj_keys.length;
+
   const ngraph = createGraph();
   populateNGraph(ngraph, geojson);
 
@@ -37,28 +41,17 @@ async function main() {
   });
 
 
-  const adj_keys = Object.keys(adjacency);
-  const adj_length = adj_keys.length;
-
-
-  const fasterDijkstra = new Graph();
-  fasterDijkstra.loadFromGeoJson(geojson);
-
   const coords = [];
-  const coordmatch = [];
 
   for (let i = 0; i < 100; i++) {
     const rnd1 = Math.floor(Math.random() * adj_length);
     const rnd2 = Math.floor(Math.random() * adj_length);
     const coord = [adj_keys[rnd1], adj_keys[rnd2]];
-    const coord_match = [adj_keys[rnd1].split(',').map(d => Number(d)), adj_keys[rnd2].split(',').map(d => Number(d))];
-    // const coord = ['-121.606712,39.75233', '-121.687492,39.494369'];
+    //const coord = ['-121.606712,39.75233', '-121.687492,39.494369'];
     coords.push(coord);
-    coordmatch.push(coord_match);
   }
 
   const ch = [];
-  const fd = [];
   const ng = [];
 
 
@@ -74,12 +67,6 @@ async function main() {
     );
     console.log('----');
 
-    console.time('fasterDijkstra');
-    fd[index] = fasterDijkstra.findPath(
-      coordmatch[index][0],
-      coordmatch[index][1], [buildEdgeIdList, buildGeoJsonPath]
-    );
-    console.timeEnd('fasterDijkstra');
 
     console.time('nGraph');
     ng[index] = getNGraphDist(pathFinder.find(pair[0], pair[1]));
@@ -87,13 +74,9 @@ async function main() {
 
     console.time('ch');
     ch[index] = queryContractionHierarchy(
-      new_adj,
-      new_edge,
+      fasterDijkstra,
       pair[0],
-      pair[1],
-      '_cost',
-      node_rank,
-      id_list
+      pair[1]
     );
     console.timeEnd('ch');
 
@@ -102,7 +85,6 @@ async function main() {
   let error_count = 0;
   for (let i = 0; i < coords.length; i++) {
     const values = [
-      fd[i].total_cost,
       ng[i].distance,
       ch[i].distance,
     ];
@@ -119,17 +101,15 @@ async function main() {
       }
     });
 
-    if (max - min > 0.000001) {
+    if (true /*max - min > 0.000001*/ ) {
       error_count++;
       console.log(
         i,
         coords[i],
-        fd[i].edge_list.length,
-        fd[i].total_cost.toFixed(5),
-        ng[i].edgelist.length,
-        ng[i].distance.toFixed(5),
-        ch[i].segments.length,
-        ch[i].distance.toFixed(5)
+        // ng[i].edgelist.length,
+        ng[i].distance,
+        // ch[i].segments.length,
+        ch[i].distance
       );
     }
   }

@@ -1,7 +1,9 @@
+script to build both old-hierarchy and new hierarchy and compare logging.
 
 
-Do a 1 for 1, following alt-build-contraction-hierarchy
-&& regular build-contraction-hierarchy!
+
+
+run contraction hierarchy bidirectional dijkstra
 
 
 DATA OPTIMIZATIONS
@@ -12,7 +14,6 @@ TIME TO BUILD - Colorado, New Mexico, Wyoming only:
   - AFTER:  
 
 tailor new dijkstra to all alternate uses (contraction hierarchy and arcflags)
- - fix bidirectional
  - fix contraction hierarchy
 
 LOL - loadFromGeoJson should be replaced by new Graph(geojson)!

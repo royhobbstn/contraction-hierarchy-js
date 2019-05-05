@@ -11,11 +11,7 @@ async function main() {
 
   const geojson = cleanseNetwork(geofile);
 
-
   console.time('contractTime');
-  const graph = new Graph();
-  graph.loadFromGeoJson(geojson);
-
 
   // const contracted_graph = contractGraph(graph);
   const contracted_graph = contractGraph(geojson, { cost_field: '_cost' });
