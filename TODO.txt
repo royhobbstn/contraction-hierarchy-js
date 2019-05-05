@@ -1,5 +1,4 @@
-script to build both old-hierarchy and new hierarchy and compare logging.
-
+why oh why is queue taking things out of order
 
 
 

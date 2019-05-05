@@ -104,7 +104,6 @@ function contractGraph(graph) {
   // if node were to be contracted
 
   function contract(v, get_count_only) {
-    console.log(v)
 
     if (!get_count_only && debug) {
       console.log('-------------------------------------');
@@ -158,7 +157,6 @@ function contractGraph(graph) {
         v,
         max_total
       );
-      console.log({ path })
 
       to_connections.forEach(w => {
         // ignore node
@@ -188,7 +186,6 @@ function contractGraph(graph) {
 
           shortcut_count++;
 
-          //console.log({ edge: 'edge', u, w })
 
           if (!get_count_only) {
 
@@ -218,14 +215,12 @@ function contractGraph(graph) {
     vertex,
     total
   ) {
+    console.log('next')
 
     graph.pool.reset();
 
     const str_start = String(start);
     const str_end = String(end);
-
-    console.log({ str_start, str_end, vertex, total })
-
 
     const nodeState = new Map();
 
@@ -253,7 +248,6 @@ function contractGraph(graph) {
           return edge !== vertex;
         })
         .forEach(exploring_node => {
-          console.log({ exploring_node })
 
           const edge = graph.paths[`${current.id}|${exploring_node}`];
 
@@ -266,6 +260,7 @@ function contractGraph(graph) {
           if (node.visited === true) {
             return;
           }
+
 
           if (!node.opened) {
             openSet.push(node);
@@ -288,6 +283,11 @@ function contractGraph(graph) {
       const settled_amt = current.dist;
 
       // get lowest value from heap
+      if (openSet.peek()) {
+        console.log({ current: openSet.peek().id, current_key: openSet.peek().dist })
+      }
+
+
       current = openSet.pop();
 
       // exit early if current node becomes end node

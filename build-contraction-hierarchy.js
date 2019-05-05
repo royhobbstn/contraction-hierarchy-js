@@ -9,7 +9,7 @@ exports.contractGraph = contractGraph;
 
 function contractGraph(geojson, options) {
   console.log("OLD")
-  const cost_field = '_cost' // options.cost_field;
+  const cost_field = '_cost'; // options.cost_field
 
   const adjacency_list = toAdjacencyList(geojson);
   const edge_hash = toEdgeHash(geojson);
@@ -105,7 +105,6 @@ function contractGraph(geojson, options) {
   // with `get_count_only = true` find number of shortcuts added
   // if node were to be contracted
   function contract(v, get_count_only) {
-    console.log(v)
 
     if (!get_count_only && debug) {
       console.log('-------------------------------------');
@@ -152,7 +151,6 @@ function contractGraph(geojson, options) {
         v,
         max_total
       );
-      console.log({ path })
 
       connections.forEach(w => {
         // ignore node
@@ -195,8 +193,6 @@ function contractGraph(geojson, options) {
               ID: `${seg1_id},${seg2_id}`
             };
 
-            console.log({ attrs })
-
 
             edge_hash[`${u}|${w}`] = {
               properties: attrs
@@ -221,7 +217,7 @@ function contractGraph(geojson, options) {
     vertex,
     total
   ) {
-    console.log({ start, end, vertex, total })
+    console.log('next')
 
     // quick exit for start === end
     if (start === end) {
@@ -260,8 +256,6 @@ function contractGraph(geojson, options) {
         })
         .forEach(node => {
 
-          console.log({ node })
-          // this optimization may not hold true for directed graphs
           if (visited[node]) {
             return;
           }
@@ -290,6 +284,7 @@ function contractGraph(geojson, options) {
       if (elem) {
         current = elem.value;
         current_key = elem.key;
+        console.log({ current, current_key })
       }
       else {
         current = '';
