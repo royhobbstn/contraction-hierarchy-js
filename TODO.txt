@@ -1,16 +1,9 @@
-why oh why is queue taking things out of order
 
+convert back to adjacency_list connections as edge objects model, rather than STR coordinate with lookup
 
+delete old edges instead of filtering through them?
 
-run contraction hierarchy bidirectional dijkstra
-
-
-DATA OPTIMIZATIONS
-------------------
-
-TIME TO BUILD - Colorado, New Mexico, Wyoming only: 
-  - BEFORE: 13.3s
-  - AFTER:  
+apply A* to network contraction?
 
 tailor new dijkstra to all alternate uses (contraction hierarchy and arcflags)
  - fix contraction hierarchy
@@ -23,9 +16,19 @@ graph.properties, geometry should be array.  placement_index an integer.
 TEST directed graph
  -- TEST directed graph from geojson extension
 
+check edge creation for building CH (using sample-ch.geojson)
+ - does it make sense?
 
-clean common.js
+clean out common.js
 
+BENCHMARK SO FAR
+--------
+Benchmark faf.geojson, CA, OR, WA
+
+TimeToContract: 209868, 210000~
+        before after
+ngraph: 92250, 107195
+ch:     14319, 8864!
 
 OTHER
 ------

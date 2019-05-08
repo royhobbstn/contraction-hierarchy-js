@@ -1,7 +1,9 @@
 //
 
 const { toBestRoute, getComparator } = require('./common.js');
+
 const FibonacciHeap = require('@tyriar/fibonacci-heap').FibonacciHeap;
+const NodeHeap = require('../geojson-dijkstra/queue.js');
 
 
 exports.queryContractionHierarchy = queryContractionHierarchy;
@@ -11,36 +13,44 @@ function queryContractionHierarchy(
   start,
   end
 ) {
-  // quick exit for start === end
-  if (start === end) {
-    return {
-      distance: 0,
-      segments: [],
-      route: {
-        type: 'FeatureCollection',
-        features: []
-      }
-    };
-  }
 
-  const forward = {};
-  forward.dist = {};
-  forward.dist[start] = 0;
-  const backward = {};
-  backward.dist = {};
-  backward.dist[end] = 0;
+  graph.pool.reset();
+
+  const str_start = String(start);
+  const str_end = String(end);
+
+  const forward_nodeState = new Map();
+  const backward_nodeState = new Map();
+
+  const forward_distances = {};
+  const backward_distances = {};
+
+
+  let current_start = graph.pool.createNewState({ id: str_start, dist: 0 });
+  forward_nodeState.set(str_start, current_start);
+  current_start.opened = 1;
+  forward_distances[current_start.id] = 0;
+
+  let current_end = graph.pool.createNewState({ id: str_end, dist: 0 });
+  backward_nodeState.set(str_end, current_end);
+  current_end.opened = 1;
+  backward_distances[current_end.id] = 0;
 
   const searchForward = doDijkstra(
-    forward,
-    start,
+    current_start,
     'forward',
-    backward
+    forward_nodeState,
+    forward_distances,
+    backward_nodeState,
+    backward_distances
   );
   const searchBackward = doDijkstra(
-    backward,
-    end,
+    current_end,
     'backward',
-    forward
+    backward_nodeState,
+    backward_distances,
+    forward_nodeState,
+    forward_distances
   );
 
   let forward_done = false;
@@ -50,31 +60,29 @@ function queryContractionHierarchy(
   let tentative_shortest_path = Infinity;
   let tentative_shortest_node = null;
 
-  do {
-    if (!forward_done) {
-      sf = searchForward.next();
-      if (sf.done) {
-        console.log("DONE F")
-        forward_done = true;
+  if (str_start !== str_end) {
+    do {
+      if (!forward_done) {
+        sf = searchForward.next();
+        if (sf.done) {
+          forward_done = true;
+        }
       }
-    }
-    if (!backward_done) {
-      sb = searchBackward.next();
-      if (sb.done) {
-        console.log("DONE B")
-        backward_done = true;
+      if (!backward_done) {
+        sb = searchBackward.next();
+        if (sb.done) {
+          backward_done = true;
+        }
       }
-    }
-    console.log('test');
-    console.log({ sf: sf.value, sb: sb.value })
-    console.log(forward.dist[sf.value], tentative_shortest_path);
-    console.log(backward.dist[sb.value], tentative_shortest_path);
 
-  } while (
-    forward.dist[sf.value] < tentative_shortest_path ||
-    backward.dist[sb.value] < tentative_shortest_path
-  );
-
+    } while (
+      forward_distances[sf.value.id] < tentative_shortest_path ||
+      backward_distances[sb.value.id] < tentative_shortest_path
+    );
+  }
+  else {
+    tentative_shortest_path = 0;
+  }
 
   // const geojson_forward = toBestRoute(
   //   tentative_shortest_node,
@@ -140,83 +148,64 @@ function queryContractionHierarchy(
   return { distance: tentative_shortest_path /*, segments, route, raw_segments */ };
 
   function* doDijkstra(
-    ref,
     current,
     direction,
-    reverse_ref
+    nodeState,
+    distances,
+    reverse_nodeState,
+    reverse_distances
   ) {
 
-    const heap = new FibonacciHeap();
-    const key_to_nodes = {};
-
-    ref.prev = {}; // node to parent_node lookup
-    ref.visited = {}; // node has been fully explored
-    ref.dist[current] = 0;
+    var openSet = new NodeHeap(null, { rank: 'dist' });
 
     do {
 
-      console.log();
-      console.log();
-      console.log(direction);
-      console.log('===============')
-      console.log();
+      graph.adjacency_list[current.id].forEach(nodestr => {
 
-      console.log('working on current', current)
-      // console.log(graph.adjacency_list[current])
+        const edge = graph.paths[`${current.id}|${nodestr}`];
 
-      graph.adjacency_list[current].forEach(node => {
+        let node = nodeState.get(nodestr);
+        if (node === undefined) {
+          node = graph.pool.createNewState({ id: nodestr });
+          nodeState.set(nodestr, node);
+        }
 
-        if (graph.contracted_nodes[node] < graph.contracted_nodes[current]) {
-          console.log(`reject ${node} as ${graph.contracted_nodes[current]} > ${graph.contracted_nodes[node]}`)
+        if (node.visited === true) {
           return;
         }
-        else {
-          console.log(`continue ${node} as ${graph.contracted_nodes[current]} < ${graph.contracted_nodes[node]}`)
+
+        if (!node.opened) {
+          openSet.push(node);
+          node.opened = true;
         }
 
-        const index = graph.paths[`${current}|${node}`].lookup_index;
-        const segment_distance = graph.properties[index]._cost;
+        const proposed_distance = current.dist + edge.cost;
+        if (proposed_distance >= node.dist) {
+          return;
+        }
 
-        const proposed_distance = ref.dist[current] + segment_distance;
+        node.dist = proposed_distance;
+        distances[node.id] = proposed_distance;
+        node.prev = current.id;
 
-        // console.log({ index, segment_distance, proposed_distance, comp: getComparator(ref.dist[node]) });
+        openSet.updateItem(node.heapIndex);
 
-        if (proposed_distance < getComparator(ref.dist[node])) {
-
-          if (ref.dist[node] !== undefined) {
-            heap.decreaseKey(key_to_nodes[node], proposed_distance);
-            console.log("decrease key: ", proposed_distance, node)
+        const reverse_dist = reverse_distances[nodestr];
+        if (reverse_dist >= 0) {
+          const path_len = proposed_distance + reverse_dist;
+          if (tentative_shortest_path > path_len) {
+            tentative_shortest_path = path_len;
+            tentative_shortest_node = nodestr;
           }
-          else {
-            key_to_nodes[node] = heap.insert(proposed_distance, node);
-            console.log("insert key: ", proposed_distance, node)
-          }
-
-          if (reverse_ref.dist[node] >= 0) {
-            const path_len = proposed_distance + reverse_ref.dist[node];
-            if (tentative_shortest_path > path_len) {
-              tentative_shortest_path = path_len;
-              tentative_shortest_node = node;
-
-            }
-          }
-          ref.dist[node] = proposed_distance;
-          ref.prev[node] = current;
         }
 
       });
-      ref.visited[current] = true;
+      current.visited = true;
 
-      // get lowest value from heaps
-      const elem = heap.extractMinimum();
+      // get lowest value from heap
+      current = openSet.pop();
 
-      if (elem) {
-        current = elem.value;
-        console.log("NEXT NODE ", elem.value)
-      }
-      else {
-        current = '';
-        console.log("NO NODES LEFT");
+      if (!current) {
         return '';
       }
 

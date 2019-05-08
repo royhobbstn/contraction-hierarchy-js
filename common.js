@@ -16,6 +16,7 @@ async function readyNetwork() {
   const geojson_raw = await fs.readFile('./networks/sample-ch.geojson'); // full_network
   const geojson = JSON.parse(geojson_raw);
 
+
   //set up cost field
   // geojson.features.forEach(feat => {
   //   const mph = getMPH(feat.properties.NHS);
@@ -25,11 +26,12 @@ async function readyNetwork() {
 
   //clean network
   // geojson.features = geojson.features.filter(feat => {
-  //   // todo only colorado
-  //   if (feat.properties._cost && feat.geometry.coordinates && (feat.properties.STFIPS === 8 || feat.properties.STFIPS === 35 || feat.properties.STFIPS === 56)) {
+  //   if (feat.properties._cost && feat.geometry.coordinates &&
+  //     (feat.properties.STFIPS === 6 || feat.properties.STFIPS === 41 || feat.properties.STFIPS === 53)) {
   //     return true;
   //   }
   // });
+  console.log(geojson.features.length)
 
   return geojson;
 }

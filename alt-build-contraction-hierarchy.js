@@ -12,8 +12,7 @@ function OrderNode(score, id) {
 }
 
 function contractGraph(graph) {
-  console.log("NEW")
-  const nh = new NodeHeap({ rank: 'score' });
+  const nh = new NodeHeap(null, { rank: 'score' });
 
   const contraction_order_nodes = {};
   const contracted_nodes = {};
@@ -215,7 +214,6 @@ function contractGraph(graph) {
     vertex,
     total
   ) {
-    console.log('next')
 
     graph.pool.reset();
 
@@ -226,7 +224,7 @@ function contractGraph(graph) {
 
     const distances = {};
 
-    var openSet = new NodeHeap({ rank: 'dist' });
+    var openSet = new NodeHeap(null, { rank: 'dist' });
 
     let current = graph.pool.createNewState({ id: str_start, dist: 0 });
     nodeState.set(str_start, current);
@@ -283,11 +281,6 @@ function contractGraph(graph) {
       const settled_amt = current.dist;
 
       // get lowest value from heap
-      if (openSet.peek()) {
-        console.log({ current: openSet.peek().id, current_key: openSet.peek().dist })
-      }
-
-
       current = openSet.pop();
 
       // exit early if current node becomes end node

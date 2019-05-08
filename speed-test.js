@@ -1,6 +1,3 @@
-const new_adj = require('./networks/ch.json');
-const new_edge = require('./networks/ne.json');
-const node_rank = require('./networks/nr.json');
 const createGraph = require('ngraph.graph');
 const pathNGraph = require('ngraph.path');
 
@@ -8,29 +5,33 @@ const pathNGraph = require('ngraph.path');
 const { Graph, buildEdgeIdList, buildGeoJsonPath } = require('../geojson-dijkstra/index.js');
 
 // load utility functions
-const { toAdjacencyList, toIdList, readyNetwork, cleanseNetwork, getNGraphDist, populateNGraph } = require('./common.js');
+const { readyNetwork, cleanseNetwork, getNGraphDist, populateNGraph } = require('./common.js');
 
+
+// load contraction hierarchy version bidirectional dijkstra
 const {
   queryContractionHierarchy
-} = require('./run-contraction-hierarchy');
+} = require('./alt-run-contraction-hierarchy');
 
 
-const ITERATIONS = 1000;
+const { contractGraph } = require('./alt-build-contraction-hierarchy.js');
+
+const ITERATIONS = 10000;
 
 main();
 
 async function main() {
 
   const geofile = await readyNetwork();
-
   const geojson = cleanseNetwork(geofile);
 
   const fasterDijkstra = new Graph();
   fasterDijkstra.loadFromGeoJson(geojson);
 
-  const adjacency = toAdjacencyList(geojson);
+  console.time('TimeToContract');
+  contractGraph(fasterDijkstra);
+  console.timeEnd('TimeToContract');
 
-  const id_list = toIdList(geojson);
   const ngraph = createGraph();
   populateNGraph(ngraph, geojson);
 
@@ -49,26 +50,8 @@ async function main() {
 
   setTimeout(function() {
     // performance test
-    const adj_keys = Object.keys(adjacency);
+    const adj_keys = Object.keys(fasterDijkstra.adjacency_list);
     const adj_length = adj_keys.length;
-    const new_adj_keys = Object.keys(new_adj);
-    const new_adj_length = new_adj_keys.length;
-    const fd_keys = Object.keys(fasterDijkstra.adjacency_list).map(key => {
-      return key.split(',').map(d => Number(d));
-    });
-    const fd_keys_length = fd_keys.length;
-
-
-    console.time('fasterDijkstra');
-    for (let i = 0; i < ITERATIONS; i++) {
-      let rnd1 = Math.floor(Math.random() * fd_keys_length);
-      let rnd2 = Math.floor(Math.random() * fd_keys_length);
-      fasterDijkstra.findPath(
-        fd_keys[rnd1],
-        fd_keys[rnd2], [buildEdgeIdList, buildGeoJsonPath]
-      );
-    }
-    console.timeEnd('fasterDijkstra');
 
     console.time('ngraph');
     for (let i = 0; i < ITERATIONS; i++) {
@@ -78,21 +61,17 @@ async function main() {
     }
     console.timeEnd('ngraph');
 
-    // console.time('ContractionHierarchy');
-    // for (let i = 0; i < ITERATIONS; i++) {
-    //   let rnd1 = Math.floor(Math.random() * new_adj_length);
-    //   let rnd2 = Math.floor(Math.random() * new_adj_length);
-    //   queryContractionHierarchy(
-    //     new_adj,
-    //     new_edge,
-    //     new_adj_keys[rnd1],
-    //     new_adj_keys[rnd2],
-    //     '_cost',
-    //     node_rank,
-    //     id_list
-    //   );
-    // }
-    // console.timeEnd('ContractionHierarchy');
+    console.time('ContractionHierarchy');
+    for (let i = 0; i < ITERATIONS; i++) {
+      let rnd1 = Math.floor(Math.random() * adj_length);
+      let rnd2 = Math.floor(Math.random() * adj_length);
+      queryContractionHierarchy(
+        fasterDijkstra,
+        adj_keys[rnd1],
+        adj_keys[rnd2]
+      );
+    }
+    console.timeEnd('ContractionHierarchy');
 
   }, 3000);
 }

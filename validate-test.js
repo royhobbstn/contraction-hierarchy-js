@@ -43,11 +43,11 @@ async function main() {
 
   const coords = [];
 
-  for (let i = 0; i < 100; i++) {
+  for (let i = 0; i < 1; i++) {
     const rnd1 = Math.floor(Math.random() * adj_length);
     const rnd2 = Math.floor(Math.random() * adj_length);
     const coord = [adj_keys[rnd1], adj_keys[rnd2]];
-    //const coord = ['-121.606712,39.75233', '-121.687492,39.494369'];
+    //const coord = ['-108.204345703125,40.22921818870117','-108.204345703125,40.22921818870117'];
     coords.push(coord);
   }
 
@@ -101,7 +101,7 @@ async function main() {
       }
     });
 
-    if (true /*max - min > 0.000001*/ ) {
+    if (max - min > 0.000001) {
       error_count++;
       console.log(
         i,

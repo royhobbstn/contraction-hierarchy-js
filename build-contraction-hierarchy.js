@@ -8,7 +8,6 @@ const { toAdjacencyList, toEdgeHash, getComparator } = require('./common.js');
 exports.contractGraph = contractGraph;
 
 function contractGraph(geojson, options) {
-  console.log("OLD")
   const cost_field = '_cost'; // options.cost_field
 
   const adjacency_list = toAdjacencyList(geojson);
@@ -217,7 +216,6 @@ function contractGraph(geojson, options) {
     vertex,
     total
   ) {
-    console.log('next')
 
     // quick exit for start === end
     if (start === end) {
@@ -284,7 +282,6 @@ function contractGraph(geojson, options) {
       if (elem) {
         current = elem.value;
         current_key = elem.key;
-        console.log({ current, current_key })
       }
       else {
         current = '';
