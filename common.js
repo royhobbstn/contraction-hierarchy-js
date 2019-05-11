@@ -17,7 +17,7 @@ async function readyNetwork() {
   const geojson = JSON.parse(geojson_raw);
 
 
-  // set up cost field
+  //set up cost field
   geojson.features.forEach(feat => {
     const mph = getMPH(feat.properties.NHS);
     feat.properties._cost = (feat.properties.MILES / 60) * mph;

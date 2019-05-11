@@ -9,7 +9,43 @@ function OrderNode(score, id) {
   this.id = id;
 }
 
+function createReverseAdjList(graph) {
+
+  // create a reverse adjacency list
+  const reverse_adj = {};
+
+  Object.keys(graph.adjacency_list).forEach(node => {
+    graph.adjacency_list[node].forEach(edge => {
+      // reverse obj
+      const reverse_obj = {
+        start: edge.end,
+        end: edge.start,
+        start_lat: edge.end_lat,
+        start_lng: edge.end_lng,
+        end_lat: edge.start_lat,
+        end_lng: edge.start_lng,
+        cost: edge.cost,
+        lookup_index: edge.lookup_index
+        // reverse_flag:?
+      };
+      // add reversed obj to reverse adj list
+      if (!reverse_adj[reverse_obj.start]) {
+        reverse_adj[reverse_obj.start] = [reverse_obj];
+      }
+      else {
+        reverse_adj[reverse_obj.start].push(reverse_obj);
+      }
+
+    });
+
+  });
+
+  return reverse_adj;
+}
+
 function contractGraph(graph) {
+
+  const reverse_adj = createReverseAdjList(graph);
 
   const nh = new NodeHeap(null, { rank: 'score' });
 
@@ -75,7 +111,6 @@ function contractGraph(graph) {
   }
 
   // remove links to lower ranked nodes
-  // TODO we may not need to do more than this
   Object.keys(graph.adjacency_list).forEach(node => {
     const from_rank = contracted_nodes[node];
     graph.adjacency_list[node] = graph.adjacency_list[node].filter(
@@ -100,35 +135,34 @@ function contractGraph(graph) {
 
   function contract(v, get_count_only) {
 
-    const from_connections = (graph.rev_adjacency_list[v] || []).filter(c => {
-      return !contracted_nodes[c];
+    const from_connections = (reverse_adj[v] || []).filter(c => {
+      return !contracted_nodes[c.end];
     });
+
     const to_connections = (graph.adjacency_list[v] || []).filter(c => {
       return !contracted_nodes[c.end];
     });
 
+
     let shortcut_count = 0;
 
-    from_connections.forEach(u => {
+    // TODO from
+    to_connections.forEach(u => {
 
       let max_total = 0;
 
       // dist u to v
-      const uv_path = graph.paths[`${u}|${v}`];
-      const uv_lookup = uv_path.lookup_index;
-      const uv_start_lng = uv_path.start_lng;
-      const uv_start_lat = uv_path.start_lat;
-      const dist1 = graph.properties[uv_lookup]._cost;
+      const dist1 = u.cost;
 
       to_connections.forEach(w => {
+
         // ignore node to itself
-        if (u === w.end) {
+        if (u.end === w.end) {
           return;
         }
 
         // dist v to w
-        const vw_lookup = graph.paths[`${v}|${w.end}`].lookup_index;
-        const dist2 = graph.properties[vw_lookup]._cost;
+        const dist2 = w.cost;
 
         const total = dist1 + dist2;
 
@@ -138,7 +172,7 @@ function contractGraph(graph) {
       });
 
       const path = runDijkstra(
-        graph, [uv_start_lng, uv_start_lat],
+        graph, u.end,
         null,
         v,
         max_total
@@ -146,13 +180,12 @@ function contractGraph(graph) {
 
       to_connections.forEach(w => {
         // ignore node
-        if (u === w.end) {
+        if (u.end === w.end) {
           return;
         }
 
         // dist v to w
-        const vw_lookup = graph.paths[`${v}|${w.end}`].lookup_index;
-        const dist2 = graph.properties[vw_lookup]._cost;
+        const dist2 = w.cost;
         const total = dist1 + dist2;
 
         const dijkstra = path.distances[w.end] || Infinity;
@@ -164,15 +197,16 @@ function contractGraph(graph) {
 
           if (!get_count_only) {
 
-            const seg1 = graph.paths[`${u}|${v}`].lookup_index;
-            const seg2 = graph.paths[`${v}|${w.end}`].lookup_index;
+            const seg1 = u.lookup_index;
+
+            const seg2 = w.lookup_index;
 
             const attrs = {
               _cost: total,
               _id: `${graph.properties[seg1]._id},${graph.properties[seg2]._id}`
             };
 
-            const s = u.split(',').map(d => Number(d));
+            const s = u.end.split(',').map(d => Number(d));
             const e = w.end.split(',').map(d => Number(d));
 
             graph.addEdge(s, e, attrs, true);

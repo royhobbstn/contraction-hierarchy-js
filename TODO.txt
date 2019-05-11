@@ -1,7 +1,11 @@
 
-standard dijkstra on edges, now convert ch to edges
+    
 
     // TODO probably dont need paths???  Or, paths can be built just for CH.
+    
+    // seems like just copy properties and geometry straight to obj to avoid lookup
+    
+    // AStar the CH?
 
     // API change: findPath, findAStar
 
