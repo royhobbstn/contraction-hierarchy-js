@@ -13,24 +13,24 @@ exports.populateNGraph = populateNGraph;
 
 async function readyNetwork() {
 
-  const geojson_raw = await fs.readFile('./networks/sample-ch.geojson'); // full_network
+  const geojson_raw = await fs.readFile('./networks/faf.geojson'); // full_network
   const geojson = JSON.parse(geojson_raw);
 
 
-  //set up cost field
-  // geojson.features.forEach(feat => {
-  //   const mph = getMPH(feat.properties.NHS);
-  //   feat.properties._cost = (feat.properties.MILES / 60) * mph;
-  //   feat.properties._id = feat.properties.ID;
-  // });
+  // set up cost field
+  geojson.features.forEach(feat => {
+    const mph = getMPH(feat.properties.NHS);
+    feat.properties._cost = (feat.properties.MILES / 60) * mph;
+    feat.properties._id = feat.properties.ID;
+  });
 
-  //clean network
-  // geojson.features = geojson.features.filter(feat => {
-  //   if (feat.properties._cost && feat.geometry.coordinates &&
-  //     (feat.properties.STFIPS === 6 || feat.properties.STFIPS === 41 || feat.properties.STFIPS === 53)) {
-  //     return true;
-  //   }
-  // });
+  // clean network
+  geojson.features = geojson.features.filter(feat => {
+    if (feat.properties._cost && feat.geometry.coordinates &&
+      (feat.properties.STFIPS === 6 || feat.properties.STFIPS === 41 || feat.properties.STFIPS === 53)) {
+      return true;
+    }
+  });
   console.log(geojson.features.length)
 
   return geojson;

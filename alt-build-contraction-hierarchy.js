@@ -1,6 +1,4 @@
 //
-let debug = false;
-
 const NodeHeap = require('../geojson-dijkstra/queue.js');
 
 exports.contractGraph = contractGraph;
@@ -12,6 +10,7 @@ function OrderNode(score, id) {
 }
 
 function contractGraph(graph) {
+
   const nh = new NodeHeap(null, { rank: 'score' });
 
   const contraction_order_nodes = {};
@@ -27,7 +26,6 @@ function contractGraph(graph) {
 
   function getVertexScore(v) {
     const shortcut_count = contract(v, true);
-    // console.log({ v, shortcut_count })
     const edge_count = graph.adjacency_list[v].length;
     const edge_difference = shortcut_count - edge_count;
     const contracted_neighbors = getContractedNeighborCount(v);
@@ -40,8 +38,6 @@ function contractGraph(graph) {
       return acc + is_contracted;
     }, 0);
   }
-
-  // console.log({ contraction_order_nodes });
 
   let contraction_level = 1;
 
@@ -84,7 +80,7 @@ function contractGraph(graph) {
     const from_rank = contracted_nodes[node];
     graph.adjacency_list[node] = graph.adjacency_list[node].filter(
       to_coords => {
-        const to_rank = contracted_nodes[to_coords];
+        const to_rank = contracted_nodes[to_coords.end];
         return from_rank < to_rank;
       }
     );
@@ -104,23 +100,14 @@ function contractGraph(graph) {
 
   function contract(v, get_count_only) {
 
-    if (!get_count_only && debug) {
-      console.log('-------------------------------------');
-      console.log('contract: ' + v);
-    }
-
     const from_connections = (graph.rev_adjacency_list[v] || []).filter(c => {
       return !contracted_nodes[c];
     });
     const to_connections = (graph.adjacency_list[v] || []).filter(c => {
-      return !contracted_nodes[c];
+      return !contracted_nodes[c.end];
     });
 
-    // console.log({ from_connections, to_connections })
-
-
     let shortcut_count = 0;
-
 
     from_connections.forEach(u => {
 
@@ -135,12 +122,12 @@ function contractGraph(graph) {
 
       to_connections.forEach(w => {
         // ignore node to itself
-        if (u === w) {
+        if (u === w.end) {
           return;
         }
 
         // dist v to w
-        const vw_lookup = graph.paths[`${v}|${w}`].lookup_index;
+        const vw_lookup = graph.paths[`${v}|${w.end}`].lookup_index;
         const dist2 = graph.properties[vw_lookup]._cost;
 
         const total = dist1 + dist2;
@@ -159,44 +146,36 @@ function contractGraph(graph) {
 
       to_connections.forEach(w => {
         // ignore node
-        if (u === w) {
+        if (u === w.end) {
           return;
         }
 
         // dist v to w
-        const vw_lookup = graph.paths[`${v}|${w}`].lookup_index;
+        const vw_lookup = graph.paths[`${v}|${w.end}`].lookup_index;
         const dist2 = graph.properties[vw_lookup]._cost;
         const total = dist1 + dist2;
 
-        const dijkstra = path.distances[w] || Infinity;
+        const dijkstra = path.distances[w.end] || Infinity;
 
         // Infinity does happen - what are the consequences
-        if (!get_count_only && debug) {
-          console.log({ u, w, v });
-          console.log({ path: path.distances[w] });
-          console.log({ total });
-          console.log({ dijkstra });
-        }
-
         if (total < dijkstra) {
-          if (!get_count_only && debug) {
-            console.log('shortcut !');
-          }
 
           shortcut_count++;
-
 
           if (!get_count_only) {
 
             const seg1 = graph.paths[`${u}|${v}`].lookup_index;
-            const seg2 = graph.paths[`${v}|${w}`].lookup_index;
+            const seg2 = graph.paths[`${v}|${w.end}`].lookup_index;
 
             const attrs = {
               _cost: total,
               _id: `${graph.properties[seg1]._id},${graph.properties[seg2]._id}`
             };
 
-            graph.addEdge(u.split(',').map(d => Number(d)), w.split(',').map(d => Number(d)), attrs, true);
+            const s = u.split(',').map(d => Number(d));
+            const e = w.end.split(',').map(d => Number(d));
+
+            graph.addEdge(s, e, attrs, true);
 
           }
         }
@@ -236,23 +215,21 @@ function contractGraph(graph) {
       current = '';
     }
 
-    // TODO problem, heuristic on by default
+    // TODO problem???? heuristic on by default
     while (current) {
 
       graph.adjacency_list[current.id]
         .filter(edge => {
           // this is a modification for contraction hierarchy
           // otherwise vertex===undefined
-          return edge !== vertex;
+          return edge.end !== vertex;
         })
-        .forEach(exploring_node => {
+        .forEach(edge => {
 
-          const edge = graph.paths[`${current.id}|${exploring_node}`];
-
-          let node = nodeState.get(exploring_node);
+          let node = nodeState.get(edge.end);
           if (node === undefined) {
-            node = graph.pool.createNewState({ id: exploring_node });
-            nodeState.set(exploring_node, node);
+            node = graph.pool.createNewState({ id: edge.end });
+            nodeState.set(edge.end, node);
           }
 
           if (node.visited === true) {
@@ -284,7 +261,7 @@ function contractGraph(graph) {
       current = openSet.pop();
 
       // exit early if current node becomes end node
-      if (current === end) {
+      if (current && (current.id === end)) {
         current = '';
       }
 

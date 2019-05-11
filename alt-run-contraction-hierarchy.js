@@ -1,8 +1,5 @@
 //
 
-const { toBestRoute, getComparator } = require('./common.js');
-
-const FibonacciHeap = require('@tyriar/fibonacci-heap').FibonacciHeap;
 const NodeHeap = require('../geojson-dijkstra/queue.js');
 
 
@@ -160,14 +157,12 @@ function queryContractionHierarchy(
 
     do {
 
-      graph.adjacency_list[current.id].forEach(nodestr => {
+      graph.adjacency_list[current.id].forEach(edge => {
 
-        const edge = graph.paths[`${current.id}|${nodestr}`];
-
-        let node = nodeState.get(nodestr);
+        let node = nodeState.get(edge.end);
         if (node === undefined) {
-          node = graph.pool.createNewState({ id: nodestr });
-          nodeState.set(nodestr, node);
+          node = graph.pool.createNewState({ id: edge.end });
+          nodeState.set(edge.end, node);
         }
 
         if (node.visited === true) {
@@ -190,12 +185,12 @@ function queryContractionHierarchy(
 
         openSet.updateItem(node.heapIndex);
 
-        const reverse_dist = reverse_distances[nodestr];
+        const reverse_dist = reverse_distances[edge.end];
         if (reverse_dist >= 0) {
           const path_len = proposed_distance + reverse_dist;
           if (tentative_shortest_path > path_len) {
             tentative_shortest_path = path_len;
-            tentative_shortest_node = nodestr;
+            tentative_shortest_node = edge.end;
           }
         }
 

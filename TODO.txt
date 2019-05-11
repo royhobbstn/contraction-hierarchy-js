@@ -1,12 +1,19 @@
 
+standard dijkstra on edges, now convert ch to edges
+
+    // TODO probably dont need paths???  Or, paths can be built just for CH.
+
+    // API change: findPath, findAStar
+
 convert back to adjacency_list connections as edge objects model, rather than STR coordinate with lookup
 
 delete old edges instead of filtering through them?
 
 apply A* to network contraction?
 
+add outputFunctions (like in geojson dijkstra)
+
 tailor new dijkstra to all alternate uses (contraction hierarchy and arcflags)
- - fix contraction hierarchy
 
 LOL - loadFromGeoJson should be replaced by new Graph(geojson)!
 mutate inputs documentation
@@ -25,10 +32,10 @@ BENCHMARK SO FAR
 --------
 Benchmark faf.geojson, CA, OR, WA
 
-TimeToContract: 209868, 210000~
+TimeToContract: 209868, 210000~ 185013
         before after
-ngraph: 92250, 107195
-ch:     14319, 8864!
+ngraph: 92250, 107195 118439
+ch:     14319, 8864   5835
 
 OTHER
 ------
