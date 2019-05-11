@@ -197,13 +197,9 @@ function contractGraph(graph) {
 
           if (!get_count_only) {
 
-            const seg1 = u.lookup_index;
-
-            const seg2 = w.lookup_index;
-
             const attrs = {
               _cost: total,
-              _id: `${graph.properties[seg1]._id},${graph.properties[seg2]._id}`
+              _id: `${u.attributes._id},${w.attributes._id}`
             };
 
             const s = u.end.split(',').map(d => Number(d));

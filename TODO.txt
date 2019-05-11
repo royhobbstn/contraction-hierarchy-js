@@ -1,13 +1,11 @@
 
-    
+    // reverse_adj list on CH broken
 
-    // TODO probably dont need paths???  Or, paths can be built just for CH.
-    
-    // seems like just copy properties and geometry straight to obj to avoid lookup
-    
     // AStar the CH?
 
     // API change: findPath, findAStar
+    
+    // directed graph is broken (probably)
 
 convert back to adjacency_list connections as edge objects model, rather than STR coordinate with lookup
 
@@ -36,10 +34,10 @@ BENCHMARK SO FAR
 --------
 Benchmark faf.geojson, CA, OR, WA
 
-TimeToContract: 209868, 210000~ 185013
+TimeToContract: 209868, 210000~ 185013 163293
         before after
-ngraph: 92250, 107195 118439
-ch:     14319, 8864   5835
+ngraph: 92250, 107195 118439 118702
+ch:     14319, 8864   5835   5188!
 
 OTHER
 ------
