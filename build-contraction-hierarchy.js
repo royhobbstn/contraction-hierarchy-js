@@ -1,139 +1,168 @@
 //
-let debug = false;
-
-const FibonacciHeap = require('@tyriar/fibonacci-heap').FibonacciHeap;
-
-const { toAdjacencyList, toEdgeHash, getComparator } = require('./common.js');
+const NodeHeap = require('../geojson-dijkstra/queue.js');
 
 exports.contractGraph = contractGraph;
 
-function contractGraph(geojson, options) {
-  const cost_field = '_cost'; // options.cost_field
+// node containing contraction order score
+function OrderNode(score, id) {
+  this.score = score;
+  this.id = id;
+}
 
-  const adjacency_list = toAdjacencyList(geojson);
-  const edge_hash = toEdgeHash(geojson);
+function createReverseAdjList(graph) {
 
-  const bh = new FibonacciHeap();
-  const key_to_nodes = {};
+  // create a reverse adjacency list
+  const reverse_adj = {};
 
-  const ih = new FibonacciHeap();
-  const key_to_nodes_extra = {};
+  Object.keys(graph.adjacency_list).forEach(node => {
+    graph.adjacency_list[node].forEach(edge => {
+      // reverse obj
+      const reverse_obj = {
+        start: edge.end,
+        end: edge.start,
+        start_lat: edge.end_lat,
+        start_lng: edge.end_lng,
+        end_lat: edge.start_lat,
+        end_lng: edge.start_lng,
+        cost: edge.cost,
+        attributes: edge.attributes,
+        geometry: edge.geometry
+      };
+      // add reversed obj to reverse adj list
+      if (!reverse_adj[reverse_obj.start]) {
+        reverse_adj[reverse_obj.start] = [reverse_obj];
+      }
+      else {
+        reverse_adj[reverse_obj.start].push(reverse_obj);
+      }
 
+    });
+
+  });
+
+  return reverse_adj;
+}
+
+function contractGraph(graph) {
+
+  const reverse_adj = createReverseAdjList(graph);
+
+  const nh = new NodeHeap(null, { rank: 'score' });
+
+  const contraction_order_nodes = {};
   const contracted_nodes = {};
 
   // create an additional node ordering
-  Object.keys(adjacency_list).forEach((vertex, i) => {
+  Object.keys(graph.adjacency_list).forEach(vertex => {
     const score = getVertexScore(vertex);
-    key_to_nodes[vertex] = bh.insert(score, vertex);
-    key_to_nodes_extra[vertex] = ih.insert(score, vertex);
+    const node = new OrderNode(score, vertex);
+    nh.push(node);
+    contraction_order_nodes[vertex] = node;
   });
 
   function getVertexScore(v) {
     const shortcut_count = contract(v, true);
-    // console.log({ v, shortcut_count })
-
-    const edge_count = adjacency_list[v].length;
+    const edge_count = graph.adjacency_list[v].length;
     const edge_difference = shortcut_count - edge_count;
     const contracted_neighbors = getContractedNeighborCount(v);
     return edge_difference + contracted_neighbors;
   }
 
   function getContractedNeighborCount(v) {
-    return adjacency_list[v].reduce((acc, node) => {
+    return graph.adjacency_list[v].reduce((acc, node) => {
       const is_contracted = contracted_nodes[node] ? 1 : 0;
       return acc + is_contracted;
     }, 0);
   }
 
-  // console.log({ key_to_nodes });
-
   let contraction_level = 1;
 
   // main contraction loop
-  while (bh.size() > 0) {
+  while (nh.length > 0) {
 
-    // console.time('loop');
     // recompute to make sure that first node in priority queue
     // is still best candidate to contract
     let found_lowest = false;
-    let node_obj = bh.findMinimum();
+    let node_obj = nh.peek();
+    const old_score = node_obj.score;
 
-    const old_score = node_obj.key;
-
-    // console.time('doWhile');
     do {
-      const first_vertex = node_obj.value;
+      const first_vertex = node_obj.id;
       const new_score = getVertexScore(first_vertex);
       if (new_score > old_score) {
-        bh.delete(node_obj);
-        key_to_nodes[first_vertex] = bh.insert(new_score, first_vertex);
+        node_obj.score = new_score;
+        nh.updateItem(node_obj.heapIndex);
       }
-      node_obj = key_to_nodes[first_vertex];
-      if (node_obj.value === first_vertex) {
+      node_obj = nh.peek();
+      if (node_obj.id === first_vertex) {
         found_lowest = true;
       }
     } while (found_lowest === false);
-    // console.timeEnd('doWhile');
 
     // lowest found, pop it off the queue and contract it
-    const v = bh.extractMinimum();
-    // console.time('innerLoop');
-    contract(v.value, false);
-    // console.timeEnd('innerLoop');
+    const v = nh.pop();
+
+    contract(v.id, false);
+
     // keep a record of contraction level of each node
-    contracted_nodes[v.value] = contraction_level;
+    contracted_nodes[v.id] = contraction_level;
     contraction_level++;
 
-    // console.timeEnd('loop');
   }
 
   // remove links to lower ranked nodes
-  Object.keys(adjacency_list).forEach(from_coords => {
-    const from_rank = contracted_nodes[from_coords];
-    adjacency_list[from_coords] = adjacency_list[from_coords].filter(
+  Object.keys(graph.adjacency_list).forEach(node => {
+    const from_rank = contracted_nodes[node];
+    graph.adjacency_list[node] = graph.adjacency_list[node].filter(
       to_coords => {
-        const to_rank = contracted_nodes[to_coords];
+        const to_rank = contracted_nodes[to_coords.end];
         return from_rank < to_rank;
       }
     );
   });
 
-  return [adjacency_list, edge_hash, contracted_nodes];
+  // this was returning an adjacency list, edge list, and list of contracted nodes
+  // but now, we can just store the contracted nodes on the graph
+  // and return nothing
+
+  graph.contracted_nodes = contracted_nodes;
+
+  return;
 
   // this function is multi-use:  actually contract a node  OR
   // with `get_count_only = true` find number of shortcuts added
   // if node were to be contracted
+
   function contract(v, get_count_only) {
 
-    if (!get_count_only && debug) {
-      console.log('-------------------------------------');
-      console.log('contract: ' + v);
-    }
-
-    const connections = adjacency_list[v].filter(c => {
-      return !contracted_nodes[c];
+    const from_connections = (reverse_adj[v] || []).filter(c => {
+      return !contracted_nodes[c.end];
     });
 
-    // console.log({ connections })
+    const to_connections = (graph.adjacency_list[v] || []).filter(c => {
+      return !contracted_nodes[c.end];
+    });
 
     let shortcut_count = 0;
 
-    connections.forEach(u => {
+    // TODO from
+    to_connections.forEach(u => {
 
       let max_total = 0;
 
       // dist u to v
-      const dist1 = edge_hash[`${u}|${v}`].properties[cost_field];
+      const dist1 = u.cost;
 
-      connections.forEach(w => {
+      to_connections.forEach(w => {
 
         // ignore node to itself
-        if (u === w) {
+        if (u.end === w.end) {
           return;
         }
 
         // dist v to w
-        const dist2 = edge_hash[`${v}|${w}`].properties[cost_field];
+        const dist2 = w.cost;
+
         const total = dist1 + dist2;
 
         if (total > max_total) {
@@ -142,162 +171,139 @@ function contractGraph(geojson, options) {
       });
 
       const path = runDijkstra(
-        adjacency_list,
-        edge_hash,
-        u,
+        graph, u.end,
         null,
-        cost_field,
         v,
         max_total
       );
 
-      connections.forEach(w => {
+      to_connections.forEach(w => {
         // ignore node
-        if (u === w) {
+        if (u.end === w.end) {
           return;
         }
 
         // dist v to w
-        const dist2 = edge_hash[`${v}|${w}`].properties[cost_field];
+        const dist2 = w.cost;
         const total = dist1 + dist2;
 
-        const dijkstra = path.distances[w] || Infinity;
+        const dijkstra = path.distances[w.end] || Infinity;
 
         // Infinity does happen - what are the consequences
-        if (!get_count_only && debug) {
-          console.log({ u, w, v });
-          console.log({ path: path.distances[w] });
-          console.log({ total });
-          console.log({ dijkstra });
-        }
-
         if (total < dijkstra) {
-          if (!get_count_only && debug) {
-            console.log('shortcut !');
-          }
 
           shortcut_count++;
 
-          //console.log({ edge: 'edge', u, w })
-
           if (!get_count_only) {
 
-            adjacency_list[u].push(w);
-
-            const seg1_id = edge_hash[`${u}|${v}`].properties._id;
-            const seg2_id = edge_hash[`${v}|${w}`].properties._id;
-
             const attrs = {
-              [cost_field]: total,
-              ID: `${seg1_id},${seg2_id}`
+              _cost: total,
+              _id: `${u.attributes._id},${w.attributes._id}`
             };
 
+            const s = u.end.split(',').map(d => Number(d));
+            const e = w.end.split(',').map(d => Number(d));
 
-            edge_hash[`${u}|${w}`] = {
-              properties: attrs
-            };
+            graph.addEdge(s, e, attrs, true);
 
-            edge_hash[`${w}|${u}`] = {
-              properties: attrs
-            };
           }
         }
       });
+
     });
+
     return shortcut_count;
   }
 
   function runDijkstra(
-    adj_list,
-    edge_hash,
+    graph,
     start,
     end,
-    cost_field,
     vertex,
     total
   ) {
 
+    graph.pool.reset();
+
+    const str_start = String(start);
+    const str_end = String(end);
+
+    const nodeState = new Map();
+
+    const distances = {};
+
+    var openSet = new NodeHeap(null, { rank: 'dist' });
+
+    let current = graph.pool.createNewState({ id: str_start, dist: 0 });
+    nodeState.set(str_start, current);
+    current.opened = 1;
+    distances[current.id] = 0;
+
     // quick exit for start === end
-    if (start === end) {
-      return {
-        distance: 0,
-        segments: [],
-        route: {
-          type: 'FeatureCollection',
-          features: []
-        }
-      };
+    if (str_start === str_end) {
+      current = '';
     }
 
-    if (debug) {
-      console.log('dij', { start, end, vertex });
-    }
+    // TODO problem???? heuristic on by default
+    while (current) {
 
-    const heap = new FibonacciHeap();
-    const key_to_nodes = {};
-
-    const dist = {}; // distances to each node
-    const prev = {}; // node to parent_node lookup
-    const visited = {}; // node has been fully explored
-
-    let current = start;
-    let current_key = 0;
-    dist[start] = 0;
-
-    do {
-
-      adj_list[current]
-        .filter(node => {
-          // maybe not necessary?
-          // this is a modification for contraction hierarchy.  otherwise vertex===undefined
-          return node !== vertex;
+      graph.adjacency_list[current.id]
+        .filter(edge => {
+          // this is a modification for contraction hierarchy
+          // otherwise vertex===undefined
+          return edge.end !== vertex;
         })
-        .forEach(node => {
+        .forEach(edge => {
 
-          if (visited[node]) {
+          let node = nodeState.get(edge.end);
+          if (node === undefined) {
+            node = graph.pool.createNewState({ id: edge.end });
+            nodeState.set(edge.end, node);
+          }
+
+          if (node.visited === true) {
             return;
           }
 
-          const segment_distance =
-            edge_hash[`${current}|${node}`].properties[cost_field];
-          const proposed_distance = dist[current] + segment_distance;
 
-          if (proposed_distance < getComparator(dist[node])) {
-            if (dist[node] !== undefined) {
-              heap.decreaseKey(key_to_nodes[node], proposed_distance);
-            }
-            else {
-              key_to_nodes[node] = heap.insert(proposed_distance, node);
-            }
-            dist[node] = proposed_distance;
-            prev[node] = current;
+          if (!node.opened) {
+            openSet.push(node);
+            node.opened = true;
           }
+
+          const proposed_distance = current.dist + edge.cost;
+          if (proposed_distance >= node.dist) {
+            return;
+          }
+
+          node.dist = proposed_distance;
+          distances[node.id] = proposed_distance;
+          node.prev = current.id;
+
+          openSet.updateItem(node.heapIndex);
         });
-      visited[current] = true;
-      const settled_key = current_key;
+
+      current.visited = true;
+      const settled_amt = current.dist;
 
       // get lowest value from heap
-      const elem = heap.extractMinimum();
-
-      if (elem) {
-        current = elem.value;
-        current_key = elem.key;
-      }
-      else {
-        current = '';
-      }
+      current = openSet.pop();
 
       // exit early if current node becomes end node
-      if (current === end) {
+      if (current && (current.id === end)) {
         current = '';
       }
 
       // stopping condition
-      if (settled_key > total) {
+      if (settled_amt > total) {
         current = '';
       }
-    } while (current);
+    }
 
-    return { distances: dist };
+    // total cost included by default
+    let response = { distances };
+
+
+    return response;
   }
 }

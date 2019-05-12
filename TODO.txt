@@ -1,48 +1,38 @@
 
-    // reverse_adj list on CH broken
-
-    // AStar the CH?
-
-    // API change: findPath, findAStar
-    
-    // directed graph is broken (probably)
-
-convert back to adjacency_list connections as edge objects model, rather than STR coordinate with lookup
-
-delete old edges instead of filtering through them?
-
-apply A* to network contraction?
-
+CH
+----------
+reverse_adj list on CH broken
+AStar the CH (routing)?
+apply A* to network contraction (building)?
 add outputFunctions (like in geojson dijkstra)
+directed graph (start from beginning)
+load / save keeping minimal memory footprint
+publish CH
 
-tailor new dijkstra to all alternate uses (contraction hierarchy and arcflags)
-
-LOL - loadFromGeoJson should be replaced by new Graph(geojson)!
+Geojson Dijkstra
+------------
+loadFromGeoJson should be replaced by new Graph(geojson)!
 mutate inputs documentation
+API change: findPath, findAStar
+re-benchmark geojson-dijkstra vs ngraph
+directed graph (start from beginning)
+load / save keeping minimal memory footprint
+re-publish geojson dijkstra 2.0 with updated info about CH
 
-graph.properties, geometry should be array.  placement_index an integer.
-
-TEST directed graph
- -- TEST directed graph from geojson extension
-
-check edge creation for building CH (using sample-ch.geojson)
- - does it make sense?
-
-clean out common.js
 
 BENCHMARK SO FAR
 --------
 Benchmark faf.geojson, CA, OR, WA
 
-TimeToContract: 209868, 210000~ 185013 163293
-        before after
-ngraph: 92250, 107195 118439 118702
-ch:     14319, 8864   5835   5188!
+TimeToContract: 209868, 163293
+ngraph:         92250,  118702
+ch:             14319,  5188
 
 OTHER
 ------
 
 join alike and cut at intersections should have a recompute line length option
+where should create-network live? it's specific to faf
 
 
 BUILDING CH && ARCFLAGS

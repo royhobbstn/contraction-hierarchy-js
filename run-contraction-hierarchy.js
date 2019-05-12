@@ -1,58 +1,53 @@
 //
 
-const { toBestRoute, getComparator } = require('./common.js');
-const FibonacciHeap = require('@tyriar/fibonacci-heap').FibonacciHeap;
+const NodeHeap = require('../geojson-dijkstra/queue.js');
 
 
 exports.queryContractionHierarchy = queryContractionHierarchy;
 
 function queryContractionHierarchy(
-  adj_list,
-  edge_hash,
+  graph,
   start,
-  end,
-  cost_field,
-  node_rank,
-  id_list
+  end
 ) {
-  // quick exit for start === end
-  if (start === end) {
-    return {
-      distance: 0,
-      segments: [],
-      route: {
-        type: 'FeatureCollection',
-        features: []
-      }
-    };
-  }
 
-  const forward = {};
-  forward.dist = {};
-  forward.dist[start] = 0;
-  const backward = {};
-  backward.dist = {};
-  backward.dist[end] = 0;
+  graph.pool.reset();
+
+  const str_start = String(start);
+  const str_end = String(end);
+
+  const forward_nodeState = new Map();
+  const backward_nodeState = new Map();
+
+  const forward_distances = {};
+  const backward_distances = {};
+
+
+  let current_start = graph.pool.createNewState({ id: str_start, dist: 0 });
+  forward_nodeState.set(str_start, current_start);
+  current_start.opened = 1;
+  forward_distances[current_start.id] = 0;
+
+  let current_end = graph.pool.createNewState({ id: str_end, dist: 0 });
+  backward_nodeState.set(str_end, current_end);
+  current_end.opened = 1;
+  backward_distances[current_end.id] = 0;
 
   const searchForward = doDijkstra(
-    adj_list,
-    edge_hash,
-    forward,
-    start,
-    cost_field,
-    node_rank,
+    current_start,
     'forward',
-    backward
+    forward_nodeState,
+    forward_distances,
+    backward_nodeState,
+    backward_distances
   );
   const searchBackward = doDijkstra(
-    adj_list,
-    edge_hash,
-    backward,
-    end,
-    cost_field,
-    node_rank,
+    current_end,
     'backward',
-    forward
+    backward_nodeState,
+    backward_distances,
+    forward_nodeState,
+    forward_distances
   );
 
   let forward_done = false;
@@ -62,143 +57,150 @@ function queryContractionHierarchy(
   let tentative_shortest_path = Infinity;
   let tentative_shortest_node = null;
 
-  do {
-    if (!forward_done) {
-      sf = searchForward.next();
-      if (sf.done) {
-        forward_done = true;
+  if (str_start !== str_end) {
+    do {
+      if (!forward_done) {
+        sf = searchForward.next();
+        if (sf.done) {
+          forward_done = true;
+        }
       }
-    }
-    if (!backward_done) {
-      sb = searchBackward.next();
-      if (sb.done) {
-        backward_done = true;
+      if (!backward_done) {
+        sb = searchBackward.next();
+        if (sb.done) {
+          backward_done = true;
+        }
       }
-    }
-  } while (
-    forward.dist[sf.value] < tentative_shortest_path ||
-    backward.dist[sb.value] < tentative_shortest_path
-  );
 
-  const geojson_forward = toBestRoute(
-    tentative_shortest_node,
-    forward.prev,
-    edge_hash
-  );
-  const geojson_backward = toBestRoute(
-    tentative_shortest_node,
-    backward.prev,
-    edge_hash
-  );
+    } while (
+      forward_distances[sf.value.id] < tentative_shortest_path ||
+      backward_distances[sb.value.id] < tentative_shortest_path
+    );
+  }
+  else {
+    tentative_shortest_path = 0;
+  }
 
-  const ff = geojson_forward.features.reduce((acc, g) => {
-    const id = g.properties.ID;
-    if (typeof id === 'string') {
-      const nums = id.split(',');
-      acc = [...acc, ...nums];
-    }
-    else if (typeof id === 'number') {
-      acc.push(String(id));
-    }
-    return acc;
-  }, []);
+  // const geojson_forward = toBestRoute(
+  //   tentative_shortest_node,
+  //   forward.prev
+  // );
+  // const geojson_backward = toBestRoute(
+  //   tentative_shortest_node,
+  //   backward.prev
+  // );
 
-  const bb = geojson_backward.features.reduce((acc, g) => {
-    const id = g.properties.ID;
-    if (typeof id === 'string') {
-      const nums = id.split(',');
-      acc = [...acc, ...nums];
-    }
-    else if (typeof id === 'number') {
-      acc.push(String(id));
-    }
-    return acc;
-  }, []);
+  // const ff = geojson_forward.features.reduce((acc, g) => {
+  //   const id = g.properties.ID;
+  //   if (typeof id === 'string') {
+  //     const nums = id.split(',');
+  //     acc = [...acc, ...nums];
+  //   }
+  //   else if (typeof id === 'number') {
+  //     acc.push(String(id));
+  //   }
+  //   return acc;
+  // }, []);
 
-  const fc = {
-    type: 'FeatureCollection',
-    features: ff.map(d => id_list[d])
-  };
+  // const bb = geojson_backward.features.reduce((acc, g) => {
+  //   const id = g.properties.ID;
+  //   if (typeof id === 'string') {
+  //     const nums = id.split(',');
+  //     acc = [...acc, ...nums];
+  //   }
+  //   else if (typeof id === 'number') {
+  //     acc.push(String(id));
+  //   }
+  //   return acc;
+  // }, []);
 
-  const bc = {
-    type: 'FeatureCollection',
-    features: bb.map(d => id_list[d])
-  };
+  // const fc = {
+  //   type: 'FeatureCollection',
+  //   features: ff.map(d => id_list[d])
+  // };
 
-  const raw_combined = [
-    ...geojson_forward.features,
-    ...geojson_backward.features
-  ];
-  const raw_segments = raw_combined.map(f => f.properties.ID);
-  const geojson_combined = [...fc.features, ...bc.features];
-  const segments = geojson_combined.map(f => f.properties.ID);
-  const distance = geojson_combined.reduce((acc, feat) => {
-    return acc + feat.properties[cost_field];
-  }, 0);
+  // const bc = {
+  //   type: 'FeatureCollection',
+  //   features: bb.map(d => id_list[d])
+  // };
 
-  segments.sort((a, b) => a - b);
+  // const raw_combined = [
+  //   ...geojson_forward.features,
+  //   ...geojson_backward.features
+  // ];
+  // const raw_segments = raw_combined.map(f => f.properties.ID);
+  // const geojson_combined = [...fc.features, ...bc.features];
+  // const segments = geojson_combined.map(f => f.properties.ID);
+  // const distance = geojson_combined.reduce((acc, feat) => {
+  //   return acc + feat.properties[cost_field];
+  // }, 0);
 
-  const route = {
-    type: 'FeatureCollection',
-    features: geojson_combined
-  };
+  // segments.sort((a, b) => a - b);
 
-  return { distance, segments, route, raw_segments };
+  // const route = {
+  //   type: 'FeatureCollection',
+  //   features: geojson_combined
+  // };
+
+  return { distance: tentative_shortest_path /*, segments, route, raw_segments */ };
 
   function* doDijkstra(
-    graph,
-    edge_hash,
-    ref,
     current,
-    cost_field,
-    node_rank,
     direction,
-    reverse_ref
+    nodeState,
+    distances,
+    reverse_nodeState,
+    reverse_distances
   ) {
-    const heap = new FibonacciHeap();
-    const key_to_nodes = {};
 
-    ref.prev = {}; // node to parent_node lookup
-    ref.visited = {}; // node has been fully explored
-    ref.dist[current] = 0;
+    var openSet = new NodeHeap(null, { rank: 'dist' });
 
     do {
-      graph[current].forEach(node => {
 
-        const segment_distance =
-          edge_hash[`${current}|${node}`].properties[cost_field];
-        const proposed_distance = ref.dist[current] + segment_distance;
+      graph.adjacency_list[current.id].forEach(edge => {
 
-        if (proposed_distance < getComparator(ref.dist[node])) {
+        let node = nodeState.get(edge.end);
+        if (node === undefined) {
+          node = graph.pool.createNewState({ id: edge.end });
+          nodeState.set(edge.end, node);
+        }
 
-          if (ref.dist[node] !== undefined) {
-            heap.decreaseKey(key_to_nodes[node], proposed_distance);
+        if (node.visited === true) {
+          return;
+        }
+
+        if (!node.opened) {
+          openSet.push(node);
+          node.opened = true;
+        }
+
+        const proposed_distance = current.dist + edge.cost;
+        if (proposed_distance >= node.dist) {
+          return;
+        }
+
+        node.dist = proposed_distance;
+        distances[node.id] = proposed_distance;
+        node.prev = current.id;
+
+        openSet.updateItem(node.heapIndex);
+
+        const reverse_dist = reverse_distances[edge.end];
+        if (reverse_dist >= 0) {
+          const path_len = proposed_distance + reverse_dist;
+          if (tentative_shortest_path > path_len) {
+            tentative_shortest_path = path_len;
+            tentative_shortest_node = edge.end;
           }
-          else {
-            key_to_nodes[node] = heap.insert(proposed_distance, node);
-          }
-          if (reverse_ref.dist[node] >= 0) {
-            const path_len = proposed_distance + reverse_ref.dist[node];
-            if (tentative_shortest_path > path_len) {
-              tentative_shortest_path = path_len;
-              tentative_shortest_node = node;
-            }
-          }
-          ref.dist[node] = proposed_distance;
-          ref.prev[node] = current;
         }
 
       });
-      ref.visited[current] = true;
+      current.visited = true;
 
-      // get lowest value from heaps
-      const elem = heap.extractMinimum();
+      // get lowest value from heap
+      current = openSet.pop();
 
-      if (elem) {
-        current = elem.value;
-      }
-      else {
-        current = '';
+      if (!current) {
         return '';
       }
 

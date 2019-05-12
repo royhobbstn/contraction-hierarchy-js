@@ -1,20 +1,14 @@
 const createGraph = require('ngraph.graph');
 const pathNGraph = require('ngraph.path');
 
-const { Graph } = require('../geojson-dijkstra/index.js');
+const { Graph } = require('../../geojson-dijkstra/index.js');
 
 // load utility functions
-const { readyNetwork, cleanseNetwork, getNGraphDist, populateNGraph } = require('./common.js');
+const { readyNetwork, cleanseNetwork, getNGraphDist, populateNGraph } = require('./test-util.js');
 
 // load contraction hierarchy version bidirectional dijkstra
-const {
-  queryContractionHierarchy
-} = require('./alt-run-contraction-hierarchy');
-
-
-const { contractGraph } = require('./alt-build-contraction-hierarchy.js');
-
-
+const { queryContractionHierarchy } = require('../run-contraction-hierarchy');
+const { contractGraph } = require('../build-contraction-hierarchy.js');
 
 main();
 
