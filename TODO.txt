@@ -1,36 +1,38 @@
+Here's an interesting edge case:
+341 [ '-117.958443,33.853954', '-115.551277,32.76506' ] 0 Infinity
+(probably disconnected network area ... need this to be 0)
+
+-122 lng somehow ended up as -22?
 
 CH
 ----------
-reverse_adj list on CH broken
 AStar the CH (routing)?
 apply A* to network contraction (building)?
-add outputFunctions (like in geojson dijkstra)
 directed graph (start from beginning)
 load / save keeping minimal memory footprint
 publish CH
 
 Geojson Dijkstra
 ------------
-loadFromGeoJson should be replaced by new Graph(geojson)!
-mutate inputs documentation
 API change: findPath, findAStar
 re-benchmark geojson-dijkstra vs ngraph
 directed graph (start from beginning)
 load / save keeping minimal memory footprint
 re-publish geojson dijkstra 2.0 with updated info about CH
 
+some unit tests once things are settled?
 
 BENCHMARK SO FAR
 --------
 Benchmark faf.geojson, CA, OR, WA
 
-TimeToContract: 209868, 163293
-ngraph:         92250,  118702
-ch:             14319,  5188
+TimeToContract: 209868, 163293, 183686
+ngraph:         92250,  118702, 108889
+ch:             14319,  5188,   6573
 
 OTHER
 ------
-
+Maybe reconsider how to create CH ids/geojson without ancillary data structures
 join alike and cut at intersections should have a recompute line length option
 where should create-network live? it's specific to faf
 

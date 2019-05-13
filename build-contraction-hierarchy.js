@@ -16,24 +16,20 @@ function createReverseAdjList(graph) {
 
   Object.keys(graph.adjacency_list).forEach(node => {
     graph.adjacency_list[node].forEach(edge => {
-      // reverse obj
-      const reverse_obj = {
-        start: edge.end,
+
+      const obj = {
         end: edge.start,
-        start_lat: edge.end_lat,
-        start_lng: edge.end_lng,
-        end_lat: edge.start_lat,
-        end_lng: edge.start_lng,
         cost: edge.cost,
-        attributes: edge.attributes,
-        geometry: edge.geometry
+        id: edge.id,
+        attributes: edge.attributes
       };
-      // add reversed obj to reverse adj list
-      if (!reverse_adj[reverse_obj.start]) {
-        reverse_adj[reverse_obj.start] = [reverse_obj];
+
+      // add edge to reverse adj list
+      if (!reverse_adj[edge.end]) {
+        reverse_adj[edge.end] = [obj];
       }
       else {
-        reverse_adj[reverse_obj.start].push(reverse_obj);
+        reverse_adj[edge.end].push(obj);
       }
 
     });
@@ -43,9 +39,47 @@ function createReverseAdjList(graph) {
   return reverse_adj;
 }
 
+function createPathLookup(graph) {
+
+  // create an id lookup
+  const path_lookup = {};
+
+  Object.keys(graph.adjacency_list).forEach(node => {
+    graph.adjacency_list[node].forEach(edge => {
+      path_lookup[`${edge.start}|${edge.end}`] = edge.attributes._id;
+    });
+  });
+
+  return path_lookup;
+}
+
+function createEdgeIdLookup(graph) {
+
+  // create an edge lookup
+  const edge_lookup = {};
+
+  Object.keys(graph.adjacency_list).forEach(node => {
+    graph.adjacency_list[node].forEach(edge => {
+      edge_lookup[edge.attributes._id] = edge;
+    });
+  });
+
+  return edge_lookup;
+}
+
 function contractGraph(graph) {
 
+  // for constructing hierarchy, to be able to quickly determine which edges lead to a specific vertex
   const reverse_adj = createReverseAdjList(graph);
+
+  // TODO, future, hope to avoid the below steps and instead use node.prev_edge
+  // and recursively step through
+
+  // when creating a geoJson path, to be able to quickly reference edge information by segment _id
+  graph.path_lookup = createPathLookup(graph);
+
+  // be able to quickly look up edge information from an _id
+  graph.edge_lookup = createEdgeIdLookup(graph);
 
   const nh = new NodeHeap(null, { rank: 'score' });
 
@@ -145,8 +179,7 @@ function contractGraph(graph) {
 
     let shortcut_count = 0;
 
-    // TODO from
-    to_connections.forEach(u => {
+    from_connections.forEach(u => {
 
       let max_total = 0;
 
@@ -198,13 +231,34 @@ function contractGraph(graph) {
 
             const attrs = {
               _cost: total,
-              _id: `${u.attributes._id},${w.attributes._id}`
+              _id: `${u.attributes._id},${w.attributes._id}`,
+              _attrs_array: [u, w]
             };
 
             const s = u.end.split(',').map(d => Number(d));
             const e = w.end.split(',').map(d => Number(d));
 
-            graph.addEdge(s, e, attrs, true);
+            // todo?  does this work in directed network??
+            // should it only be added one-way?
+            graph.addEdge(s, e, attrs, false);
+
+            // add to reverse adj list
+            const obj = {
+              start: u.end,
+              end: w.end,
+              attributes: attrs,
+              cost: total
+            };
+
+            if (reverse_adj[s]) {
+              reverse_adj[s].push(obj);
+            }
+            else {
+              reverse_adj[s] = [obj];
+            }
+
+            // add to pathIdLookup
+            graph.path_lookup[`${u.end}|${w.end}`] = attrs._id;
 
           }
         }

@@ -81,68 +81,13 @@ function queryContractionHierarchy(
     tentative_shortest_path = 0;
   }
 
-  // const geojson_forward = toBestRoute(
-  //   tentative_shortest_node,
-  //   forward.prev
-  // );
-  // const geojson_backward = toBestRoute(
-  //   tentative_shortest_node,
-  //   backward.prev
-  // );
 
-  // const ff = geojson_forward.features.reduce((acc, g) => {
-  //   const id = g.properties.ID;
-  //   if (typeof id === 'string') {
-  //     const nums = id.split(',');
-  //     acc = [...acc, ...nums];
-  //   }
-  //   else if (typeof id === 'number') {
-  //     acc.push(String(id));
-  //   }
-  //   return acc;
-  // }, []);
+  const result = buildIdsCH(graph, forward_nodeState, backward_nodeState, tentative_shortest_node, start, end);
 
-  // const bb = geojson_backward.features.reduce((acc, g) => {
-  //   const id = g.properties.ID;
-  //   if (typeof id === 'string') {
-  //     const nums = id.split(',');
-  //     acc = [...acc, ...nums];
-  //   }
-  //   else if (typeof id === 'number') {
-  //     acc.push(String(id));
-  //   }
-  //   return acc;
-  // }, []);
+  console.log(JSON.stringify(result.geojsonPath));
 
-  // const fc = {
-  //   type: 'FeatureCollection',
-  //   features: ff.map(d => id_list[d])
-  // };
+  return { distance: tentative_shortest_path, segments: result.ids, route: result.geojsonPath };
 
-  // const bc = {
-  //   type: 'FeatureCollection',
-  //   features: bb.map(d => id_list[d])
-  // };
-
-  // const raw_combined = [
-  //   ...geojson_forward.features,
-  //   ...geojson_backward.features
-  // ];
-  // const raw_segments = raw_combined.map(f => f.properties.ID);
-  // const geojson_combined = [...fc.features, ...bc.features];
-  // const segments = geojson_combined.map(f => f.properties.ID);
-  // const distance = geojson_combined.reduce((acc, feat) => {
-  //   return acc + feat.properties[cost_field];
-  // }, 0);
-
-  // segments.sort((a, b) => a - b);
-
-  // const route = {
-  //   type: 'FeatureCollection',
-  //   features: geojson_combined
-  // };
-
-  return { distance: tentative_shortest_path /*, segments, route, raw_segments */ };
 
   function* doDijkstra(
     current,
@@ -207,5 +152,70 @@ function queryContractionHierarchy(
       yield current;
 
     } while (true);
+
   }
+
+
+}
+
+
+
+function buildIdsCH(graph, forward_nodeState, backward_nodeState, tentative_shortest_node, start, end) {
+
+  const ids = [];
+
+  if (start === end) {
+    return { geojsonPath: ids };
+  }
+
+  let forward_path = forward_nodeState.get(tentative_shortest_node);
+
+  while (forward_path && forward_path.prev) {
+    const feature_ids = graph.path_lookup[`${forward_path.prev}|${forward_path.id}`];
+    if (typeof feature_ids === 'string') {
+      // a CH edge
+      ids.push(...feature_ids.split(',').map(d => Number(d)));
+    }
+    else {
+      // regular network edge
+      ids.push(feature_ids);
+    }
+    forward_path = forward_nodeState.get(forward_path.prev);
+  }
+
+  ids.reverse();
+
+  let backward_path = backward_nodeState.get(tentative_shortest_node);
+
+  while (backward_path && backward_path.prev) {
+    const feature_ids = graph.path_lookup[`${backward_path.id}|${backward_path.prev}`];
+    if (typeof feature_ids === 'string') {
+      // a CH edge
+      ids.push(...feature_ids.split(',').map(d => Number(d)));
+    }
+    else {
+      // regular network edge
+      ids.push(feature_ids);
+    }
+    backward_path = backward_nodeState.get(backward_path.prev);
+  }
+
+  // TODO split this off?
+
+  const geojsonPath = {
+    type: 'FeatureCollection',
+    features: ids.map(id => {
+      const edge = graph.edge_lookup[id];
+      return {
+        "type": "Feature",
+        "properties": edge.attributes,
+        "geometry": {
+          "type": "LineString",
+          "coordinates": edge.geometry
+        }
+      };
+    })
+  };
+
+  return { ids, geojsonPath };
 }
