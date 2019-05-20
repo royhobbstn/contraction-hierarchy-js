@@ -26,7 +26,6 @@ async function readyNetwork() {
       return true;
     }
   });
-  console.log(geojson.features.length)
 
   return geojson;
 }
@@ -125,29 +124,39 @@ function populateNGraph(ngraph, geojson) {
   geojson.features.forEach(feature => {
     const start = feature.geometry.coordinates[0];
     const end = feature.geometry.coordinates[feature.geometry.coordinates.length - 1];
-    const properties = Object.assign({}, feature.properties, { _geometry: feature.geometry.coordinates });
 
     ngraph.addNode(String(start), { lng: start[0], lat: start[1] });
     ngraph.addNode(String(end), { lng: end[0], lat: end[1] });
+
+    const properties = Object.assign({}, feature.properties, { _geometry: feature.geometry.coordinates });
+
     ngraph.addLink(String(start), String(end), properties);
-    ngraph.addLink(String(end), String(start), properties);
+
+    if (properties._direction !== 'f') {
+      ngraph.addLink(String(end), String(start), properties);
+    }
+
   });
 
 }
 
 function getNGraphDist(path) {
+
   const edge_ids = [];
   let distance = 0;
 
   for (let i = 0; i < path.length - 1; i++) {
     const start_node = path[i].id;
     const end_node = path[i + 1].id;
+
     path[i]['links'].forEach(link => {
-      if ((link.fromId === start_node && link.toId === end_node)) {
-        edge_ids.push(link.data.ID);
+      if ((link.toId === start_node && link.fromId === end_node)) {
+        edge_ids.push(link.data._id);
         distance += link.data._cost;
       }
+
     });
+
   }
 
   return { edgelist: edge_ids.reverse(), distance };

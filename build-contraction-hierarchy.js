@@ -1,5 +1,5 @@
 //
-const NodeHeap = require('../geojson-dijkstra/queue.js');
+const NodeHeap = require('./queue.js');
 
 exports.contractGraph = contractGraph;
 
@@ -67,7 +67,11 @@ function createEdgeIdLookup(graph) {
   return edge_lookup;
 }
 
+
 function contractGraph(graph) {
+
+  // initialize dijkstra shortcut/path finder
+  const finder = createChShortcutter(graph);
 
   // for constructing hierarchy, to be able to quickly determine which edges lead to a specific vertex
   const reverse_adj = createReverseAdjList(graph);
@@ -81,7 +85,11 @@ function contractGraph(graph) {
   // be able to quickly look up edge information from an _id
   graph.edge_lookup = createEdgeIdLookup(graph);
 
-  const nh = new NodeHeap(null, { rank: 'score' });
+  const nh = new NodeHeap({
+    compare(a, b) {
+      return a.score - b.score;
+    }
+  });
 
   const contraction_order_nodes = {};
   const contracted_nodes = {};
@@ -203,7 +211,7 @@ function contractGraph(graph) {
         }
       });
 
-      const path = runDijkstra(
+      const path = finder.runDijkstra(
         graph, u.end,
         null,
         v,
@@ -240,7 +248,7 @@ function contractGraph(graph) {
 
             // todo?  does this work in directed network??
             // should it only be added one-way?
-            graph.addEdge(s, e, attrs, false);
+            graph._addEdge(s, e, attrs, false);
 
             // add to reverse adj list
             const obj = {
@@ -269,6 +277,20 @@ function contractGraph(graph) {
     return shortcut_count;
   }
 
+}
+
+
+
+
+function createChShortcutter(graph) {
+
+  const pool = createNodePool();
+  const adjacency_list = graph.adjacency_list;
+
+  return {
+    runDijkstra
+  };
+
   function runDijkstra(
     graph,
     start,
@@ -277,7 +299,7 @@ function contractGraph(graph) {
     total
   ) {
 
-    graph.pool.reset();
+    pool.reset();
 
     const str_start = String(start);
     const str_end = String(end);
@@ -286,9 +308,13 @@ function contractGraph(graph) {
 
     const distances = {};
 
-    var openSet = new NodeHeap(null, { rank: 'dist' });
+    var openSet = new NodeHeap({
+      compare(a, b) {
+        return a.dist - b.dist;
+      }
+    });
 
-    let current = graph.pool.createNewState({ id: str_start, dist: 0 });
+    let current = pool.createNewState({ id: str_start, dist: 0 });
     nodeState.set(str_start, current);
     current.opened = 1;
     distances[current.id] = 0;
@@ -298,10 +324,9 @@ function contractGraph(graph) {
       current = '';
     }
 
-    // TODO problem???? heuristic on by default
     while (current) {
 
-      graph.adjacency_list[current.id]
+      adjacency_list[current.id]
         .filter(edge => {
           // this is a modification for contraction hierarchy
           // otherwise vertex===undefined
@@ -311,7 +336,7 @@ function contractGraph(graph) {
 
           let node = nodeState.get(edge.end);
           if (node === undefined) {
-            node = graph.pool.createNewState({ id: edge.end });
+            node = pool.createNewState({ id: edge.end });
             nodeState.set(edge.end, node);
           }
 
@@ -360,4 +385,54 @@ function contractGraph(graph) {
 
     return response;
   }
+
+}
+
+
+
+
+function Node(node, heuristic) {
+  this.id = node.id;
+  this.dist = node.dist !== undefined ? node.dist : Infinity;
+  this.prev = undefined;
+  this.visited = undefined;
+  this.opened = false; // whether has been put in queue
+  this.heapIndex = -1;
+  this.score = Infinity;
+  this.heuristic = heuristic;
+}
+
+function createNodePool() {
+  var currentInCache = 0;
+  var nodeCache = [];
+
+  return {
+    createNewState: createNewState,
+    reset: reset
+  };
+
+  function reset() {
+    currentInCache = 0;
+  }
+
+  function createNewState(node, heuristic) {
+    var cached = nodeCache[currentInCache];
+    if (cached) {
+      cached.id = node.id;
+      cached.dist = node.dist !== undefined ? node.dist : Infinity;
+      cached.prev = undefined;
+      cached.visited = undefined;
+      cached.opened = false;
+      cached.heapIndex = -1;
+      cached.score = Infinity;
+      cached.heuristic = heuristic;
+    }
+    else {
+      cached = new Node(node, heuristic);
+      nodeCache[currentInCache] = cached;
+    }
+    currentInCache++;
+    return cached;
+  }
+
 }

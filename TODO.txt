@@ -1,60 +1,37 @@
-Here's an interesting edge case:
-341 [ '-117.958443,33.853954', '-115.551277,32.76506' ] 0 Infinity
-(probably disconnected network area ... need this to be 0)
 
--122 lng somehow ended up as -22?
+
+create finder for queryContractionHierarchy
 
 CH
 ----------
-AStar the CH (routing)?
-apply A* to network contraction (building)?
-directed graph (start from beginning)
-load / save keeping minimal memory footprint
+duplication of queue
+duplication of node pool
+duplication of test/util
+
+Maybe reconsider how to create CH ids/geojson without ancillary data structures
+make sure geojson is ordered properly
+
+directed graph - please just work??
+load / save CH keeping minimal memory footprint
 publish CH
 
-Geojson Dijkstra
-------------
-API change: findPath, findAStar
-re-benchmark geojson-dijkstra vs ngraph
-directed graph (start from beginning)
-load / save keeping minimal memory footprint
-re-publish geojson dijkstra 2.0 with updated info about CH
 
-some unit tests once things are settled?
 
 BENCHMARK SO FAR
 --------
 Benchmark faf.geojson, CA, OR, WA
 
-TimeToContract: 209868, 163293, 183686
-ngraph:         92250,  118702, 108889
-ch:             14319,  5188,   6573
+TimeToContract: 209868, 163293, 183686, 217732
+ngraph:         92250,  118702, 108889, 111203
+ch:             14319,  5188,   6573,   7971
 
 OTHER
 ------
-Maybe reconsider how to create CH ids/geojson without ancillary data structures
-join alike and cut at intersections should have a recompute line length option
-where should create-network live? it's specific to faf
-
-
-BUILDING CH && ARCFLAGS
----------------------------
-
-make contraction hierarchy building process faster
--limit hops speed up contraction hierarchy?
-
-michigan non-contiguous kmeans -is this a problem?  Research METIS
-
-Cut ArcFlags processing time by using contraction hierarchy instead of std dijkstra
-
-2 tiered arcFlags??
+move create-network to network_api/reduceNetwork and incorporate this change:
+   - join alike and cut at intersections should have a recompute line length option
 
 
 BIG PICTURE
 --------------
-
-Integrate CH with ArcFlags - if it doesnt immediately improve performance... can it!
-
-golang or native node addon build-hierarchy and build-arcflags
-
-C++ implementation for runDijkstra webAssembly
+Integrate CH with ArcFlags?
+golang or native node addon

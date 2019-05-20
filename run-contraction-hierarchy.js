@@ -1,6 +1,6 @@
 //
 
-const NodeHeap = require('../geojson-dijkstra/queue.js');
+const NodeHeap = require('./queue.js');
 
 
 exports.queryContractionHierarchy = queryContractionHierarchy;
@@ -8,8 +8,13 @@ exports.queryContractionHierarchy = queryContractionHierarchy;
 function queryContractionHierarchy(
   graph,
   start,
-  end
+  end,
+  options
 ) {
+
+  if (!options) {
+    options = {};
+  }
 
   graph.pool.reset();
 
@@ -81,12 +86,24 @@ function queryContractionHierarchy(
     tentative_shortest_path = 0;
   }
 
+  let result = { distance: tentative_shortest_path !== Infinity ? tentative_shortest_path : 0 };
 
-  const result = buildIdsCH(graph, forward_nodeState, backward_nodeState, tentative_shortest_node, start, end);
+  let ids;
 
-  console.log(JSON.stringify(result.geojsonPath));
+  if (options.ids === true || options.path === true) {
+    ids = buildIdsCH(graph, forward_nodeState, backward_nodeState, tentative_shortest_node, tentative_shortest_path, start, end);
+  }
 
-  return { distance: tentative_shortest_path, segments: result.ids, route: result.geojsonPath };
+  if (options.ids === true) {
+    result = Object.assign(result, ids);
+  }
+
+  if (options.path === true) {
+    const path = buildGeoJsonPath(graph, ids.ids, tentative_shortest_path, start, end);
+    result = Object.assign(result, path);
+  }
+
+  return result;
 
 
   function* doDijkstra(
@@ -98,7 +115,11 @@ function queryContractionHierarchy(
     reverse_distances
   ) {
 
-    var openSet = new NodeHeap(null, { rank: 'dist' });
+    var openSet = new NodeHeap({
+      compare(a, b) {
+        return a.dist - b.dist;
+      }
+    });
 
     do {
 
@@ -158,14 +179,43 @@ function queryContractionHierarchy(
 
 }
 
+function buildGeoJsonPath(graph, ids, tentative_shortest_path, start, end) {
 
+  let path = {
+    type: 'FeatureCollection',
+    features: []
+  };
 
-function buildIdsCH(graph, forward_nodeState, backward_nodeState, tentative_shortest_node, start, end) {
+  if (start === end || tentative_shortest_path === Infinity) {
+    return { path };
+  }
+
+  path = {
+    type: 'FeatureCollection',
+    features: ids.map(id => {
+      const edge = graph.edge_lookup[id];
+      const feat = {
+        "type": "Feature",
+        "properties": edge.attributes,
+        "geometry": {
+          "type": "LineString",
+          "coordinates": edge.geometry
+        }
+      };
+      console.log(JSON.stringify(feat));
+      return feat;
+    })
+  };
+
+  return { path };
+}
+
+function buildIdsCH(graph, forward_nodeState, backward_nodeState, tentative_shortest_node, tentative_shortest_path, start, end) {
 
   const ids = [];
 
-  if (start === end) {
-    return { geojsonPath: ids };
+  if (start === end || tentative_shortest_path === Infinity) {
+    return { ids };
   }
 
   let forward_path = forward_nodeState.get(tentative_shortest_node);
@@ -200,22 +250,5 @@ function buildIdsCH(graph, forward_nodeState, backward_nodeState, tentative_shor
     backward_path = backward_nodeState.get(backward_path.prev);
   }
 
-  // TODO split this off?
-
-  const geojsonPath = {
-    type: 'FeatureCollection',
-    features: ids.map(id => {
-      const edge = graph.edge_lookup[id];
-      return {
-        "type": "Feature",
-        "properties": edge.attributes,
-        "geometry": {
-          "type": "LineString",
-          "coordinates": edge.geometry
-        }
-      };
-    })
-  };
-
-  return { ids, geojsonPath };
+  return { ids };
 }

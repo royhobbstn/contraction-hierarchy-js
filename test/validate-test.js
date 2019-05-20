@@ -17,8 +17,7 @@ async function main() {
   const geofile = await readyNetwork();
   const geojson = cleanseNetwork(geofile);
 
-  const fasterDijkstra = new Graph();
-  fasterDijkstra.loadFromGeoJson(geojson);
+  const fasterDijkstra = new Graph(geojson);
 
   contractGraph(fasterDijkstra);
 
@@ -41,7 +40,7 @@ async function main() {
     const rnd1 = Math.floor(Math.random() * adj_length);
     const rnd2 = Math.floor(Math.random() * adj_length);
     const coord = [adj_keys[rnd1], adj_keys[rnd2]];
-    // const coord = ['-118.447431,34.048777', '-118.371087,33.977172'];
+    // const coord = ['-117.958443,33.853954', '-115.551277,32.76506'];
     coords.push(coord);
   }
 
@@ -70,7 +69,7 @@ async function main() {
     ch[index] = queryContractionHierarchy(
       fasterDijkstra,
       pair[0],
-      pair[1]
+      pair[1], { path: true }
     );
     console.timeEnd('ch');
 
