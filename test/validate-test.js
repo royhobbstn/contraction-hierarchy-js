@@ -1,13 +1,13 @@
 const createGraph = require('ngraph.graph');
 const pathNGraph = require('ngraph.path');
 
-const { Graph } = require('../../geojson-dijkstra/index.js');
+const { Graph } = require('geojson-dijkstra');
 
 // load utility functions
-const { readyNetwork, cleanseNetwork, getNGraphDist, populateNGraph } = require('./test-util.js');
+const { readyNetwork, cleanseNetwork, getNGraphDist, populateNGraph } = require('geojson-dijkstra/test/test-util.js');
 
 // load contraction hierarchy version bidirectional dijkstra
-const { queryContractionHierarchy } = require('../run-contraction-hierarchy');
+const { createPathfinder } = require('../run-contraction-hierarchy');
 const { contractGraph } = require('../build-contraction-hierarchy.js');
 
 main();
@@ -17,11 +17,13 @@ async function main() {
   const geofile = await readyNetwork();
   const geojson = cleanseNetwork(geofile);
 
-  const fasterDijkstra = new Graph(geojson);
+  const graph = new Graph(geojson);
 
-  contractGraph(fasterDijkstra);
+  contractGraph(graph);
 
-  const adj_keys = Object.keys(fasterDijkstra.adjacency_list);
+  const finder = createPathfinder(graph);
+
+  const adj_keys = Object.keys(graph.adjacency_list);
   const adj_length = adj_keys.length;
 
   const ngraph = createGraph();
@@ -66,8 +68,8 @@ async function main() {
     console.timeEnd('nGraph');
 
     console.time('ch');
-    ch[index] = queryContractionHierarchy(
-      fasterDijkstra,
+    ch[index] = finder.queryContractionHierarchy(
+      graph,
       pair[0],
       pair[1], { path: true }
     );

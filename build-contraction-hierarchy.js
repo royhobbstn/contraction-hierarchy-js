@@ -1,5 +1,6 @@
 //
-const NodeHeap = require('./queue.js');
+const NodeHeap = require('geojson-dijkstra/queue');
+
 
 exports.contractGraph = contractGraph;
 

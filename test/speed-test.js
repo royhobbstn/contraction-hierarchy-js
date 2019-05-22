@@ -5,7 +5,7 @@ const pathNGraph = require('ngraph.path');
 const { Graph } = require('../../geojson-dijkstra/index.js');
 
 // load utility functions
-const { readyNetwork, cleanseNetwork, getNGraphDist, populateNGraph } = require('./test-util.js');
+const { readyNetwork, cleanseNetwork, getNGraphDist, populateNGraph } = require('geojson-dijkstra/test/test-util.js');
 
 // load contraction hierarchy version bidirectional dijkstra
 const { queryContractionHierarchy } = require('../run-contraction-hierarchy');

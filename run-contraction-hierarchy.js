@@ -1,9 +1,16 @@
 //
+const NodeHeap = require('geojson-dijkstra/queue');
 
-const NodeHeap = require('./queue.js');
+
+exports.createPathfinder = createPathfinder;
+
+function createPathfinder() {
 
 
-exports.queryContractionHierarchy = queryContractionHierarchy;
+  return {
+    queryContractionHierarchy
+  };
+}
 
 function queryContractionHierarchy(
   graph,

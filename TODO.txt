@@ -1,18 +1,16 @@
 
 
-create finder for queryContractionHierarchy
 
 CH
 ----------
-duplication of queue
-duplication of node pool
-duplication of test/util
+create finder for queryContractionHierarchy
 
 Maybe reconsider how to create CH ids/geojson without ancillary data structures
 make sure geojson is ordered properly
 
 directed graph - please just work??
 load / save CH keeping minimal memory footprint
+documentation
 publish CH
 
 
@@ -24,11 +22,6 @@ Benchmark faf.geojson, CA, OR, WA
 TimeToContract: 209868, 163293, 183686, 217732
 ngraph:         92250,  118702, 108889, 111203
 ch:             14319,  5188,   6573,   7971
-
-OTHER
-------
-move create-network to network_api/reduceNetwork and incorporate this change:
-   - join alike and cut at intersections should have a recompute line length option
 
 
 BIG PICTURE
