@@ -77,6 +77,8 @@ function contractGraph(graph) {
   // for constructing hierarchy, to be able to quickly determine which edges lead to a specific vertex
   const reverse_adj = createReverseAdjList(graph);
 
+  graph.reverse_adj = reverse_adj;
+
   // TODO, future, hope to avoid the below steps and instead use node.prev_edge
   // and recursively step through
 

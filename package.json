@@ -1,6 +1,6 @@
 {
   "name": "contraction-hierarchy-js",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "Contraction Hierarchy",
   "main": "index.js",
   "scripts": {
@@ -23,21 +23,10 @@
   },
   "homepage": "https://github.com/royhobbstn/contraction-hierarchy-js#readme",
   "dependencies": {
-    "@turf/turf": "^5.1.6",
-    "@tyriar/fibonacci-heap": "^2.0.9",
-    "geojson-dijkstra": "0.0.1",
-    "geojson-dissolve": "^3.1.0",
-    "geojson-id-disconnected-networks": "^1.0.2",
-    "geojson-linestring-join-alike": "^1.1.3",
-    "geojson-network-node-lookup": "^1.0.1",
-    "geojson-network-node-snap": "^1.0.2",
-    "geojson-rbush": "^3.1.1",
-    "geojson-split-crossing-lines": "^1.0.2",
-    "geojson-trim-network": "^1.0.0",
-    "ngraph.graph": "0.0.18",
-    "ngraph.path": "^1.1.0"
+    "geojson-dijkstra": "1.0.2"
   },
   "devDependencies": {
-    "prettier": "^1.16.4"
+    "ngraph.graph": "0.0.18",
+    "ngraph.path": "1.1.0"
   }
 }

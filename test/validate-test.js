@@ -1,10 +1,11 @@
+const fs = require('fs');
 const createGraph = require('ngraph.graph');
 const pathNGraph = require('ngraph.path');
 
-const { Graph } = require('geojson-dijkstra');
+const { Graph, buildGeoJsonPath, buildEdgeIdList } = require('geojson-dijkstra');
 
 // load utility functions
-const { readyNetwork, cleanseNetwork, getNGraphDist, populateNGraph } = require('geojson-dijkstra/test/test-util.js');
+const { getNGraphDist, populateNGraph, readyNetwork, cleanseNetwork } = require('geojson-dijkstra/test/test-util.js');
 
 // load contraction hierarchy version bidirectional dijkstra
 const { createPathfinder } = require('../run-contraction-hierarchy');
@@ -16,6 +17,10 @@ async function main() {
 
   const geofile = await readyNetwork();
   const geojson = cleanseNetwork(geofile);
+
+  const ogGraph = new Graph(geojson);
+
+  const finderOG = ogGraph.createFinder({ parseOutputFns: [buildGeoJsonPath, buildEdgeIdList] });
 
   const graph = new Graph(geojson);
 
@@ -32,22 +37,24 @@ async function main() {
   const pathFinder = pathNGraph.aStar(ngraph, {
     distance(fromNode, toNode, link) {
       return link.data._cost;
-    }
+    },
+    oriented: true
   });
 
 
   const coords = [];
 
-  for (let i = 0; i < 1; i++) {
+  for (let i = 0; i < 100; i++) {
     const rnd1 = Math.floor(Math.random() * adj_length);
     const rnd2 = Math.floor(Math.random() * adj_length);
     const coord = [adj_keys[rnd1], adj_keys[rnd2]];
-    // const coord = ['-117.958443,33.853954', '-115.551277,32.76506'];
+    //const coord = ['-113.330402,43.245203', '-116.452899,41.967659'];
     coords.push(coord);
   }
 
   const ch = [];
   const ng = [];
+  const og = [];
 
 
   coords.forEach((pair, index) => {
@@ -67,6 +74,10 @@ async function main() {
     ng[index] = getNGraphDist(pathFinder.find(pair[0], pair[1]));
     console.timeEnd('nGraph');
 
+    console.time('og');
+    og[index] = finderOG.findPath((pair[0]), (pair[1]));
+    console.timeEnd('og');
+
     console.time('ch');
     ch[index] = finder.queryContractionHierarchy(
       graph,
@@ -82,6 +93,7 @@ async function main() {
     const values = [
       ng[i].distance,
       ch[i].distance,
+      og[i].total_cost,
     ];
 
     let min = Infinity;
@@ -104,6 +116,7 @@ async function main() {
         // ng[i].edgelist.length,
         ng[i].distance,
         // ch[i].segments.length,
+        og[i].total_cost,
         ch[i].distance
       );
     }

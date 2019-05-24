@@ -1,14 +1,8 @@
 
 
-
 CH
 ----------
-create finder for queryContractionHierarchy
-
-Maybe reconsider how to create CH ids/geojson without ancillary data structures
 make sure geojson is ordered properly
-
-directed graph - please just work??
 load / save CH keeping minimal memory footprint
 documentation
 publish CH
@@ -26,5 +20,6 @@ ch:             14319,  5188,   6573,   7971
 
 BIG PICTURE
 --------------
+Reconsider how to create CH ids/geojson without ancillary data structures
 Integrate CH with ArcFlags?
 golang or native node addon
