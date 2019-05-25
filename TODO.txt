@@ -2,9 +2,10 @@
 
 CH
 ----------
-make sure geojson is ordered properly
 load / save CH keeping minimal memory footprint
-documentation
+a problem that input can only be as strings
+
+readme documentation
 publish CH
 blog
 
@@ -12,7 +13,7 @@ blog
 
 BENCHMARK SO FAR
 --------
-Benchmark faf.geojson, CA, OR, WA
+Benchmark faf.geojson, CA, OR, WA: 10,000 routes
 
 TimeToContract: 209868, 163293, 183686, 217732, 145840
 ngraph:         92250,  118702, 108889, 111203, 107243
@@ -21,6 +22,7 @@ ch:             14319,  5188,   6573,   7971,   5806
 
 BIG PICTURE
 --------------
+non-geojson interface
 think more deeply about adj list and reverse adj list
 Reconsider how to create CH ids/geojson without ancillary data structures
 Integrate CH with ArcFlags?

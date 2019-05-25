@@ -399,7 +399,7 @@ Graph.prototype._createChShortcutter = function() {
 
 
 
-
+// TODO repeated
 function Node(node, heuristic) {
   this.id = node.id;
   this.dist = node.dist !== undefined ? node.dist : Infinity;
@@ -452,12 +452,17 @@ function createNodePool() {
 
 //// Below is Running the Contraction Hierarchy
 
-Graph.prototype.createPathfinder = function() {
+Graph.prototype.createPathfinder = function(options) {
 
   const adjacency_list = this.adjacency_list;
   const rev_adjacency_list = this.reverse_adj;
   const pool = this._createNodePool();
-  // const graph = this;
+  const graph = this;
+
+  if (!options) {
+    options = {};
+  }
+
 
   return {
     queryContractionHierarchy
@@ -465,13 +470,8 @@ Graph.prototype.createPathfinder = function() {
 
   function queryContractionHierarchy(
     start,
-    end,
-    options
+    end
   ) {
-
-    if (!options) {
-      options = {};
-    }
 
     pool.reset();
 
@@ -547,24 +547,22 @@ Graph.prototype.createPathfinder = function() {
 
     let result = { distance: tentative_shortest_path !== Infinity ? tentative_shortest_path : 0 };
 
+    let ids;
+
+    if (options.ids === true || options.path === true) {
+      ids = buildIdsCH(graph, forward_nodeState, backward_nodeState, tentative_shortest_node, tentative_shortest_path, start, end);
+    }
+
+    if (options.ids === true) {
+      result = Object.assign(result, ids);
+    }
+
+    if (options.path === true) {
+      const path = buildGeoJsonPath(graph, ids.ids, tentative_shortest_path, start, end);
+      result = Object.assign(result, path);
+    }
+
     return result;
-
-    // let ids;
-
-    // if (options.ids === true || options.path === true) {
-    //   ids = buildIdsCH(graph, forward_nodeState, backward_nodeState, tentative_shortest_node, tentative_shortest_path, start, end);
-    // }
-
-    // if (options.ids === true) {
-    //   result = Object.assign(result, ids);
-    // }
-
-    // if (options.path === true) {
-    //   const path = {} // buildGeoJsonPath(graph, ids.ids, tentative_shortest_path, start, end);
-    //   result = Object.assign(result, path);
-    // }
-
-    // return result;
 
 
     function* doDijkstra(
@@ -670,10 +668,13 @@ function buildGeoJsonPath(graph, ids, tentative_shortest_path, start, end) {
     })
   };
 
-  return { path };
+  return { path: detangle(path) };
 }
 
 function buildIdsCH(graph, forward_nodeState, backward_nodeState, tentative_shortest_node, tentative_shortest_path, start, end) {
+
+
+  //
 
   const ids = [];
 
@@ -696,8 +697,6 @@ function buildIdsCH(graph, forward_nodeState, backward_nodeState, tentative_shor
     forward_path = forward_nodeState.get(forward_path.prev);
   }
 
-  ids.reverse();
-
   let backward_path = backward_nodeState.get(tentative_shortest_node);
 
   while (backward_path && backward_path.prev) {
@@ -713,8 +712,132 @@ function buildIdsCH(graph, forward_nodeState, backward_nodeState, tentative_shor
     backward_path = backward_nodeState.get(backward_path.prev);
   }
 
-  return { ids };
+  const ordered_ids = orderIds(graph, ids, start, end);
+
+  return { ids: ordered_ids };
 }
+
+function orderIds(graph, ids, start, end) {
+
+  const links = {};
+
+  ids.forEach(id => {
+    const edge = graph.edge_lookup[id];
+
+    if (!links[edge.start]) {
+      links[edge.start] = [id];
+    }
+    else {
+      links[edge.start].push(id);
+    }
+
+    if (!links[edge.end]) {
+      links[edge.end] = [id];
+    }
+    else {
+      links[edge.end].push(id);
+    }
+  });
+
+  // { '-122.521653,45.672558': [ 10165, 10164 ],
+  // '-122.552598,45.667629': [ 10165, 10166 ],
+  // '-122.505768,45.672218': [ 10164, 11680 ],
+  // '-122.560869,45.665279': [ 10166, 13514 ],
+  // '-122.572247,45.659981': [ 13514, 13513 ],
+  // '-122.577877,45.65563': [ 13513, 12027 ],
+  // '-122.400266,45.587041': [ 11716, 11721 ],
+  // '-122.407011,45.604287': [ 11716, 11680 ],
+  // '-122.368245,45.583623': [ 11721 ],
+  // '-122.6009,45.644779': [ 12027, 10404 ],
+  // '-122.601984,45.626598': [ 10404 ] }
+
+  const ordered = [];
+
+  // first segment
+  let pt = start;
+  let link_id = links[pt][0]; // first pt points to array with a single item
+  ordered.push(link_id);
+  let segment_details = graph.edge_lookup[link_id];
+
+  do {
+    const link_start = segment_details.start;
+    const link_end = segment_details.end;
+    const next_pt = pt === link_start ? link_end : link_start;
+    const matched_ids = links[next_pt];
+    if (matched_ids.length === 1) {
+      // end pt found
+      break;
+    }
+    link_id = link_id === matched_ids[0] ? matched_ids[1] : matched_ids[0];
+    ordered.push(link_id);
+    segment_details = graph.edge_lookup[link_id];
+    pt = next_pt;
+  } while (true);
+
+  return ordered;
+
+}
+
+
+
+// todo duplicated
+function detangle(geo) {
+
+  // ------ de-tangle routine
+
+  // copy source to avoid mutation
+  const features = JSON.parse(JSON.stringify(geo)).features;
+
+  const collection = {
+    type: "FeatureCollection",
+    features: features
+  };
+
+  // if only one feature return
+  if (features.length <= 1) {
+    return collection;
+  }
+
+  // modify first feature
+  const cf = features[0];
+  const nf = features[1];
+
+  const ce = cf.geometry.coordinates[cf.geometry.coordinates.length - 1];
+
+  const ns = nf.geometry.coordinates[0];
+  const ne = nf.geometry.coordinates[nf.geometry.coordinates.length - 1];
+
+  // in case of ce !== ns && ce !== ne. (flip first feature)
+
+  // ce === ns
+  const ce_ns = ce[0] === ns[0] && ce[1] === ns[1];
+  // ce === ne
+  const ce_ne = ce[0] === ne[0] && ce[1] === ne[1];
+
+  if (!ce_ns && !ce_ne) {
+    features[0].geometry.coordinates.reverse();
+  }
+
+  // modify rest of the features to match orientation of the first
+  for (let i = 1; i < features.length; i++) {
+    const lastFeature = features[i - 1];
+    const currentFeature = features[i];
+
+    const last_end = lastFeature.geometry.coordinates[lastFeature.geometry.coordinates.length - 1];
+    const current_end = currentFeature.geometry.coordinates[currentFeature.geometry.coordinates.length - 1];
+
+    // in the case of last_end == current_end  (flip this)
+    const le_ce = last_end[0] === current_end[0] && last_end[1] === current_end[1];
+
+    if (le_ce) {
+      currentFeature.geometry.coordinates.reverse();
+    }
+
+  }
+
+  return collection;
+}
+
 
 
 exports.Graph = Graph;

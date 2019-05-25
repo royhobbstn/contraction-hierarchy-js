@@ -24,7 +24,7 @@ async function main() {
   const graph = new GraphCH(geojson);
   graph.contractGraph();
 
-  const finder = graph.createPathfinder(); // todo  options go here
+  const finder = graph.createPathfinder({ ids: true, path: true });
 
   const adj_keys = Object.keys(graph.adjacency_list);
   const adj_length = adj_keys.length;
@@ -42,11 +42,11 @@ async function main() {
 
   const coords = [];
 
-  for (let i = 0; i < 100; i++) {
+  for (let i = 0; i < 1000; i++) {
     const rnd1 = Math.floor(Math.random() * adj_length);
     const rnd2 = Math.floor(Math.random() * adj_length);
     const coord = [adj_keys[rnd1], adj_keys[rnd2]];
-    //const coord = ['-113.330402,43.245203', '-116.452899,41.967659'];
+    // const coord = ['-122.368245,45.583623', '-122.601984,45.626598'];
     coords.push(coord);
   }
 
@@ -74,11 +74,19 @@ async function main() {
 
     console.time('og');
     og[index] = finderOG.findPath((pair[0]), (pair[1]));
+    //const a = JSON.stringify(og[index].geojsonPath, null, '\t')
     console.timeEnd('og');
 
     console.time('ch');
     ch[index] = finder.queryContractionHierarchy(pair[0], pair[1]);
+    //const b = JSON.stringify(ch[index].path, null, '\t')
     console.timeEnd('ch');
+
+    // console.log(a)
+    // console.log('----')
+    // console.log(b)
+
+    //console.log(a === b)
 
   });
 
