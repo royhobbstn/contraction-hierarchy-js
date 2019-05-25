@@ -2,11 +2,11 @@
 
 CH
 ----------
-think more deeply about adj list and reverse adj list
 make sure geojson is ordered properly
 load / save CH keeping minimal memory footprint
 documentation
 publish CH
+blog
 
 
 
@@ -14,13 +14,14 @@ BENCHMARK SO FAR
 --------
 Benchmark faf.geojson, CA, OR, WA
 
-TimeToContract: 209868, 163293, 183686, 217732
-ngraph:         92250,  118702, 108889, 111203
-ch:             14319,  5188,   6573,   7971
+TimeToContract: 209868, 163293, 183686, 217732, 145840
+ngraph:         92250,  118702, 108889, 111203, 107243
+ch:             14319,  5188,   6573,   7971,   5806
 
 
 BIG PICTURE
 --------------
+think more deeply about adj list and reverse adj list
 Reconsider how to create CH ids/geojson without ancillary data structures
 Integrate CH with ArcFlags?
 golang or native node addon

@@ -96,8 +96,16 @@ Graph.prototype.contractGraph = function() {
     );
   });
 
-  // TODO remove from reverse_adj?
-
+  // remove links to lower ranked nodes - reverse adj list
+  Object.keys(this.reverse_adj).forEach(node => {
+    const from_rank = this.contracted_nodes[node];
+    this.reverse_adj[node] = this.reverse_adj[node].filter(
+      to_coords => {
+        const to_rank = this.contracted_nodes[to_coords.end];
+        return from_rank < to_rank;
+      }
+    );
+  });
 
   return;
 
@@ -449,7 +457,7 @@ Graph.prototype.createPathfinder = function() {
   const adjacency_list = this.adjacency_list;
   const rev_adjacency_list = this.reverse_adj;
   const pool = this._createNodePool();
-  const graph = this;
+  // const graph = this;
 
   return {
     queryContractionHierarchy
@@ -539,22 +547,24 @@ Graph.prototype.createPathfinder = function() {
 
     let result = { distance: tentative_shortest_path !== Infinity ? tentative_shortest_path : 0 };
 
-    let ids;
-
-    if (options.ids === true || options.path === true) {
-      ids = buildIdsCH(graph, forward_nodeState, backward_nodeState, tentative_shortest_node, tentative_shortest_path, start, end);
-    }
-
-    if (options.ids === true) {
-      result = Object.assign(result, ids);
-    }
-
-    if (options.path === true) {
-      const path = {} // buildGeoJsonPath(graph, ids.ids, tentative_shortest_path, start, end);
-      result = Object.assign(result, path);
-    }
-
     return result;
+
+    // let ids;
+
+    // if (options.ids === true || options.path === true) {
+    //   ids = buildIdsCH(graph, forward_nodeState, backward_nodeState, tentative_shortest_node, tentative_shortest_path, start, end);
+    // }
+
+    // if (options.ids === true) {
+    //   result = Object.assign(result, ids);
+    // }
+
+    // if (options.path === true) {
+    //   const path = {} // buildGeoJsonPath(graph, ids.ids, tentative_shortest_path, start, end);
+    //   result = Object.assign(result, path);
+    // }
+
+    // return result;
 
 
     function* doDijkstra(
@@ -656,7 +666,6 @@ function buildGeoJsonPath(graph, ids, tentative_shortest_path, start, end) {
           "coordinates": edge.geometry
         }
       };
-      console.log(JSON.stringify(feat));
       return feat;
     })
   };
