@@ -2,6 +2,7 @@
 
 CH
 ----------
+think more deeply about adj list and reverse adj list
 make sure geojson is ordered properly
 load / save CH keeping minimal memory footprint
 documentation

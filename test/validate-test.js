@@ -9,7 +9,7 @@ const { getNGraphDist, populateNGraph, readyNetwork, cleanseNetwork } = require(
 
 // load contraction hierarchy version bidirectional dijkstra
 const { createPathfinder } = require('../run-contraction-hierarchy');
-const { contractGraph } = require('../build-contraction-hierarchy.js');
+const GraphCH = require('../index.js').Graph;
 
 main();
 
@@ -22,11 +22,11 @@ async function main() {
 
   const finderOG = ogGraph.createFinder({ parseOutputFns: [buildGeoJsonPath, buildEdgeIdList] });
 
-  const graph = new Graph(geojson);
+  const graph = new GraphCH(geojson);
 
-  contractGraph(graph);
+  graph.contractGraph();
 
-  const finder = createPathfinder(graph);
+  const finder = graph.createPathfinder(); // todo  options go here
 
   const adj_keys = Object.keys(graph.adjacency_list);
   const adj_length = adj_keys.length;
@@ -80,7 +80,6 @@ async function main() {
 
     console.time('ch');
     ch[index] = finder.queryContractionHierarchy(
-      graph,
       pair[0],
       pair[1], { path: true }
     );
