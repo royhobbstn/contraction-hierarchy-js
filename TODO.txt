@@ -2,7 +2,6 @@
 
 CH
 ----------
-load / save CH keeping minimal memory footprint
 a problem that input can only be as strings
 
 readme documentation

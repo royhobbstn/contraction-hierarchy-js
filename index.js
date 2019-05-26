@@ -215,12 +215,18 @@ Graph.prototype._contract = function(v, get_count_only, finder) {
   return shortcut_count;
 };
 
-Graph.prototype.loadCH = function() {
-  return null;
+Graph.prototype.loadCH = function(ch) {
+  const parsed = JSON.parse(ch);
+  this.adjacency_list = parsed.adjacency_list;
+  this.mutate_inputs = parsed.mutate_inputs;
+  this.reverse_adj = parsed.reverse_adj;
+  this.path_lookup = parsed.path_lookup;
+  this.edge_lookup = parsed.edge_lookup;
+  this.contracted_nodes = parsed.contracted_nodes;
 };
 
 Graph.prototype.saveCH = function() {
-  return null;
+  return JSON.stringify(this);
 };
 
 //

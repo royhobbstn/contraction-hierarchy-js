@@ -21,8 +21,13 @@ async function main() {
 
   const finderOG = ogGraph.createFinder({ parseOutputFns: [buildGeoJsonPath, buildEdgeIdList] });
 
-  const graph = new GraphCH(geojson);
-  graph.contractGraph();
+  const tempGraph = new GraphCH(geojson);
+  tempGraph.contractGraph();
+
+  const saved = tempGraph.saveCH();
+
+  const graph = new GraphCH();
+  graph.loadCH(saved);
 
   const finder = graph.createPathfinder({ ids: true, path: true });
 

@@ -8,7 +8,7 @@ const { readyNetwork, cleanseNetwork, getNGraphDist, populateNGraph } = require(
 const GraphCH = require('../index.js').Graph;
 
 
-const ITERATIONS = 10000;
+const ITERATIONS = 1000;
 
 main();
 
@@ -19,11 +19,21 @@ async function main() {
 
   const graph = new GraphCH(geojson);
 
+
+  const tempGraph = new GraphCH(geojson);
+  tempGraph.contractGraph();
+
+  const saved = tempGraph.saveCH();
+
+  const savedGraph = new GraphCH();
+  savedGraph.loadCH(saved);
+
   console.time('TimeToContract');
   graph.contractGraph();
   console.timeEnd('TimeToContract');
 
   const finder = graph.createPathfinder(); // todo  options go here
+  const savedFinder = savedGraph.createPathfinder(); // todo  options go here
 
   const ngraph = createGraph();
   populateNGraph(ngraph, geojson);
@@ -65,5 +75,15 @@ async function main() {
     }
     console.timeEnd('ContractionHierarchy');
 
+    console.time('savedCH');
+    for (let i = 0; i < ITERATIONS; i++) {
+      let rnd1 = Math.floor(Math.random() * adj_length);
+      let rnd2 = Math.floor(Math.random() * adj_length);
+      savedFinder.queryContractionHierarchy(
+        adj_keys[rnd1],
+        adj_keys[rnd2]
+      );
+    }
+    console.timeEnd('savedCH');
   }, 3000);
 }
