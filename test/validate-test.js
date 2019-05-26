@@ -21,13 +21,8 @@ async function main() {
 
   const finderOG = ogGraph.createFinder({ parseOutputFns: [buildGeoJsonPath, buildEdgeIdList] });
 
-  const tempGraph = new GraphCH(geojson);
-  tempGraph.contractGraph();
-
-  const saved = tempGraph.saveCH();
-
-  const graph = new GraphCH();
-  graph.loadCH(saved);
+  const graph = new GraphCH(geojson);
+  graph.contractGraph();
 
   const finder = graph.createPathfinder({ ids: true, path: true });
 
@@ -79,19 +74,11 @@ async function main() {
 
     console.time('og');
     og[index] = finderOG.findPath((pair[0]), (pair[1]));
-    //const a = JSON.stringify(og[index].geojsonPath, null, '\t')
     console.timeEnd('og');
 
     console.time('ch');
     ch[index] = finder.queryContractionHierarchy(pair[0], pair[1]);
-    //const b = JSON.stringify(ch[index].path, null, '\t')
     console.timeEnd('ch');
-
-    // console.log(a)
-    // console.log('----')
-    // console.log(b)
-
-    //console.log(a === b)
 
   });
 
@@ -120,9 +107,7 @@ async function main() {
       console.log(
         i,
         coords[i],
-        // ng[i].edgelist.length,
         ng[i].distance,
-        // ch[i].segments.length,
         og[i].total_cost,
         ch[i].distance
       );

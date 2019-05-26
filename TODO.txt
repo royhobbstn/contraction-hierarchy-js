@@ -2,15 +2,13 @@
 
 CH
 ----------
-a problem that input can only be as strings
-
 readme documentation
 publish CH
 blog
 
 
 
-BENCHMARK SO FAR
+BENCHMARKS
 --------
 Benchmark faf.geojson, CA, OR, WA: 10,000 routes
 
@@ -19,10 +17,24 @@ ngraph:         92250,  118702, 108889, 111203, 107243
 ch:             14319,  5188,   6573,   7971,   5806
 
 
-BIG PICTURE
+FUTURE
 --------------
-non-geojson interface
+
+coordinate lookup needs to read reverse_adj??
+
+change naive serialization for saving / loading CH
+
+  18M originalGraph.json
+  41M originalProcessedGraph.json
+ 467M chGraph.json   !!!!!!!!!!!!!!
+
+non-geojson interface 
 think more deeply about adj list and reverse adj list
 Reconsider how to create CH ids/geojson without ancillary data structures
+
+
+BIG PICTURE
+--------------
+
 Integrate CH with ArcFlags?
 golang or native node addon

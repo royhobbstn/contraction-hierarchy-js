@@ -1,4 +1,4 @@
-const { Graph } = require('geojson-dijkstra');
+const { Graph, CoordinateLookup } = require('geojson-dijkstra');
 
 Graph.prototype.contractGraph = function() {
 
@@ -394,9 +394,7 @@ Graph.prototype._createChShortcutter = function() {
       }
     }
 
-    // total cost included by default
     let response = { distances };
-
 
     return response;
   }
@@ -551,12 +549,12 @@ Graph.prototype.createPathfinder = function(options) {
       tentative_shortest_path = 0;
     }
 
-    let result = { distance: tentative_shortest_path !== Infinity ? tentative_shortest_path : 0 };
+    let result = { total_cost: tentative_shortest_path !== Infinity ? tentative_shortest_path : 0 };
 
     let ids;
 
     if (options.ids === true || options.path === true) {
-      ids = buildIdsCH(graph, forward_nodeState, backward_nodeState, tentative_shortest_node, tentative_shortest_path, start, end);
+      ids = buildIdsCH(graph, forward_nodeState, backward_nodeState, tentative_shortest_node, tentative_shortest_path, str_start, str_end);
     }
 
     if (options.ids === true) {
@@ -564,7 +562,7 @@ Graph.prototype.createPathfinder = function(options) {
     }
 
     if (options.path === true) {
-      const path = buildGeoJsonPath(graph, ids.ids, tentative_shortest_path, start, end);
+      const path = buildGeoJsonPath(graph, ids.ids, tentative_shortest_path, str_start, str_end);
       result = Object.assign(result, path);
     }
 
@@ -647,14 +645,14 @@ Graph.prototype.createPathfinder = function(options) {
 
 
 
-function buildGeoJsonPath(graph, ids, tentative_shortest_path, start, end) {
+function buildGeoJsonPath(graph, ids, tentative_shortest_path, str_start, str_end) {
 
   let path = {
     type: 'FeatureCollection',
     features: []
   };
 
-  if (start === end || tentative_shortest_path === Infinity) {
+  if (str_start === str_end || tentative_shortest_path === Infinity) {
     return { path };
   }
 
@@ -677,14 +675,11 @@ function buildGeoJsonPath(graph, ids, tentative_shortest_path, start, end) {
   return { path: detangle(path) };
 }
 
-function buildIdsCH(graph, forward_nodeState, backward_nodeState, tentative_shortest_node, tentative_shortest_path, start, end) {
-
-
-  //
+function buildIdsCH(graph, forward_nodeState, backward_nodeState, tentative_shortest_node, tentative_shortest_path, str_start, str_end) {
 
   const ids = [];
 
-  if (start === end || tentative_shortest_path === Infinity) {
+  if (str_start === str_end || tentative_shortest_path === Infinity) {
     return { ids };
   }
 
@@ -718,12 +713,12 @@ function buildIdsCH(graph, forward_nodeState, backward_nodeState, tentative_shor
     backward_path = backward_nodeState.get(backward_path.prev);
   }
 
-  const ordered_ids = orderIds(graph, ids, start, end);
+  const ordered_ids = orderIds(graph, ids, str_start, str_end);
 
   return { ids: ordered_ids };
 }
 
-function orderIds(graph, ids, start, end) {
+function orderIds(graph, ids, str_start, str_end) {
 
   const links = {};
 
@@ -760,7 +755,7 @@ function orderIds(graph, ids, start, end) {
   const ordered = [];
 
   // first segment
-  let pt = start;
+  let pt = str_start;
   let link_id = links[pt][0]; // first pt points to array with a single item
   ordered.push(link_id);
   let segment_details = graph.edge_lookup[link_id];
@@ -847,3 +842,4 @@ function detangle(geo) {
 
 
 exports.Graph = Graph;
+exports.CoordinateLookup = CoordinateLookup;
