@@ -205,7 +205,7 @@ Graph.prototype._contract = function(v, get_count_only, finder) {
 
           // add to pathIdLookup
           this.path_lookup[`${u.end}|${w.end}`] = attrs._id;
-
+          this.path_lookup[`${w.end}|${u.end}`] = attrs._id;
         }
       }
     });
@@ -701,7 +701,10 @@ function buildIdsCH(graph, forward_nodeState, backward_nodeState, tentative_shor
   let backward_path = backward_nodeState.get(tentative_shortest_node);
 
   while (backward_path && backward_path.prev) {
+
+
     const feature_ids = graph.path_lookup[`${backward_path.id}|${backward_path.prev}`];
+
     if (typeof feature_ids === 'string') {
       // a CH edge
       ids.push(...feature_ids.split(',').map(d => Number(d)));
@@ -724,7 +727,6 @@ function orderIds(graph, ids, str_start, str_end) {
 
   ids.forEach(id => {
     const edge = graph.edge_lookup[id];
-
     if (!links[edge.start]) {
       links[edge.start] = [id];
     }

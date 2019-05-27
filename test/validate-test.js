@@ -1,5 +1,6 @@
 const createGraph = require('ngraph.graph');
 const pathNGraph = require('ngraph.path');
+const fs = require('fs');
 
 // load original geojson-dijkstra for sanity check
 const { Graph, buildGeoJsonPath, buildEdgeIdList } = require('geojson-dijkstra');
@@ -23,6 +24,12 @@ async function main() {
 
   const graph = new GraphCH(geojson);
   graph.contractGraph();
+
+  // const saved = graph.saveCH();
+
+  // fs.writeFileSync('./saved.json', saved, 'utf8');
+
+  // process.exit();
 
   const finder = graph.createPathfinder({ ids: true, path: true });
 

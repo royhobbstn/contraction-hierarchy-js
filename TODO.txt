@@ -1,9 +1,27 @@
 
+would be helpful to see what data looks like.
+
+... possible that during contraction can figure out the reverse pts on own?
+
+... what would happen if use original adj list in bidi queryContractionHierarchy?
+(because maybe don't need to store a reverse_adj list at all)
+
+really need to get rid of the ancillary structures either way though.  start there.
+
+
+think more deeply about adj list and reverse adj list
+Reconsider how to create CH ids/geojson without ancillary data structures
+change naive serialization for saving / loading CH
+
+TimeToContract: 154481.987ms
+ngraph: 9374.445ms
+GeoJSON-Dijkstra: 9455.455ms
+ContractionHierarchy: 634.409ms
+
+
 
 CH
 ----------
-readme documentation
-publish CH
 blog
 
 
@@ -22,15 +40,12 @@ FUTURE
 
 coordinate lookup needs to read reverse_adj??
 
-change naive serialization for saving / loading CH
-
   18M originalGraph.json
   41M originalProcessedGraph.json
  467M chGraph.json   !!!!!!!!!!!!!!
 
 non-geojson interface 
-think more deeply about adj list and reverse adj list
-Reconsider how to create CH ids/geojson without ancillary data structures
+
 
 
 BIG PICTURE

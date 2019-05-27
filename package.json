@@ -1,6 +1,6 @@
 {
   "name": "contraction-hierarchy-js",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Contraction Hierarchy",
   "main": "index.js",
   "scripts": {

@@ -4,6 +4,8 @@ const pathNGraph = require('ngraph.path');
 // load utility functions
 const { readyNetwork, cleanseNetwork, getNGraphDist, populateNGraph } = require('geojson-dijkstra/test/test-util.js');
 
+const GDGraph = require('geojson-dijkstra').Graph;
+
 // load contraction hierarchy version bidirectional dijkstra
 const GraphCH = require('../index.js').Graph;
 
@@ -18,12 +20,14 @@ async function main() {
   const geojson = cleanseNetwork(geofile);
 
   const graph = new GraphCH(geojson);
+  const gdgraph = new GDGraph(geojson);
 
   console.time('TimeToContract');
   graph.contractGraph();
   console.timeEnd('TimeToContract');
 
-  const finder = graph.createPathfinder(); // todo  options go here
+  const finder = graph.createPathfinder();
+  const gdfinder = gdgraph.createFinder({ parseOutputFns: [] });
 
   const ngraph = createGraph();
   populateNGraph(ngraph, geojson);
@@ -53,6 +57,17 @@ async function main() {
       getNGraphDist(pathFinder.find(adj_keys[rnd1], adj_keys[rnd2]));
     }
     console.timeEnd('ngraph');
+
+    console.time('GeoJSON-Dijkstra');
+    for (let i = 0; i < ITERATIONS; i++) {
+      let rnd1 = Math.floor(Math.random() * adj_length);
+      let rnd2 = Math.floor(Math.random() * adj_length);
+      gdfinder.findPath(
+        adj_keys[rnd1],
+        adj_keys[rnd2]
+      );
+    }
+    console.timeEnd('GeoJSON-Dijkstra');
 
     console.time('ContractionHierarchy');
     for (let i = 0; i < ITERATIONS; i++) {
