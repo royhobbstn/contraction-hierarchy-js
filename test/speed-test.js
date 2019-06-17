@@ -1,5 +1,6 @@
 const createGraph = require('ngraph.graph');
 const pathNGraph = require('ngraph.path');
+const fs = require('fs');
 
 // load utility functions
 const { readyNetwork, cleanseNetwork, getNGraphDist, populateNGraph } = require('geojson-dijkstra/test/test-util.js');
@@ -10,7 +11,7 @@ const GDGraph = require('geojson-dijkstra').Graph;
 const GraphCH = require('../index.js').Graph;
 
 
-const ITERATIONS = 1000;
+const ITERATIONS = 10000;
 
 main();
 
@@ -25,6 +26,9 @@ async function main() {
   console.time('TimeToContract');
   graph.contractGraph();
   console.timeEnd('TimeToContract');
+
+  // const data = graph.saveCH();
+  // fs.writeFileSync('./data.json', data, 'utf8');
 
   const finder = graph.createPathfinder();
   const gdfinder = gdgraph.createFinder({ parseOutputFns: [] });
@@ -81,4 +85,6 @@ async function main() {
     console.timeEnd('ContractionHierarchy');
 
   }, 3000);
+
+
 }

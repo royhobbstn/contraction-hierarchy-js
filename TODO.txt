@@ -1,10 +1,10 @@
 
-would be helpful to see what data looks like.
+benchmark with full USA with A* geojson dijkstra, and normal ngraph
+
+May want to return to original graph representation of separate edges.
+(adj list + edges)
 
 ... possible that during contraction can figure out the reverse pts on own?
-
-... what would happen if use original adj list in bidi queryContractionHierarchy?
-(because maybe don't need to store a reverse_adj list at all)
 
 really need to get rid of the ancillary structures either way though.  start there.
 
@@ -31,9 +31,15 @@ BENCHMARKS
 Benchmark faf.geojson, CA, OR, WA: 10,000 routes
 
 TimeToContract: 209868, 163293, 183686, 217732, 145840
-ngraph:         92250,  118702, 108889, 111203, 107243
-ch:             14319,  5188,   6573,   7971,   5806
+ngraph:          92250, 118702, 108889, 111203, 107243
+ch:              14319,   5188,   6573,   7971,   5806
 
+
+All States, 10,000 routes --max_old_space_size=7000
+TimeToContract:    8316742,
+ngraph:             836551, *Astar
+geojson-djikstra:  1279104, *standard dijkstra
+ch:                  39203,
 
 FUTURE
 --------------
@@ -51,5 +57,4 @@ non-geojson interface
 BIG PICTURE
 --------------
 
-Integrate CH with ArcFlags?
-golang or native node addon
+implement in Golang

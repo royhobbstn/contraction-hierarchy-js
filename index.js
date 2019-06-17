@@ -38,7 +38,6 @@ Graph.prototype.contractGraph = function() {
     }
   });
 
-  const contraction_order_nodes = {};
   this.contracted_nodes = {};
 
   // create an additional node ordering
@@ -46,14 +45,21 @@ Graph.prototype.contractGraph = function() {
     const score = getVertexScore(vertex);
     const node = new OrderNode(score, vertex);
     nh.push(node);
-    contraction_order_nodes[vertex] = node;
   });
 
 
   let contraction_level = 1;
 
+  const len = nh.length;
+
   // main contraction loop
   while (nh.length > 0) {
+
+    const updated_len = nh.length;
+
+    if (updated_len % 1000 === 0) {
+      console.log(updated_len / len);
+    }
 
     // recompute to make sure that first node in priority queue
     // is still best candidate to contract
@@ -85,12 +91,25 @@ Graph.prototype.contractGraph = function() {
 
   }
 
+  this._cleanAdjList();
+
+  return;
+
+};
+
+Graph.prototype._cleanAdjList = function() {
   // remove links to lower ranked nodes
   Object.keys(this.adjacency_list).forEach(node => {
     const from_rank = this.contracted_nodes[node];
+    if (!from_rank) {
+      return;
+    }
     this.adjacency_list[node] = this.adjacency_list[node].filter(
       to_coords => {
         const to_rank = this.contracted_nodes[to_coords.end];
+        if (!to_rank) {
+          return true;
+        }
         return from_rank < to_rank;
       }
     );
@@ -99,16 +118,19 @@ Graph.prototype.contractGraph = function() {
   // remove links to lower ranked nodes - reverse adj list
   Object.keys(this.reverse_adj).forEach(node => {
     const from_rank = this.contracted_nodes[node];
+    if (!from_rank) {
+      return;
+    }
     this.reverse_adj[node] = this.reverse_adj[node].filter(
       to_coords => {
         const to_rank = this.contracted_nodes[to_coords.end];
+        if (!to_rank) {
+          return true;
+        }
         return from_rank < to_rank;
       }
     );
   });
-
-  return;
-
 };
 
 // this function is multi-use:  actually contract a node  OR
@@ -177,8 +199,7 @@ Graph.prototype._contract = function(v, get_count_only, finder) {
 
           const attrs = {
             _cost: total,
-            _id: `${u.attributes._id},${w.attributes._id}`,
-            _attrs_array: [u, w]
+            _id: `${u.attributes._id},${w.attributes._id}`
           };
 
           const s = u.end.split(',').map(d => Number(d));
@@ -300,7 +321,7 @@ Graph.prototype._createEdgeIdLookup = function() {
 
 Graph.prototype._createChShortcutter = function() {
 
-  const pool = createNodePool();
+  const pool = this._createNodePool();
   const adjacency_list = this.adjacency_list;
 
   return {
@@ -400,55 +421,6 @@ Graph.prototype._createChShortcutter = function() {
   }
 
 };
-
-
-
-// TODO repeated
-function Node(node, heuristic) {
-  this.id = node.id;
-  this.dist = node.dist !== undefined ? node.dist : Infinity;
-  this.prev = undefined;
-  this.visited = undefined;
-  this.opened = false; // whether has been put in queue
-  this.heapIndex = -1;
-  this.score = Infinity;
-  this.heuristic = heuristic;
-}
-
-function createNodePool() {
-  var currentInCache = 0;
-  var nodeCache = [];
-
-  return {
-    createNewState: createNewState,
-    reset: reset
-  };
-
-  function reset() {
-    currentInCache = 0;
-  }
-
-  function createNewState(node, heuristic) {
-    var cached = nodeCache[currentInCache];
-    if (cached) {
-      cached.id = node.id;
-      cached.dist = node.dist !== undefined ? node.dist : Infinity;
-      cached.prev = undefined;
-      cached.visited = undefined;
-      cached.opened = false;
-      cached.heapIndex = -1;
-      cached.score = Infinity;
-      cached.heuristic = heuristic;
-    }
-    else {
-      cached = new Node(node, heuristic);
-      nodeCache[currentInCache] = cached;
-    }
-    currentInCache++;
-    return cached;
-  }
-
-}
 
 
 

@@ -49,7 +49,7 @@ async function main() {
 
   const coords = [];
 
-  for (let i = 0; i < 1000; i++) {
+  for (let i = 0; i < 100; i++) {
     const rnd1 = Math.floor(Math.random() * adj_length);
     const rnd2 = Math.floor(Math.random() * adj_length);
     const coord = [adj_keys[rnd1], adj_keys[rnd2]];
@@ -74,27 +74,29 @@ async function main() {
     );
     console.log('----');
 
-
     console.time('nGraph');
-    ng[index] = getNGraphDist(pathFinder.find(pair[0], pair[1]));
+    ng[index] = getNGraphDist(pathFinder.find(pair[0], pair[1])).distance;
     console.timeEnd('nGraph');
 
     console.time('og');
-    og[index] = finderOG.findPath((pair[0]), (pair[1]));
+    og[index] = finderOG.findPath((pair[0]), (pair[1])).total_cost;
     console.timeEnd('og');
 
     console.time('ch');
-    ch[index] = finder.queryContractionHierarchy(pair[0], pair[1]);
+    ch[index] = finder.queryContractionHierarchy(pair[0], pair[1]).total_cost;
     console.timeEnd('ch');
+
+    const used = process.memoryUsage().heapUsed / 1024 / 1024;
+    console.log(`The script uses approximately ${used} MB`);
 
   });
 
   let error_count = 0;
   for (let i = 0; i < coords.length; i++) {
     const values = [
-      ng[i].distance,
-      ch[i].distance,
-      og[i].total_cost,
+      ng[i],
+      og[i],
+      ch[i]
     ];
 
     let min = Infinity;
@@ -114,9 +116,9 @@ async function main() {
       console.log(
         i,
         coords[i],
-        ng[i].distance,
-        og[i].total_cost,
-        ch[i].distance
+        ng[i],
+        og[i],
+        ch[i]
       );
     }
   }
