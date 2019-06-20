@@ -1,4 +1,13 @@
 
+check out data.json
+
+arrays cheaper lookup than object.
+
+streamline data model!
+
+
+---------
+
 benchmark with full USA with A* geojson dijkstra, and normal ngraph
 
 May want to return to original graph representation of separate edges.

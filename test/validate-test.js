@@ -6,7 +6,7 @@ const fs = require('fs');
 const { Graph, buildGeoJsonPath, buildEdgeIdList } = require('geojson-dijkstra');
 
 // load utility functions
-const { getNGraphDist, populateNGraph, readyNetwork, cleanseNetwork } = require('geojson-dijkstra/test/test-util.js');
+const { getNGraphDist, populateNGraph, readyNetwork, cleanseNetwork } = require('./test-util.js');
 
 // load contraction hierarchy
 const GraphCH = require('../index.js').Graph;

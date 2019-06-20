@@ -23,9 +23,12 @@
   },
   "homepage": "https://github.com/royhobbstn/contraction-hierarchy-js#readme",
   "dependencies": {
-    "geojson-dijkstra": "1.0.3"
+    "@turf/clone": "6.0.2",
+    "geokdbush": "1.1.0",
+    "kdbush": "1.0.1"
   },
   "devDependencies": {
+    "geojson-dijkstra": "^1.0.4",
     "ngraph.graph": "0.0.18",
     "ngraph.path": "1.1.0"
   }
