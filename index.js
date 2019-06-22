@@ -10,8 +10,8 @@ function Graph(geojson) {
   this._createNodePool = createNodePool;
 
   this._coordsIndex = 0;
-  this._strCoordsToIndex = {}; // todo may not ever be needed
-  this._indexToStrCoords = [];
+  this._strCoordsToIndex = {};
+  this._indexToStrCoords = []; // todo may not ever be needed
 
   this._propertiesIndex = 0;
   this._properties = [];
@@ -164,10 +164,12 @@ Graph.prototype.loadFromGeoJson = function(geo) {
 };
 
 
-Graph.prototype._cleanseGeoJsonNetwork = function(features) {
+Graph.prototype._cleanseGeoJsonNetwork = function(file) {
 
   // get rid of duplicate edges (same origin to dest)
   const inventory = {};
+
+  const features = file.features;
 
   features.forEach(feature => {
     const start = feature.geometry.coordinates[0].join(',');
@@ -289,13 +291,129 @@ function detangle(geo) {
   return collection;
 }
 
+function noOp() {
+  return 0;
+}
+
+
+Graph.prototype.createFinder = function(opts) {
+
+  const options = opts || {};
+  const parseOutputFns = options.parseOutputFns || [];
+  const heuristicFn = options.heuristic || noOp;
+  const pool = this._createNodePool();
+  const adjacency_list = this.adjacency_list;
+  const strCoordsToIndex = this._strCoordsToIndex;
+
+  return {
+    findPath
+  };
+
+  function findPath(start, end) {
+
+    pool.reset();
+
+    const start_index = strCoordsToIndex[String(start)];
+    const end_index = strCoordsToIndex[String(end)];
+
+    const nodeState = [];
+
+    var openSet = new NodeHeap({
+      compare(a, b) {
+        return a.score - b.score;
+      }
+    });
+
+    let current = pool.createNewState({ id: start_index, dist: 0 }, heuristicFn(start, end));
+    nodeState[start_index] = current;
+    current.opened = 1;
+
+    // quick exit for start === end	
+    if (start_index === end_index) {
+      current = '';
+    }
+
+    while (current) {
+
+      adjacency_list[current.id]
+        .forEach(edge => {
+
+          let node = nodeState[edge.end];
+          if (node === undefined) {
+            node = pool.createNewState({ id: edge.end }, heuristicFn([edge.end_lng, edge.end_lat], end));
+            nodeState[edge.end] = node;
+          }
+
+          if (node.visited === true) {
+            return;
+          }
+
+          if (!node.opened) {
+            openSet.push(node);
+            node.opened = true;
+          }
+
+          const proposed_distance = current.dist + edge.cost;
+          if (proposed_distance >= node.dist) {
+            // longer path	
+            return;
+          }
+
+          node.dist = proposed_distance;
+          node.prev = edge;
+          node.score = proposed_distance + node.heuristic;
+
+          openSet.updateItem(node.heapIndex);
+        });
+
+      current.visited = true;
+
+      // get lowest value from heap	
+      current = openSet.pop();
+
+      if (!current) {
+        // there is no path.  distance will be set to 0	
+        break;
+      }
+
+      // exit early if current node becomes end node	
+      if (current.id === end_index) {
+        current = '';
+      }
+    }
+
+    // total cost included by default	
+    const last_node = nodeState[end_index];
+    let response = { total_cost: (last_node && last_node.dist) || 0 };
+
+    // if no output fns specified	
+    if (!parseOutputFns) {
+      return response;
+    }
+
+    // one callback function	
+    if (!Array.isArray(parseOutputFns)) {
+      return Object.assign({}, response, parseOutputFns(this, nodeState, start_index, end_index));
+    }
+
+    // array of callback functions	
+    parseOutputFns.forEach(fn => {
+      response = Object.assign({}, response, fn(this, nodeState, start_index, end_index));
+    });
+
+    return response;
+  }
+};
+
+
+
 
 // Start CH specific
 
 Graph.prototype.contractGraph = function() {
 
   // initialize dijkstra shortcut/path finder
-  const finder = this._createChShortcutter();
+  const finder = this._createChShortcutter(); /**/
 
   // for constructing hierarchy, to be able to quickly determine which edges lead to a specific vertex
   this.reverse_adj = this._createReverseAdjList();
@@ -304,10 +422,10 @@ Graph.prototype.contractGraph = function() {
   // and recursively step through
 
   // when creating a geoJson path, to be able to quickly reference edge information by segment _id
-  this.path_lookup = this._createPathLookup();
+  // this.path_lookup = this._createPathLookup();
 
   // be able to quickly look up edge information from an _id
-  this.edge_lookup = this._createEdgeIdLookup();
+  // this.edge_lookup = this._createEdgeIdLookup();
 
   const getVertexScore = (v) => {
     const shortcut_count = this._contract(v, true, finder);
