@@ -1,105 +1,87 @@
 //
-const cloneGeoJson = require('@turf/clone').default;
-const kdbush = require('kdbush');
-const geokdbush = require('geokdbush');
 const NodeHeap = require('./queue.js');
 
 // objects
 exports.Graph = Graph;
-exports.CoordinateLookup = CoordinateLookup;
 
 
-function Graph(geojson, options) {
-  if (!options) {
-    options = {};
-  }
-  this.adjacency_list = {};
-  this.mutate_inputs = Boolean(options.allowMutateInputs);
+function Graph(geojson) {
+  this.adjacency_list = [];
   this._createNodePool = createNodePool;
+
+  this._coordsIndex = 0;
+  this._strCoordsToIndex = {}; // todo may not ever be needed
+  this._indexToStrCoords = [];
+
+  this._propertiesIndex = 0;
+  this._properties = [];
+  this._geometry = [];
 
   if (geojson) {
     this.loadFromGeoJson(geojson);
+    // this.contract??
   }
 }
 
-function CoordinateLookup(graph) {
 
-  const points_set = new Set();
+Graph.prototype._addEdge = function(startNode, endNode, properties, geometry, isUndirected) {
 
-  Object.keys(graph.adjacency_list).forEach(key => {
-    points_set.add(key);
-  });
-
-  const coordinate_list = [];
-
-  points_set.forEach(pt_str => {
-    coordinate_list.push(pt_str.split(',').map(d => Number(d)));
-  });
-
-  this.index = kdbush(coordinate_list, (p) => p[0], (p) => p[1]);
-}
-
-CoordinateLookup.prototype.getClosestNetworkPt = function(lng, lat) {
-  return geokdbush.around(this.index, lng, lat, 1)[0];
-};
-
-
-Graph.prototype._addEdge = function(startNode, endNode, attrs, isUndirected) {
-
-  // copying attributes slows things down significantly
-  // TODO look closer
-  const attributes = !this.mutate_inputs ? JSON.parse(JSON.stringify(attrs)) : attrs;
-
-  let geometry = undefined;
-
-  // any feature without _geometry disables geojson output
-  geometry = attributes._geometry;
-  delete attributes._geometry; // todo not sure i like this
-
+  // input can now be String or Number coordinates (or anything!) makes no difference
   const start_node = String(startNode);
   const end_node = String(endNode);
 
+  if (start_node === end_node) {
+    console.log("Start and End Nodes are the same.  Ignoring.");
+    return;
+  }
+
+  this._propertiesIndex++;
+  this._properties[this._propertiesIndex] = properties;
+  this._geometry[this._propertiesIndex] = geometry;
+
+  if (!this._strCoordsToIndex[start_node]) {
+    this._coordsIndex++;
+    this._strCoordsToIndex[start_node] = this._coordsIndex;
+    this._indexToStrCoords[this._coordsIndex] = start_node;
+  }
+  if (!this._strCoordsToIndex[end_node]) {
+    this._coordsIndex++;
+    this._strCoordsToIndex[end_node] = this._coordsIndex;
+    this._indexToStrCoords[this._coordsIndex] = end_node;
+  }
+
+  const start_index = this._strCoordsToIndex[start_node];
+  const end_index = this._strCoordsToIndex[end_node];
+
+
   // create object to push into adjacency list
   const obj = {
-    start: start_node,
-    end: end_node,
-    start_lng: startNode[0],
-    start_lat: startNode[1],
-    end_lng: endNode[0],
-    end_lat: endNode[1],
-    cost: attributes._forward_cost || attributes._cost,
-    attributes,
-    geometry
+    end: end_index,
+    cost: properties._forward_cost || properties._cost,
+    attrs: this._propertiesIndex
   };
 
-  // add edge to adjacency list; check to see if start node exists;
-  if (this.adjacency_list[start_node]) {
-    this.adjacency_list[start_node].push(obj);
+  if (this.adjacency_list[start_index]) {
+    this.adjacency_list[start_index].push(obj);
   }
   else {
-    this.adjacency_list[start_node] = [obj];
+    this.adjacency_list[start_index] = [obj];
   }
 
   // add reverse path
   if (isUndirected) {
 
     const reverse_obj = {
-      start: String(end_node),
-      end: String(start_node),
-      start_lng: endNode[0],
-      start_lat: endNode[1],
-      end_lng: startNode[0],
-      end_lat: startNode[1],
-      cost: attributes._forward_cost || attributes._cost,
-      attributes,
-      geometry
+      end: start_index,
+      cost: properties._backward_cost || properties._cost,
+      attrs: this._propertiesIndex
     };
 
-    if (this.adjacency_list[end_node]) {
-      this.adjacency_list[end_node].push(reverse_obj);
+    if (this.adjacency_list[end_index]) {
+      this.adjacency_list[end_index].push(reverse_obj);
     }
     else {
-      this.adjacency_list[end_node] = [reverse_obj];
+      this.adjacency_list[end_index] = [reverse_obj];
     }
 
   }
@@ -155,17 +137,14 @@ function createNodePool() {
 
 Graph.prototype.loadFromGeoJson = function(geo) {
 
-  // turf clone is faster than JSON.parse(JSON.stringify(x))
-  // still regretable vs mutating - avoid if possible
-  const copy = !this.mutate_inputs ? cloneGeoJson(geo).features : geo.features;
-
   // cleans geojson (mutates in place)
-  const features = this._cleanseGeoJsonNetwork(copy);
+  const features = this._cleanseGeoJsonNetwork(geo);
 
-  features.forEach((feature, index) => {
+  features.forEach(feature => {
     const coordinates = feature.geometry.coordinates;
+    const properties = feature.properties;
 
-    if (!feature.properties || !coordinates || !feature.properties._cost) {
+    if (!properties || !coordinates || !properties._cost) {
       console.log('invalid feature detected.  skipping...');
       return;
     }
@@ -173,15 +152,11 @@ Graph.prototype.loadFromGeoJson = function(geo) {
     const start_vertex = coordinates[0];
     const end_vertex = coordinates[coordinates.length - 1];
 
-    // TODO revisit directed graphs
-
-    const properties = Object.assign({}, feature.properties, { _cost: feature.properties._cost, _geometry: feature.geometry.coordinates });
-
     if (feature.properties._direction === 'f') {
-      this._addEdge(start_vertex, end_vertex, properties, false);
+      this._addEdge(start_vertex, end_vertex, properties, coordinates, false);
     }
     else {
-      this._addEdge(start_vertex, end_vertex, properties, true);
+      this._addEdge(start_vertex, end_vertex, properties, coordinates, true);
     }
 
   });
@@ -313,6 +288,9 @@ function detangle(geo) {
 
   return collection;
 }
+
+
+// Start CH specific
 
 Graph.prototype.contractGraph = function() {
 
