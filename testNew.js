@@ -18,9 +18,10 @@ async function main() {
   const finderOG = ogGraph.createFinder();
 
   const graph = new GraphCH(geojson);
-  // graph.contractGraph();
 
-  const finder = graph.createFinder();
+  graph.contractGraph();
+
+  const finder = graph.createPathfinder();
 
   const adj_keys = Object.keys(ogGraph.adjacency_list);
   const adj_length = adj_keys.length;
@@ -28,11 +29,12 @@ async function main() {
 
   const coords = [];
 
-  for (let i = 0; i < 100; i++) {
+  for (let i = 0; i < 1; i++) {
     const rnd1 = Math.floor(Math.random() * adj_length);
     const rnd2 = Math.floor(Math.random() * adj_length);
-    const coord = [adj_keys[rnd1], adj_keys[rnd2]];
-    // const coord = ['-122.368245,45.583623', '-122.601984,45.626598'];
+    // const coord = [adj_keys[rnd1], adj_keys[rnd2]];
+    const coord = ['-122.485382,49.00236', '-117.136591,47.664375'];
+
     coords.push(coord);
   }
 
@@ -57,7 +59,7 @@ async function main() {
     console.timeEnd('og');
 
     console.time('ch');
-    ch[index] = finder.findPath(pair[0], pair[1]).total_cost;
+    ch[index] = finder.queryContractionHierarchy(pair[0], pair[1]).total_cost;
     console.timeEnd('ch');
 
   });

@@ -10,7 +10,6 @@ async function readyNetwork() {
 
   const geojson_raw = await fs.readFile('./networks/faf.geojson'); // full_network
   const geojson = JSON.parse(geojson_raw);
-
   //set up cost field
   geojson.features.forEach(feat => {
     const mph = getMPH(feat.properties.NHS);

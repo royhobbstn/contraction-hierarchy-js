@@ -9,11 +9,11 @@ function Graph(geojson) {
   this.adjacency_list = [];
   this._createNodePool = createNodePool;
 
-  this._coordsIndex = 0;
+  this._coordsIndex = -1;
   this._strCoordsToIndex = {};
   this._indexToStrCoords = []; // todo may not ever be needed
 
-  this._propertiesIndex = 0;
+  this._propertiesIndex = -1;
   this._properties = [];
   this._geometry = [];
 
@@ -24,35 +24,43 @@ function Graph(geojson) {
 }
 
 
-Graph.prototype._addEdge = function(startNode, endNode, properties, geometry, isUndirected) {
+Graph.prototype._addEdge = function(startNode, endNode, properties, geometry, isUndirected, lateAdd) {
 
-  // input can now be String or Number coordinates (or anything!) makes no difference
-  const start_node = String(startNode);
-  const end_node = String(endNode);
+  let start_index;
+  let end_index;
 
-  if (start_node === end_node) {
-    console.log("Start and End Nodes are the same.  Ignoring.");
-    return;
+  if (!lateAdd) {
+    // input can now be String or Number coordinates (or anything!) makes no difference
+    const start_node = String(startNode);
+    const end_node = String(endNode);
+
+    if (start_node === end_node) {
+      console.log("Start and End Nodes are the same.  Ignoring.");
+      return;
+    }
+
+    if (this._strCoordsToIndex[start_node] == null) {
+      this._coordsIndex++;
+      this._strCoordsToIndex[start_node] = this._coordsIndex;
+      this._indexToStrCoords[this._coordsIndex] = start_node;
+    }
+    if (this._strCoordsToIndex[end_node] == null) {
+      this._coordsIndex++;
+      this._strCoordsToIndex[end_node] = this._coordsIndex;
+      this._indexToStrCoords[this._coordsIndex] = end_node;
+    }
+
+    start_index = this._strCoordsToIndex[start_node];
+    end_index = this._strCoordsToIndex[end_node];
+  }
+  else {
+    start_index = startNode;
+    end_index = endNode;
   }
 
   this._propertiesIndex++;
   this._properties[this._propertiesIndex] = properties;
   this._geometry[this._propertiesIndex] = geometry;
-
-  if (!this._strCoordsToIndex[start_node]) {
-    this._coordsIndex++;
-    this._strCoordsToIndex[start_node] = this._coordsIndex;
-    this._indexToStrCoords[this._coordsIndex] = start_node;
-  }
-  if (!this._strCoordsToIndex[end_node]) {
-    this._coordsIndex++;
-    this._strCoordsToIndex[end_node] = this._coordsIndex;
-    this._indexToStrCoords[this._coordsIndex] = end_node;
-  }
-
-  const start_index = this._strCoordsToIndex[start_node];
-  const end_index = this._strCoordsToIndex[end_node];
-
 
   // create object to push into adjacency list
   const obj = {
@@ -85,6 +93,8 @@ Graph.prototype._addEdge = function(startNode, endNode, properties, geometry, is
     }
 
   }
+
+  return this._propertiesIndex;
 
 };
 
@@ -153,10 +163,10 @@ Graph.prototype.loadFromGeoJson = function(geo) {
     const end_vertex = coordinates[coordinates.length - 1];
 
     if (feature.properties._direction === 'f') {
-      this._addEdge(start_vertex, end_vertex, properties, coordinates, false);
+      this._addEdge(start_vertex, end_vertex, properties, coordinates, false, false);
     }
     else {
-      this._addEdge(start_vertex, end_vertex, properties, coordinates, true);
+      this._addEdge(start_vertex, end_vertex, properties, coordinates, true, false);
     }
 
   });
@@ -413,7 +423,7 @@ Graph.prototype.createFinder = function(opts) {
 Graph.prototype.contractGraph = function() {
 
   // initialize dijkstra shortcut/path finder
-  const finder = this._createChShortcutter(); /**/
+  const finder = this._createChShortcutter();
 
   // for constructing hierarchy, to be able to quickly determine which edges lead to a specific vertex
   this.reverse_adj = this._createReverseAdjList();
@@ -428,7 +438,7 @@ Graph.prototype.contractGraph = function() {
   // this.edge_lookup = this._createEdgeIdLookup();
 
   const getVertexScore = (v) => {
-    const shortcut_count = this._contract(v, true, finder);
+    const shortcut_count = this._contract(v, true, finder); /**/
     const edge_count = this.adjacency_list[v].length;
     const edge_difference = shortcut_count - edge_count;
     const contracted_neighbors = getContractedNeighborCount(v);
@@ -437,7 +447,7 @@ Graph.prototype.contractGraph = function() {
 
   const getContractedNeighborCount = (v) => {
     return this.adjacency_list[v].reduce((acc, node) => {
-      const is_contracted = this.contracted_nodes[node] ? 1 : 0;
+      const is_contracted = this.contracted_nodes[node.end] ? 1 : 0;
       return acc + is_contracted;
     }, 0);
   };
@@ -448,15 +458,16 @@ Graph.prototype.contractGraph = function() {
     }
   });
 
-  this.contracted_nodes = {};
+  this.contracted_nodes = [];
 
   // create an additional node ordering
-  Object.keys(this.adjacency_list).forEach(vertex => {
-    const score = getVertexScore(vertex);
-    const node = new OrderNode(score, vertex);
+  this.adjacency_list.forEach((vertex, index) => {
+    const score = getVertexScore(index);
+    const node = new OrderNode(score, index);
     nh.push(node);
   });
 
+  // OK TO HERE
 
   let contraction_level = 1;
 
@@ -480,6 +491,7 @@ Graph.prototype.contractGraph = function() {
     do {
       const first_vertex = node_obj.id;
       const new_score = getVertexScore(first_vertex);
+
       if (new_score > old_score) {
         node_obj.score = new_score;
         nh.updateItem(node_obj.heapIndex);
@@ -488,12 +500,13 @@ Graph.prototype.contractGraph = function() {
       if (node_obj.id === first_vertex) {
         found_lowest = true;
       }
+
     } while (found_lowest === false);
 
     // lowest found, pop it off the queue and contract it
     const v = nh.pop();
 
-    this._contract(v.id, false, finder);
+    this._contract(v.id, false, finder); /**/
 
     // keep a record of contraction level of each node
     this.contracted_nodes[v.id] = contraction_level;
@@ -508,13 +521,14 @@ Graph.prototype.contractGraph = function() {
 };
 
 Graph.prototype._cleanAdjList = function() {
+
   // remove links to lower ranked nodes
-  Object.keys(this.adjacency_list).forEach(node => {
-    const from_rank = this.contracted_nodes[node];
+  this.adjacency_list.forEach((node, index) => {
+    const from_rank = this.contracted_nodes[index];
     if (!from_rank) {
       return;
     }
-    this.adjacency_list[node] = this.adjacency_list[node].filter(
+    this.adjacency_list[index] = this.adjacency_list[index].filter(
       to_coords => {
         const to_rank = this.contracted_nodes[to_coords.end];
         if (!to_rank) {
@@ -526,12 +540,12 @@ Graph.prototype._cleanAdjList = function() {
   });
 
   // remove links to lower ranked nodes - reverse adj list
-  Object.keys(this.reverse_adj).forEach(node => {
-    const from_rank = this.contracted_nodes[node];
+  this.reverse_adj.forEach((node, index) => {
+    const from_rank = this.contracted_nodes[index];
     if (!from_rank) {
       return;
     }
-    this.reverse_adj[node] = this.reverse_adj[node].filter(
+    this.reverse_adj[index] = this.reverse_adj[index].filter(
       to_coords => {
         const to_rank = this.contracted_nodes[to_coords.end];
         if (!to_rank) {
@@ -547,6 +561,7 @@ Graph.prototype._cleanAdjList = function() {
 // with `get_count_only = true` find number of shortcuts added
 // if node were to be contracted
 Graph.prototype._contract = function(v, get_count_only, finder) {
+
   const from_connections = (this.reverse_adj[v] || []).filter(c => {
     return !this.contracted_nodes[c.end];
   });
@@ -609,34 +624,42 @@ Graph.prototype._contract = function(v, get_count_only, finder) {
 
           const attrs = {
             _cost: total,
-            _id: `${u.attributes._id},${w.attributes._id}`
+            _id: `${u.attrs},${w.attrs}`
           };
 
-          const s = u.end.split(',').map(d => Number(d));
-          const e = w.end.split(',').map(d => Number(d));
+          // const s = u.end.split(',').map(d => Number(d));
+          // const e = w.end.split(',').map(d => Number(d));
 
           // todo?  does this work in directed network??
           // should it only be added one-way?
-          this._addEdge(s, e, attrs, false);
+
+          // somehow get node of start and end???
+
+          const attrs_index = this._addEdge(u.end, w.end, attrs, null, false, true);
+
+          // todo THIS IS suspicious for these reasons:
+          // start and end maybe should be switched
+          // cost is not taking forward/backward into account
+          // but this is what it was originally in the working
+          // version so SHRUG for now
 
           // add to reverse adj list
           const obj = {
-            start: u.end,
             end: w.end,
-            attributes: attrs,
-            cost: total
+            cost: total,
+            attrs: attrs_index
           };
 
-          if (this.reverse_adj[s]) {
-            this.reverse_adj[s].push(obj);
+          if (this.reverse_adj[u.end]) {
+            this.reverse_adj[u.end].push(obj);
           }
           else {
-            this.reverse_adj[s] = [obj];
+            this.reverse_adj[u.end] = [obj];
           }
 
           // add to pathIdLookup
-          this.path_lookup[`${u.end}|${w.end}`] = attrs._id;
-          this.path_lookup[`${w.end}|${u.end}`] = attrs._id;
+          // this.path_lookup[`${u.end}|${w.end}`] = attrs._id;
+          // this.path_lookup[`${w.end}|${u.end}`] = attrs._id;
         }
       }
     });
@@ -649,14 +672,16 @@ Graph.prototype._contract = function(v, get_count_only, finder) {
 Graph.prototype.loadCH = function(ch) {
   const parsed = JSON.parse(ch);
   this.adjacency_list = parsed.adjacency_list;
-  this.mutate_inputs = parsed.mutate_inputs;
-  this.reverse_adj = parsed.reverse_adj;
-  this.path_lookup = parsed.path_lookup;
-  this.edge_lookup = parsed.edge_lookup;
+  // this.reverse_adj = parsed.reverse_adj; // TODO just create on demand rather than save
+  // this.path_lookup = parsed.path_lookup;
+  // this.edge_lookup = parsed.edge_lookup;
   this.contracted_nodes = parsed.contracted_nodes;
+
+  // TODO function call to create a reverse adj list
 };
 
 Graph.prototype.saveCH = function() {
+  // TODO more selective
   return JSON.stringify(this);
 };
 
@@ -670,16 +695,15 @@ function OrderNode(score, id) {
 Graph.prototype._createReverseAdjList = function() {
 
   // create a reverse adjacency list
-  const reverse_adj = {};
+  const reverse_adj = [];
 
-  Object.keys(this.adjacency_list).forEach(node => {
-    this.adjacency_list[node].forEach(edge => {
+  this.adjacency_list.forEach((node, index) => {
+    node.forEach(edge => {
 
       const obj = {
-        end: edge.start,
+        end: index,
         cost: edge.cost,
-        // id: edge.id,
-        attributes: edge.attributes
+        attrs: edge.attrs
       };
 
       // add edge to reverse adj list
@@ -689,9 +713,7 @@ Graph.prototype._createReverseAdjList = function() {
       else {
         reverse_adj[edge.end].push(obj);
       }
-
     });
-
   });
 
   return reverse_adj;
@@ -736,19 +758,15 @@ Graph.prototype._createChShortcutter = function() {
   };
 
   function runDijkstra(
-    start,
-    end,
+    start_index,
+    end_index,
     vertex,
     total
   ) {
 
     pool.reset();
 
-    const str_start = String(start);
-    const str_end = String(end);
-
-    const nodeState = new Map();
-
+    const nodeState = [];
     const distances = {};
 
     var openSet = new NodeHeap({
@@ -757,13 +775,13 @@ Graph.prototype._createChShortcutter = function() {
       }
     });
 
-    let current = pool.createNewState({ id: str_start, dist: 0 });
-    nodeState.set(str_start, current);
+    let current = pool.createNewState({ id: start_index, dist: 0 });
+    nodeState[start_index] = current;
     current.opened = 1;
     distances[current.id] = 0;
 
-    // quick exit for start === end
-    if (str_start === str_end) {
+    // quick exit for start === end	
+    if (start_index === end_index) {
       current = '';
     }
 
@@ -777,10 +795,10 @@ Graph.prototype._createChShortcutter = function() {
         })
         .forEach(edge => {
 
-          let node = nodeState.get(edge.end);
+          let node = nodeState[edge.end];
           if (node === undefined) {
             node = pool.createNewState({ id: edge.end });
-            nodeState.set(edge.end, node);
+            nodeState[edge.end] = node;
           }
 
           if (node.visited === true) {
@@ -812,7 +830,7 @@ Graph.prototype._createChShortcutter = function() {
       current = openSet.pop();
 
       // exit early if current node becomes end node
-      if (current && (current.id === end)) {
+      if (current && (current.id === end_index)) {
         current = '';
       }
 
@@ -838,8 +856,10 @@ Graph.prototype._createChShortcutter = function() {
 Graph.prototype.createPathfinder = function(options) {
 
   const adjacency_list = this.adjacency_list;
-  const rev_adjacency_list = this.reverse_adj;
+  const rev_adjacency_list = this.reverse_adj; // todo or build it
   const pool = this._createNodePool();
+  const strCoordsToIndex = this._strCoordsToIndex;
+
   const graph = this;
 
   if (!options) {
@@ -858,23 +878,23 @@ Graph.prototype.createPathfinder = function(options) {
 
     pool.reset();
 
-    const str_start = String(start);
-    const str_end = String(end);
+    const start_index = strCoordsToIndex[String(start)];
+    const end_index = strCoordsToIndex[String(end)];
 
-    const forward_nodeState = new Map();
-    const backward_nodeState = new Map();
+    const forward_nodeState = [];
+    const backward_nodeState = [];
 
     const forward_distances = {};
     const backward_distances = {};
 
 
-    let current_start = pool.createNewState({ id: str_start, dist: 0 });
-    forward_nodeState.set(str_start, current_start);
+    let current_start = pool.createNewState({ id: start_index, dist: 0 });
+    forward_nodeState[start_index] = current_start;
     current_start.opened = 1;
     forward_distances[current_start.id] = 0;
 
-    let current_end = pool.createNewState({ id: str_end, dist: 0 });
-    backward_nodeState.set(str_end, current_end);
+    let current_end = pool.createNewState({ id: end_index, dist: 0 });
+    backward_nodeState[end_index] = current_end;
     current_end.opened = 1;
     backward_distances[current_end.id] = 0;
 
@@ -904,7 +924,7 @@ Graph.prototype.createPathfinder = function(options) {
     let tentative_shortest_path = Infinity;
     let tentative_shortest_node = null;
 
-    if (str_start !== str_end) {
+    if (start_index !== end_index) {
       do {
         if (!forward_done) {
           sf = searchForward.next();
@@ -933,7 +953,7 @@ Graph.prototype.createPathfinder = function(options) {
     let ids;
 
     if (options.ids === true || options.path === true) {
-      ids = buildIdsCH(graph, forward_nodeState, backward_nodeState, tentative_shortest_node, tentative_shortest_path, str_start, str_end);
+      ids = buildIdsCH(graph, forward_nodeState, backward_nodeState, tentative_shortest_node, tentative_shortest_path, start_index, end_index);
     }
 
     if (options.ids === true) {
@@ -941,7 +961,7 @@ Graph.prototype.createPathfinder = function(options) {
     }
 
     if (options.path === true) {
-      const path = buildGeoJsonPath(graph, ids.ids, tentative_shortest_path, str_start, str_end);
+      const path = buildGeoJsonPath(graph, ids.ids, tentative_shortest_path, start_index, end_index);
       result = Object.assign(result, path);
     }
 
@@ -958,6 +978,7 @@ Graph.prototype.createPathfinder = function(options) {
       reverse_distances
     ) {
 
+
       var openSet = new NodeHeap({
         compare(a, b) {
           return a.dist - b.dist;
@@ -965,12 +986,16 @@ Graph.prototype.createPathfinder = function(options) {
       });
 
       do {
-        adj[current.id].forEach(edge => {
 
-          let node = nodeState.get(edge.end);
+        console.log({ direction })
+
+        adj[current.id].forEach(edge => {
+          console.log(edge.end, graph._indexToStrCoords[edge.end])
+
+          let node = nodeState[edge.end];
           if (node === undefined) {
             node = pool.createNewState({ id: edge.end });
-            nodeState.set(edge.end, node);
+            nodeState[edge.end] = node;
           }
 
           if (node.visited === true) {
