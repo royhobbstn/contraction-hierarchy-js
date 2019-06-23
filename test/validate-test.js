@@ -3,7 +3,7 @@ const pathNGraph = require('ngraph.path');
 const fs = require('fs');
 
 // load original geojson-dijkstra for sanity check
-const { Graph, buildGeoJsonPath, buildEdgeIdList } = require('geojson-dijkstra');
+const { Graph } = require('geojson-dijkstra');
 
 // load utility functions
 const { getNGraphDist, populateNGraph, readyNetwork, cleanseNetwork } = require('./test-util.js');
@@ -18,22 +18,26 @@ async function main() {
   const geofile = await readyNetwork();
   const geojson = cleanseNetwork(geofile);
 
-  const ogGraph = new Graph(geojson);
+  const graphtemp = new GraphCH(geojson);
+  const gdgraph = new Graph(geojson);
 
-  const finderOG = ogGraph.createFinder({ parseOutputFns: [buildGeoJsonPath, buildEdgeIdList] });
+  console.time('TimeToContract');
+  graphtemp.contractGraph();
+  console.timeEnd('TimeToContract');
+
+  console.time('TimeToSave');
+  const data = graphtemp.saveCH();
+  console.timeEnd('TimeToSave');
 
   const graph = new GraphCH(geojson);
-  graph.contractGraph();
+  console.time('TimeToLoad');
+  graph.loadCH(data);
+  console.timeEnd('TimeToLoad');
 
-  // const saved = graph.saveCH();
 
-  // fs.writeFileSync('./saved.json', saved, 'utf8');
+  const finder = graph.createPathfinder();
 
-  // process.exit();
-
-  const finder = graph.createPathfinder({ ids: true, path: true });
-
-  const adj_keys = Object.keys(graph.adjacency_list);
+  const adj_keys = Object.keys(gdgraph.adjacency_list);
   const adj_length = adj_keys.length;
 
   const ngraph = createGraph();
@@ -78,16 +82,9 @@ async function main() {
     ng[index] = getNGraphDist(pathFinder.find(pair[0], pair[1])).distance;
     console.timeEnd('nGraph');
 
-    console.time('og');
-    og[index] = finderOG.findPath((pair[0]), (pair[1])).total_cost;
-    console.timeEnd('og');
-
     console.time('ch');
     ch[index] = finder.queryContractionHierarchy(pair[0], pair[1]).total_cost;
     console.timeEnd('ch');
-
-    const used = process.memoryUsage().heapUsed / 1024 / 1024;
-    console.log(`The script uses approximately ${used} MB`);
 
   });
 

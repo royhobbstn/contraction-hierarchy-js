@@ -3,7 +3,7 @@ const pathNGraph = require('ngraph.path');
 const fs = require('fs');
 
 // load utility functions
-const { readyNetwork, cleanseNetwork, getNGraphDist, populateNGraph } = require('geojson-dijkstra/test/test-util.js');
+const { readyNetwork, cleanseNetwork, getNGraphDist, populateNGraph } = require('./test-util.js');
 
 const GDGraph = require('geojson-dijkstra').Graph;
 
@@ -20,15 +20,22 @@ async function main() {
   const geofile = await readyNetwork();
   const geojson = cleanseNetwork(geofile);
 
-  const graph = new GraphCH(geojson);
+  const graphtemp = new GraphCH(geojson);
   const gdgraph = new GDGraph(geojson);
 
   console.time('TimeToContract');
-  graph.contractGraph();
+  graphtemp.contractGraph();
   console.timeEnd('TimeToContract');
 
-  // const data = graph.saveCH();
-  // fs.writeFileSync('./data.json', data, 'utf8');
+  console.time('TimeToSave');
+  const data = graphtemp.saveCH();
+  console.timeEnd('TimeToSave');
+
+  const graph = new GraphCH(geojson);
+  console.time('TimeToLoad');
+  graph.loadCH(data);
+  console.timeEnd('TimeToLoad');
+
 
   const finder = graph.createPathfinder();
   const gdfinder = gdgraph.createFinder({ parseOutputFns: [] });
@@ -51,7 +58,7 @@ async function main() {
 
   setTimeout(function() {
     // performance test
-    const adj_keys = Object.keys(graph.adjacency_list);
+    const adj_keys = Object.keys(gdgraph.adjacency_list);
     const adj_length = adj_keys.length;
 
     console.time('ngraph');
@@ -77,10 +84,7 @@ async function main() {
     for (let i = 0; i < ITERATIONS; i++) {
       let rnd1 = Math.floor(Math.random() * adj_length);
       let rnd2 = Math.floor(Math.random() * adj_length);
-      finder.queryContractionHierarchy(
-        adj_keys[rnd1],
-        adj_keys[rnd2]
-      );
+      finder.queryContractionHierarchy(adj_keys[rnd1], adj_keys[rnd2]);
     }
     console.timeEnd('ContractionHierarchy');
 

@@ -672,10 +672,10 @@ Graph.prototype._contract = function(v, get_count_only, finder) {
 Graph.prototype.loadCH = function(ch) {
   const parsed = JSON.parse(ch);
   this.adjacency_list = parsed.adjacency_list;
-  // this.reverse_adj = parsed.reverse_adj; // TODO just create on demand rather than save
+  this.reverse_adj = parsed.reverse_adj; // TODO just create on demand rather than save
   // this.path_lookup = parsed.path_lookup;
   // this.edge_lookup = parsed.edge_lookup;
-  this.contracted_nodes = parsed.contracted_nodes;
+  // this.contracted_nodes = parsed.contracted_nodes;
 
   // TODO function call to create a reverse adj list
 };
@@ -987,10 +987,7 @@ Graph.prototype.createPathfinder = function(options) {
 
       do {
 
-        console.log({ direction })
-
         adj[current.id].forEach(edge => {
-          console.log(edge.end, graph._indexToStrCoords[edge.end])
 
           let node = nodeState[edge.end];
           if (node === undefined) {
