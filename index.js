@@ -19,7 +19,6 @@ function Graph(geojson) {
 
   if (geojson) {
     this.loadFromGeoJson(geojson);
-    // this.contract??
   }
 }
 
@@ -428,15 +427,6 @@ Graph.prototype.contractGraph = function() {
   // for constructing hierarchy, to be able to quickly determine which edges lead to a specific vertex
   this.reverse_adj = this._createReverseAdjList();
 
-  // TODO, future, hope to avoid the below steps and instead use node.prev_edge
-  // and recursively step through
-
-  // when creating a geoJson path, to be able to quickly reference edge information by segment _id
-  // this.path_lookup = this._createPathLookup();
-
-  // be able to quickly look up edge information from an _id
-  // this.edge_lookup = this._createEdgeIdLookup();
-
   const getVertexScore = (v) => {
     const shortcut_count = this._contract(v, true, finder); /**/
     const edge_count = this.adjacency_list[v].length;
@@ -466,8 +456,6 @@ Graph.prototype.contractGraph = function() {
     const node = new OrderNode(score, index);
     nh.push(node);
   });
-
-  // OK TO HERE
 
   let contraction_level = 1;
 
@@ -672,17 +660,14 @@ Graph.prototype._contract = function(v, get_count_only, finder) {
 Graph.prototype.loadCH = function(ch) {
   const parsed = JSON.parse(ch);
   this.adjacency_list = parsed.adjacency_list;
-  this.reverse_adj = parsed.reverse_adj; // TODO just create on demand rather than save
-  // this.path_lookup = parsed.path_lookup;
-  // this.edge_lookup = parsed.edge_lookup;
-  // this.contracted_nodes = parsed.contracted_nodes;
+  this.reverse_adj = parsed.reverse_adj;
+  this._strCoordsToIndex = parsed._strCoordsToIndex;
+  // TODO ? this._createReverseAdjList();
 
-  // TODO function call to create a reverse adj list
 };
 
 Graph.prototype.saveCH = function() {
-  // TODO more selective
-  return JSON.stringify(this);
+  return JSON.stringify({ adjacency_list: this.adjacency_list, reverse_adj: this.reverse_adj, _strCoordsToIndex: this._strCoordsToIndex });
 };
 
 
@@ -718,35 +703,6 @@ Graph.prototype._createReverseAdjList = function() {
 
   return reverse_adj;
 };
-
-Graph.prototype._createPathLookup = function() {
-
-  // create an id lookup
-  const path_lookup = {};
-
-  Object.keys(this.adjacency_list).forEach(node => {
-    this.adjacency_list[node].forEach(edge => {
-      path_lookup[`${edge.start}|${edge.end}`] = edge.attributes._id;
-    });
-  });
-
-  return path_lookup;
-};
-
-Graph.prototype._createEdgeIdLookup = function() {
-
-  // create an edge lookup
-  const edge_lookup = {};
-
-  Object.keys(this.adjacency_list).forEach(node => {
-    this.adjacency_list[node].forEach(edge => {
-      edge_lookup[edge.attributes._id] = edge;
-    });
-  });
-
-  return edge_lookup;
-};
-
 
 Graph.prototype._createChShortcutter = function() {
 
@@ -876,10 +832,13 @@ Graph.prototype.createPathfinder = function(options) {
     end
   ) {
 
+    console.log({ start, end })
     pool.reset();
 
     const start_index = strCoordsToIndex[String(start)];
     const end_index = strCoordsToIndex[String(end)];
+
+    console.log({ start_index, end_index })
 
     const forward_nodeState = [];
     const backward_nodeState = [];

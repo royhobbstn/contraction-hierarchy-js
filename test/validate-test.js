@@ -29,7 +29,7 @@ async function main() {
   const data = graphtemp.saveCH();
   console.timeEnd('TimeToSave');
 
-  const graph = new GraphCH(geojson);
+  const graph = new GraphCH();
   console.time('TimeToLoad');
   graph.loadCH(data);
   console.timeEnd('TimeToLoad');
@@ -63,8 +63,6 @@ async function main() {
 
   const ch = [];
   const ng = [];
-  const og = [];
-
 
   coords.forEach((pair, index) => {
     process.stdout.write(
@@ -92,7 +90,6 @@ async function main() {
   for (let i = 0; i < coords.length; i++) {
     const values = [
       ng[i],
-      og[i],
       ch[i]
     ];
 
@@ -108,13 +105,12 @@ async function main() {
       }
     });
 
-    if (max - min > 0.000001) {
+    if (true /*max - min > 0.000001*/ ) {
       error_count++;
       console.log(
         i,
         coords[i],
         ng[i],
-        og[i],
         ch[i]
       );
     }

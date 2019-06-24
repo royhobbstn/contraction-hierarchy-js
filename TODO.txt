@@ -1,26 +1,14 @@
 
-check out data.json
 
-arrays cheaper lookup than object.
+be able to reconstruct rev_adjacency_list from adjacency_list on Loading Existing CH
 
-streamline data model!
+attributes - save when Saving CH, load when Loading CH
 
-
----------
-
-benchmark with full USA with A* geojson dijkstra, and normal ngraph
-
-May want to return to original graph representation of separate edges.
-(adj list + edges)
-
-... possible that during contraction can figure out the reverse pts on own?
-
-really need to get rid of the ancillary structures either way though.  start there.
-
+... return edge id and geojson representations
 
 think more deeply about adj list and reverse adj list
-Reconsider how to create CH ids/geojson without ancillary data structures
-change naive serialization for saving / loading CH
+  - lots more testing around directed graphs
+
 
 TimeToContract: 154481.987ms
 ngraph: 9374.445ms
