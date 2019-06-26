@@ -1,7 +1,6 @@
 const kdbush = require('kdbush');
 const geokdbush = require('geokdbush');
 const NodeHeap = require('./queue.js');
-const cloneGeoJson = require('@turf/clone').default;
 
 
 // objects
@@ -46,7 +45,7 @@ CoordinateLookup.prototype.getClosestNetworkPt = function(lng, lat) {
   return geokdbush.around(this.index, lng, lat, 1)[0];
 };
 
-Graph.prototype._addEdge = function(startNode, endNode, properties, geometry, isUndirected, lateAdd) {
+Graph.prototype._addEdge = function(startNode, endNode, properties, geometry, lateAdd) {
 
   let start_index;
   let end_index;
@@ -98,25 +97,18 @@ Graph.prototype._addEdge = function(startNode, endNode, properties, geometry, is
     this.adjacency_list[start_index] = [obj];
   }
 
-  // add reverse path
-  if (isUndirected) {
+  const reverse_obj = {
+    end: start_index,
+    cost: properties._backward_cost || properties._cost,
+    attrs: this._propertiesIndex
+  };
 
-    const reverse_obj = {
-      end: start_index,
-      cost: properties._backward_cost || properties._cost,
-      attrs: this._propertiesIndex
-    };
-
-    if (this.adjacency_list[end_index]) {
-      this.adjacency_list[end_index].push(reverse_obj);
-    }
-    else {
-      this.adjacency_list[end_index] = [reverse_obj];
-    }
-
+  if (this.adjacency_list[end_index]) {
+    this.adjacency_list[end_index].push(reverse_obj);
   }
-
-  return this._propertiesIndex;
+  else {
+    this.adjacency_list[end_index] = [reverse_obj];
+  }
 
 };
 
@@ -184,12 +176,9 @@ Graph.prototype.loadFromGeoJson = function(geo) {
     const start_vertex = coordinates[0];
     const end_vertex = coordinates[coordinates.length - 1];
 
-    if (feature.properties._direction === 'f') {
-      this._addEdge(start_vertex, end_vertex, properties, coordinates, false, false);
-    }
-    else {
-      this._addEdge(start_vertex, end_vertex, properties, coordinates, true, false);
-    }
+
+    this._addEdge(start_vertex, end_vertex, properties, coordinates, false);
+
 
   });
 
@@ -210,52 +199,49 @@ Graph.prototype._cleanseGeoJsonNetwork = function(file) {
 
     const reverse_id = `${end}|${start}`;
 
-    if (!feature.properties._direction || feature.properties._direction === 'all' || feature.properties._direction === 'f') {
 
-      if (!inventory[id]) {
-        // new segment
+    if (!inventory[id]) {
+      // new segment
+      inventory[id] = feature;
+    }
+    else {
+      // a segment with the same origin/dest exists.  choose shortest.
+      const old_cost = inventory[id].properties._cost;
+      const new_cost = feature.properties._cost;
+      if (new_cost < old_cost) {
+        // mark old segment for deletion
+        inventory[id].properties.__markDelete = true;
+        // rewrite old segment because this one is shorter
         inventory[id] = feature;
       }
       else {
-        // a segment with the same origin/dest exists.  choose shortest.
-        const old_cost = inventory[id].properties._cost;
-        const new_cost = feature.properties._forward_cost || feature.properties._cost;
-        if (new_cost < old_cost) {
-          // mark old segment for deletion
-          inventory[id].properties.__markDelete = true;
-          // rewrite old segment because this one is shorter
-          inventory[id] = feature;
-        }
-        else {
-          // instead mark new feature for deletion
-          feature.properties.__markDelete = true;
-        }
+        // instead mark new feature for deletion
+        feature.properties.__markDelete = true;
       }
-
     }
 
-    if (!feature.properties._direction || feature.properties._direction === 'all' || feature.properties._direction === 'b') {
-      // now reverse
-      if (!inventory[reverse_id]) {
-        // new segment
+
+    // now reverse
+    if (!inventory[reverse_id]) {
+      // new segment
+      inventory[reverse_id] = feature;
+    }
+    else {
+      // a segment with the same origin/dest exists.  choose shortest.
+      const old_cost = inventory[reverse_id].properties._cost;
+      const new_cost = feature.properties._cost;
+      if (new_cost < old_cost) {
+        // mark old segment for deletion
+        inventory[reverse_id].properties.__markDelete = true;
+        // rewrite old segment because this one is shorter
         inventory[reverse_id] = feature;
       }
       else {
-        // a segment with the same origin/dest exists.  choose shortest.
-        const old_cost = inventory[reverse_id].properties._cost;
-        const new_cost = feature.properties._backward_cost || feature.properties._cost;
-        if (new_cost < old_cost) {
-          // mark old segment for deletion
-          inventory[reverse_id].properties.__markDelete = true;
-          // rewrite old segment because this one is shorter
-          inventory[reverse_id] = feature;
-        }
-        else {
-          // instead mark new feature for deletion
-          feature.properties.__markDelete = true;
-        }
+        // instead mark new feature for deletion
+        feature.properties.__markDelete = true;
       }
     }
+
 
   });
 
@@ -266,62 +252,6 @@ Graph.prototype._cleanseGeoJsonNetwork = function(file) {
 
 };
 
-function detangle(geo) {
-
-  // ------ de-tangle routine
-
-  // copy source to avoid mutation  // todo turf clone?
-  const features = JSON.parse(JSON.stringify(geo)).features;
-
-  const collection = {
-    type: "FeatureCollection",
-    features: features
-  };
-
-  // if only one feature return
-  if (features.length <= 1) {
-    return collection;
-  }
-
-  // modify first feature
-  const cf = features[0];
-  const nf = features[1];
-
-  const ce = cf.geometry.coordinates[cf.geometry.coordinates.length - 1];
-
-  const ns = nf.geometry.coordinates[0];
-  const ne = nf.geometry.coordinates[nf.geometry.coordinates.length - 1];
-
-  // in case of ce !== ns && ce !== ne. (flip first feature)
-
-  // ce === ns
-  const ce_ns = ce[0] === ns[0] && ce[1] === ns[1];
-  // ce === ne
-  const ce_ne = ce[0] === ne[0] && ce[1] === ne[1];
-
-  if (!ce_ns && !ce_ne) {
-    features[0].geometry.coordinates.reverse();
-  }
-
-  // modify rest of the features to match orientation of the first
-  for (let i = 1; i < features.length; i++) {
-    const lastFeature = features[i - 1];
-    const currentFeature = features[i];
-
-    const last_end = lastFeature.geometry.coordinates[lastFeature.geometry.coordinates.length - 1];
-    const current_end = currentFeature.geometry.coordinates[currentFeature.geometry.coordinates.length - 1];
-
-    // in the case of last_end == current_end  (flip this)
-    const le_ce = last_end[0] === current_end[0] && last_end[1] === current_end[1];
-
-    if (le_ce) {
-      currentFeature.geometry.coordinates.reverse();
-    }
-
-  }
-
-  return collection;
-}
 
 function noOp() {
   return 0;
@@ -447,9 +377,6 @@ Graph.prototype.contractGraph = function() {
   // initialize dijkstra shortcut/path finder
   const finder = this._createChShortcutter();
 
-  // for constructing hierarchy, to be able to quickly determine which edges lead to a specific vertex
-  this.reverse_adj = this._createReverseAdjList();
-
   const getVertexScore = (v) => {
     const shortcut_count = this._contract(v, true, finder); /**/
     const edge_count = this.adjacency_list[v].length;
@@ -559,22 +486,6 @@ Graph.prototype._cleanAdjList = function() {
     );
   });
 
-  // remove links to lower ranked nodes - reverse adj list
-  this.reverse_adj.forEach((node, index) => {
-    const from_rank = this.contracted_nodes[index];
-    if (!from_rank) {
-      return;
-    }
-    this.reverse_adj[index] = this.reverse_adj[index].filter(
-      to_coords => {
-        const to_rank = this.contracted_nodes[to_coords.end];
-        if (!to_rank) {
-          return true;
-        }
-        return from_rank < to_rank;
-      }
-    );
-  });
 };
 
 // this function is multi-use:  actually contract a node  OR
@@ -582,9 +493,7 @@ Graph.prototype._cleanAdjList = function() {
 // if node were to be contracted
 Graph.prototype._contract = function(v, get_count_only, finder) {
 
-  this.edgeCount = 0;
-
-  const from_connections = (this.reverse_adj[v] || []).filter(c => {
+  const from_connections = (this.adjacency_list[v] || []).filter(c => {
     return !this.contracted_nodes[c.end];
   });
 
@@ -650,34 +559,8 @@ Graph.prototype._contract = function(v, get_count_only, finder) {
             _id: `${u.attrs},${w.attrs}`
           };
 
-
-          // todo?  does this work in directed network??
-          // should it only be added one-way?
-
           // somehow get node of start and end???
-          this.edgeCount++;
-          console.log(this.edgeCount)
-          const attrs_index = this._addEdge(u.end, w.end, attrs, null, false, true);
-
-          // todo THIS IS suspicious for these reasons:
-          // start and end maybe should be switched
-          // cost is not taking forward/backward into account
-          // but this is what it was originally in the working
-          // version so SHRUG for now
-
-          // add to reverse adj list
-          const obj = {
-            end: w.end,
-            cost: total,
-            attrs: attrs_index
-          };
-
-          if (this.reverse_adj[u.end]) {
-            this.reverse_adj[u.end].push(obj);
-          }
-          else {
-            this.reverse_adj[u.end] = [obj];
-          }
+          this._addEdge(u.end, w.end, attrs, null, true);
 
         }
       }
@@ -691,7 +574,6 @@ Graph.prototype._contract = function(v, get_count_only, finder) {
 Graph.prototype.loadCH = function(ch) {
   const parsed = JSON.parse(ch);
   this.adjacency_list = parsed.adjacency_list;
-  this.reverse_adj = parsed.reverse_adj;
   this._strCoordsToIndex = parsed._strCoordsToIndex;
   this._properties = parsed._properties;
   this._geometry = parsed._geometry;
@@ -700,7 +582,6 @@ Graph.prototype.loadCH = function(ch) {
 Graph.prototype.saveCH = function() {
   return JSON.stringify({
     adjacency_list: this.adjacency_list,
-    reverse_adj: this.reverse_adj,
     _strCoordsToIndex: this._strCoordsToIndex,
     _properties: this._properties,
     _geometry: this._geometry
@@ -714,32 +595,7 @@ function OrderNode(score, id) {
   this.id = id;
 }
 
-Graph.prototype._createReverseAdjList = function() {
 
-  // create a reverse adjacency list
-  const reverse_adj = [];
-
-  this.adjacency_list.forEach((node, index) => {
-    node.forEach(edge => {
-
-      const obj = {
-        end: index,
-        cost: edge.cost,
-        attrs: edge.attrs
-      };
-
-      // add edge to reverse adj list
-      if (!reverse_adj[edge.end]) {
-        reverse_adj[edge.end] = [obj];
-      }
-      else {
-        reverse_adj[edge.end].push(obj);
-      }
-    });
-  });
-
-  return reverse_adj;
-};
 
 Graph.prototype._createChShortcutter = function() {
 
@@ -847,8 +703,6 @@ Graph.prototype._createChShortcutter = function() {
 
 };
 
-
-
 //// Above is Building the Contraction Hierarchy
 
 //// Below is Running the Contraction Hierarchy
@@ -856,11 +710,8 @@ Graph.prototype._createChShortcutter = function() {
 Graph.prototype.createPathfinder = function(options) {
 
   const adjacency_list = this.adjacency_list;
-  const rev_adjacency_list = this.reverse_adj; // todo or build it
   const pool = this._createNodePool();
   const strCoordsToIndex = this._strCoordsToIndex;
-
-  const graph = this;
 
   if (!options) {
     options = {};
@@ -908,7 +759,7 @@ Graph.prototype.createPathfinder = function(options) {
       backward_distances
     );
     const searchBackward = doDijkstra(
-      rev_adjacency_list,
+      adjacency_list,
       current_end,
       'backward',
       backward_nodeState,
@@ -953,16 +804,16 @@ Graph.prototype.createPathfinder = function(options) {
     let ids;
 
     if (options.ids === true || options.path === true) {
-      ids = buildIdsCH(graph, forward_nodeState, backward_nodeState, tentative_shortest_node, tentative_shortest_path, start_index, end_index);
+      // ids = buildIdsCH(graph, forward_nodeState, backward_nodeState, tentative_shortest_node, tentative_shortest_path, start_index, end_index);
     }
 
     if (options.ids === true) {
-      result = Object.assign(result, ids);
+      // result = Object.assign(result, ids);
     }
 
     if (options.path === true) {
-      const path = buildGeoJsonPath(graph, ids.ids, tentative_shortest_path, start_index, end_index);
-      result = Object.assign(result, path);
+      // const path = buildGeoJsonPath(graph, ids.ids, tentative_shortest_path, start_index, end_index);
+      // result = Object.assign(result, path);
     }
 
     return result;
@@ -1045,138 +896,59 @@ Graph.prototype.createPathfinder = function(options) {
 
 
 
-function buildGeoJsonPath(graph, ids, tentative_shortest_path, str_start, str_end) {
+function detangle(geo) {
 
-  let path = {
-    type: 'FeatureCollection',
-    features: []
+  // ------ de-tangle routine
+
+  // copy source to avoid mutation  // todo turf clone?
+  const features = JSON.parse(JSON.stringify(geo)).features;
+
+  const collection = {
+    type: "FeatureCollection",
+    features: features
   };
 
-  if (str_start === str_end || tentative_shortest_path === Infinity) {
-    return { path };
+  // if only one feature return
+  if (features.length <= 1) {
+    return collection;
   }
 
-  path = {
-    type: 'FeatureCollection',
-    features: ids.map(id => {
-      const edge = graph.edge_lookup[id];
-      const feat = {
-        "type": "Feature",
-        "properties": edge.attributes,
-        "geometry": {
-          "type": "LineString",
-          "coordinates": edge.geometry
-        }
-      };
-      return feat;
-    })
-  };
+  // modify first feature
+  const cf = features[0];
+  const nf = features[1];
 
-  return { path: detangle(path) };
-}
+  const ce = cf.geometry.coordinates[cf.geometry.coordinates.length - 1];
 
-function buildIdsCH(graph, forward_nodeState, backward_nodeState, tentative_shortest_node, tentative_shortest_path, str_start, str_end) {
+  const ns = nf.geometry.coordinates[0];
+  const ne = nf.geometry.coordinates[nf.geometry.coordinates.length - 1];
 
-  const ids = [];
+  // in case of ce !== ns && ce !== ne. (flip first feature)
 
-  if (str_start === str_end || tentative_shortest_path === Infinity) {
-    return { ids };
+  // ce === ns
+  const ce_ns = ce[0] === ns[0] && ce[1] === ns[1];
+  // ce === ne
+  const ce_ne = ce[0] === ne[0] && ce[1] === ne[1];
+
+  if (!ce_ns && !ce_ne) {
+    features[0].geometry.coordinates.reverse();
   }
 
-  let forward_path = forward_nodeState.get(tentative_shortest_node);
+  // modify rest of the features to match orientation of the first
+  for (let i = 1; i < features.length; i++) {
+    const lastFeature = features[i - 1];
+    const currentFeature = features[i];
 
-  while (forward_path && forward_path.prev) {
-    const feature_ids = graph.path_lookup[`${forward_path.prev}|${forward_path.id}`];
-    if (typeof feature_ids === 'string') {
-      // a CH edge
-      ids.push(...feature_ids.split(',').map(d => Number(d)));
+    const last_end = lastFeature.geometry.coordinates[lastFeature.geometry.coordinates.length - 1];
+    const current_end = currentFeature.geometry.coordinates[currentFeature.geometry.coordinates.length - 1];
+
+    // in the case of last_end == current_end  (flip this)
+    const le_ce = last_end[0] === current_end[0] && last_end[1] === current_end[1];
+
+    if (le_ce) {
+      currentFeature.geometry.coordinates.reverse();
     }
-    else {
-      // regular network edge
-      ids.push(feature_ids);
-    }
-    forward_path = forward_nodeState.get(forward_path.prev);
+
   }
 
-  let backward_path = backward_nodeState.get(tentative_shortest_node);
-
-  while (backward_path && backward_path.prev) {
-
-
-    const feature_ids = graph.path_lookup[`${backward_path.id}|${backward_path.prev}`];
-
-    if (typeof feature_ids === 'string') {
-      // a CH edge
-      ids.push(...feature_ids.split(',').map(d => Number(d)));
-    }
-    else {
-      // regular network edge
-      ids.push(feature_ids);
-    }
-    backward_path = backward_nodeState.get(backward_path.prev);
-  }
-
-  const ordered_ids = orderIds(graph, ids, str_start, str_end);
-
-  return { ids: ordered_ids };
-}
-
-function orderIds(graph, ids, str_start, str_end) {
-
-  const links = {};
-
-  ids.forEach(id => {
-    const edge = graph.edge_lookup[id];
-    if (!links[edge.start]) {
-      links[edge.start] = [id];
-    }
-    else {
-      links[edge.start].push(id);
-    }
-
-    if (!links[edge.end]) {
-      links[edge.end] = [id];
-    }
-    else {
-      links[edge.end].push(id);
-    }
-  });
-
-  // { '-122.521653,45.672558': [ 10165, 10164 ],
-  // '-122.552598,45.667629': [ 10165, 10166 ],
-  // '-122.505768,45.672218': [ 10164, 11680 ],
-  // '-122.560869,45.665279': [ 10166, 13514 ],
-  // '-122.572247,45.659981': [ 13514, 13513 ],
-  // '-122.577877,45.65563': [ 13513, 12027 ],
-  // '-122.400266,45.587041': [ 11716, 11721 ],
-  // '-122.407011,45.604287': [ 11716, 11680 ],
-  // '-122.368245,45.583623': [ 11721 ],
-  // '-122.6009,45.644779': [ 12027, 10404 ],
-  // '-122.601984,45.626598': [ 10404 ] }
-
-  const ordered = [];
-
-  // first segment
-  let pt = str_start;
-  let link_id = links[pt][0]; // first pt points to array with a single item
-  ordered.push(link_id);
-  let segment_details = graph.edge_lookup[link_id];
-
-  do {
-    const link_start = segment_details.start;
-    const link_end = segment_details.end;
-    const next_pt = pt === link_start ? link_end : link_start;
-    const matched_ids = links[next_pt];
-    if (matched_ids.length === 1) {
-      // end pt found
-      break;
-    }
-    link_id = link_id === matched_ids[0] ? matched_ids[1] : matched_ids[0];
-    ordered.push(link_id);
-    segment_details = graph.edge_lookup[link_id];
-    pt = next_pt;
-  } while (true);
-
-  return ordered;
-
+  return collection;
 }

@@ -114,7 +114,7 @@ async function main() {
       }
     });
 
-    if (true /*max - min > 0.000001*/ ) {
+    if (max - min > 0.000001) {
       error_count++;
       console.log(
         i,

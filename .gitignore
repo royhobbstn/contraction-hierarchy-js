@@ -63,4 +63,6 @@ typings/
 networks/*.geojson
 networks/*.json
 
+test/*.json
+
 .idea
