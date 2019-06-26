@@ -1,19 +1,13 @@
 
-dont need to go full contraction??  (issue is the last 1% of contraction takes sooo long , how much speedup does it really provide)
 
-coordinate lookup 
-  - coordinate lookup needs to read reverse_adj??
 
-... return edge id and geojson representations
+return edge id and geojson representations
 
 non-geojson interface
 
-directed graphs:
+perhaps memory leak ??
 
-think more deeply about adj list and reverse adj list
-  - lots more testing around directed graphs
-
-implement in Golang
+maybe benchmark / clean up node pools??
 
 
 BENCHMARKS
@@ -31,10 +25,5 @@ ngraph:             836551, *Astar
 geojson-djikstra:  1279104, *standard dijkstra
 ch:                  39203,
 
-FUTURE
---------------
 
-  18M originalGraph.json
-  41M originalProcessedGraph.json
- 467M chGraph.json   !!!!!!!!!!!!!!
 

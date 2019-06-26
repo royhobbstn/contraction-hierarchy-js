@@ -20,29 +20,12 @@ async function main() {
 
   fs.writeFileSync('./raw_net.json', JSON.stringify(geojson), 'utf8');
 
-  const graphtemp = new GraphCH(geojson);
+  const graph = new GraphCH(geojson, { debugMode: true });
   const gdgraph = new Graph(geojson);
 
   console.time('TimeToContract');
-  graphtemp.contractGraph();
+  graph.contractGraph();
   console.timeEnd('TimeToContract');
-
-  console.time('TimeToSerialize');
-  const data = graphtemp.saveCH();
-  console.timeEnd('TimeToSerialize');
-
-  console.time('TimeToSave');
-  fs.writeFileSync('./net.json', data, 'utf8');
-  console.timeEnd('TimeToSave');
-
-  console.time('TimeToLoad');
-  const file_data = fs.readFileSync('./net.json', 'utf8');
-  console.timeEnd('TimeToLoad');
-
-  const graph = new GraphCH();
-  console.time('TimeToRead');
-  graph.loadCH(file_data);
-  console.timeEnd('TimeToRead');
 
   const finder = graph.createPathfinder();
 

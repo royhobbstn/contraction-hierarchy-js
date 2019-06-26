@@ -1,13 +1,15 @@
 const kdbush = require('kdbush');
 const geokdbush = require('geokdbush');
 const NodeHeap = require('./queue.js');
-
+const cloneGeoJson = require('@turf/clone').default;
 
 // objects
 exports.Graph = Graph;
 exports.CoordinateLookup = CoordinateLookup;
 
-function Graph(geojson) {
+function Graph(geojson, opt) {
+  const options = opt || {};
+  this.debugMode = options.debugMode || false;
   this.adjacency_list = [];
   this._createNodePool = createNodePool;
 
@@ -56,7 +58,9 @@ Graph.prototype._addEdge = function(startNode, endNode, properties, geometry, la
     const end_node = String(endNode);
 
     if (start_node === end_node) {
-      console.log("Start and End Nodes are the same.  Ignoring.");
+      if (this.debugMode) {
+        console.log("Start and End Nodes are the same.  Ignoring.");
+      }
       return;
     }
 
@@ -159,7 +163,10 @@ function createNodePool() {
 }
 
 
-Graph.prototype.loadFromGeoJson = function(geo) {
+Graph.prototype.loadFromGeoJson = function(filedata) {
+
+  // make a copy
+  const geo = cloneGeoJson(filedata);
 
   // cleans geojson (mutates in place)
   const features = this._cleanseGeoJsonNetwork(geo);
@@ -169,7 +176,9 @@ Graph.prototype.loadFromGeoJson = function(geo) {
     const properties = feature.properties;
 
     if (!properties || !coordinates || !properties._cost) {
-      console.log('invalid feature detected.  skipping...');
+      if (this.debugMode) {
+        console.log('invalid feature detected.  skipping...');
+      }
       return;
     }
 
@@ -416,16 +425,15 @@ Graph.prototype.contractGraph = function() {
 
     const updated_len = nh.length;
 
-    if (updated_len % 1000 === 0) {
-      console.log(updated_len / len);
+    if (updated_len % 50 === 0) {
+      if (this.debugMode) {
+        console.log(updated_len / len);
+      }
+      // prune adj list of no longer valid paths occasionally
+      // theres probably a better formula for determining how often this should run
+      // (bigger networks = less often)
+      this._cleanAdjList();
     }
-
-    if (updated_len % 20000 === 0) {
-      // clean adjacency lists every so often
-      // this._cleanAdjList();
-    }
-
-    this._cleanAdjList();
 
     // recompute to make sure that first node in priority queue
     // is still best candidate to contract
@@ -451,9 +459,7 @@ Graph.prototype.contractGraph = function() {
     // lowest found, pop it off the queue and contract it
     const v = nh.pop();
 
-    // console.time(' contract')
-    this._contract(v.id, false, finder); /**/
-    // console.timeEnd(' contract')
+    this._contract(v.id, false, finder);
 
     // keep a record of contraction level of each node
     this.contracted_nodes[v.id] = contraction_level;
@@ -527,17 +533,14 @@ Graph.prototype._contract = function(v, get_count_only, finder) {
       }
     });
 
-    // console.time('  dijkstra')
     const path = finder.runDijkstra(
       u.end,
       null,
       v,
       max_total
     );
-    // console.timeEnd('  dijkstra')
 
     to_connections.forEach(w => {
-      // ignore node
       if (u.end === w.end) {
         return;
       }
@@ -559,9 +562,7 @@ Graph.prototype._contract = function(v, get_count_only, finder) {
             _id: `${u.attrs},${w.attrs}`
           };
 
-          // somehow get node of start and end???
           this._addEdge(u.end, w.end, attrs, null, true);
-
         }
       }
     });
@@ -612,8 +613,6 @@ Graph.prototype._createChShortcutter = function() {
     vertex,
     total
   ) {
-
-    let hop = 0;
 
     pool.reset();
 
@@ -679,11 +678,6 @@ Graph.prototype._createChShortcutter = function() {
 
       // get lowest value from heap
       current = openSet.pop();
-      hop++;
-
-      if (hop > 1) {
-        // current = '';
-      }
 
       // exit early if current node becomes end node
       if (current && (current.id === end_index)) {
@@ -703,9 +697,7 @@ Graph.prototype._createChShortcutter = function() {
 
 };
 
-//// Above is Building the Contraction Hierarchy
 
-//// Below is Running the Contraction Hierarchy
 
 Graph.prototype.createPathfinder = function(options) {
 
@@ -716,7 +708,6 @@ Graph.prototype.createPathfinder = function(options) {
   if (!options) {
     options = {};
   }
-
 
   return {
     queryContractionHierarchy
