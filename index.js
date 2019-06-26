@@ -1,9 +1,12 @@
-//
+const kdbush = require('kdbush');
+const geokdbush = require('geokdbush');
 const NodeHeap = require('./queue.js');
+const cloneGeoJson = require('@turf/clone').default;
+
 
 // objects
 exports.Graph = Graph;
-
+exports.CoordinateLookup = CoordinateLookup;
 
 function Graph(geojson) {
   this.adjacency_list = [];
@@ -22,6 +25,26 @@ function Graph(geojson) {
   }
 }
 
+function CoordinateLookup(graph) {
+
+  const points_set = new Set();
+
+  Object.keys(graph.adjacency_list).forEach(key => {
+    points_set.add(key);
+  });
+
+  const coordinate_list = [];
+
+  points_set.forEach(pt_str => {
+    coordinate_list.push(pt_str.split(',').map(d => Number(d)));
+  });
+
+  this.index = kdbush(coordinate_list, (p) => p[0], (p) => p[1]);
+}
+
+CoordinateLookup.prototype.getClosestNetworkPt = function(lng, lat) {
+  return geokdbush.around(this.index, lng, lat, 1)[0];
+};
 
 Graph.prototype._addEdge = function(startNode, endNode, properties, geometry, isUndirected, lateAdd) {
 
@@ -247,7 +270,7 @@ function detangle(geo) {
 
   // ------ de-tangle routine
 
-  // copy source to avoid mutation
+  // copy source to avoid mutation  // todo turf clone?
   const features = JSON.parse(JSON.stringify(geo)).features;
 
   const collection = {
@@ -470,6 +493,13 @@ Graph.prototype.contractGraph = function() {
       console.log(updated_len / len);
     }
 
+    if (updated_len % 20000 === 0) {
+      // clean adjacency lists every so often
+      // this._cleanAdjList();
+    }
+
+    this._cleanAdjList();
+
     // recompute to make sure that first node in priority queue
     // is still best candidate to contract
     let found_lowest = false;
@@ -494,7 +524,9 @@ Graph.prototype.contractGraph = function() {
     // lowest found, pop it off the queue and contract it
     const v = nh.pop();
 
+    // console.time(' contract')
     this._contract(v.id, false, finder); /**/
+    // console.timeEnd(' contract')
 
     // keep a record of contraction level of each node
     this.contracted_nodes[v.id] = contraction_level;
@@ -550,6 +582,8 @@ Graph.prototype._cleanAdjList = function() {
 // if node were to be contracted
 Graph.prototype._contract = function(v, get_count_only, finder) {
 
+  this.edgeCount = 0;
+
   const from_connections = (this.reverse_adj[v] || []).filter(c => {
     return !this.contracted_nodes[c.end];
   });
@@ -584,12 +618,14 @@ Graph.prototype._contract = function(v, get_count_only, finder) {
       }
     });
 
+    // console.time('  dijkstra')
     const path = finder.runDijkstra(
       u.end,
       null,
       v,
       max_total
     );
+    // console.timeEnd('  dijkstra')
 
     to_connections.forEach(w => {
       // ignore node
@@ -603,7 +639,6 @@ Graph.prototype._contract = function(v, get_count_only, finder) {
 
       const dijkstra = path.distances[w.end] || Infinity;
 
-      // Infinity does happen - what are the consequences
       if (total < dijkstra) {
 
         shortcut_count++;
@@ -615,14 +650,13 @@ Graph.prototype._contract = function(v, get_count_only, finder) {
             _id: `${u.attrs},${w.attrs}`
           };
 
-          // const s = u.end.split(',').map(d => Number(d));
-          // const e = w.end.split(',').map(d => Number(d));
 
           // todo?  does this work in directed network??
           // should it only be added one-way?
 
           // somehow get node of start and end???
-
+          this.edgeCount++;
+          console.log(this.edgeCount)
           const attrs_index = this._addEdge(u.end, w.end, attrs, null, false, true);
 
           // todo THIS IS suspicious for these reasons:
@@ -645,9 +679,6 @@ Graph.prototype._contract = function(v, get_count_only, finder) {
             this.reverse_adj[u.end] = [obj];
           }
 
-          // add to pathIdLookup
-          // this.path_lookup[`${u.end}|${w.end}`] = attrs._id;
-          // this.path_lookup[`${w.end}|${u.end}`] = attrs._id;
         }
       }
     });
@@ -662,12 +693,18 @@ Graph.prototype.loadCH = function(ch) {
   this.adjacency_list = parsed.adjacency_list;
   this.reverse_adj = parsed.reverse_adj;
   this._strCoordsToIndex = parsed._strCoordsToIndex;
-  // TODO ? this._createReverseAdjList();
-
+  this._properties = parsed._properties;
+  this._geometry = parsed._geometry;
 };
 
 Graph.prototype.saveCH = function() {
-  return JSON.stringify({ adjacency_list: this.adjacency_list, reverse_adj: this.reverse_adj, _strCoordsToIndex: this._strCoordsToIndex });
+  return JSON.stringify({
+    adjacency_list: this.adjacency_list,
+    reverse_adj: this.reverse_adj,
+    _strCoordsToIndex: this._strCoordsToIndex,
+    _properties: this._properties,
+    _geometry: this._geometry
+  });
 };
 
 
@@ -719,6 +756,8 @@ Graph.prototype._createChShortcutter = function() {
     vertex,
     total
   ) {
+
+    let hop = 0;
 
     pool.reset();
 
@@ -784,6 +823,11 @@ Graph.prototype._createChShortcutter = function() {
 
       // get lowest value from heap
       current = openSet.pop();
+      hop++;
+
+      if (hop > 1) {
+        // current = '';
+      }
 
       // exit early if current node becomes end node
       if (current && (current.id === end_index)) {
@@ -832,13 +876,10 @@ Graph.prototype.createPathfinder = function(options) {
     end
   ) {
 
-    console.log({ start, end })
     pool.reset();
 
     const start_index = strCoordsToIndex[String(start)];
     const end_index = strCoordsToIndex[String(end)];
-
-    console.log({ start_index, end_index })
 
     const forward_nodeState = [];
     const backward_nodeState = [];
@@ -945,7 +986,6 @@ Graph.prototype.createPathfinder = function(options) {
       });
 
       do {
-
         adj[current.id].forEach(edge => {
 
           let node = nodeState[edge.end];

@@ -1,26 +1,19 @@
 
+dont need to go full contraction??  (issue is the last 1% of contraction takes sooo long , how much speedup does it really provide)
 
-be able to reconstruct rev_adjacency_list from adjacency_list on Loading Existing CH
-
-attributes - save when Saving CH, load when Loading CH
+coordinate lookup 
+  - coordinate lookup needs to read reverse_adj??
 
 ... return edge id and geojson representations
+
+non-geojson interface
+
+directed graphs:
 
 think more deeply about adj list and reverse adj list
   - lots more testing around directed graphs
 
-
-TimeToContract: 154481.987ms
-ngraph: 9374.445ms
-GeoJSON-Dijkstra: 9455.455ms
-ContractionHierarchy: 634.409ms
-
-
-
-CH
-----------
-blog
-
+implement in Golang
 
 
 BENCHMARKS
@@ -41,17 +34,7 @@ ch:                  39203,
 FUTURE
 --------------
 
-coordinate lookup needs to read reverse_adj??
-
   18M originalGraph.json
   41M originalProcessedGraph.json
  467M chGraph.json   !!!!!!!!!!!!!!
 
-non-geojson interface 
-
-
-
-BIG PICTURE
---------------
-
-implement in Golang

@@ -18,6 +18,8 @@ async function main() {
   const geofile = await readyNetwork();
   const geojson = cleanseNetwork(geofile);
 
+  fs.writeFileSync('./raw_net.json', JSON.stringify(geojson), 'utf8');
+
   const graphtemp = new GraphCH(geojson);
   const gdgraph = new Graph(geojson);
 
@@ -25,15 +27,22 @@ async function main() {
   graphtemp.contractGraph();
   console.timeEnd('TimeToContract');
 
-  console.time('TimeToSave');
+  console.time('TimeToSerialize');
   const data = graphtemp.saveCH();
+  console.timeEnd('TimeToSerialize');
+
+  console.time('TimeToSave');
+  fs.writeFileSync('./net.json', data, 'utf8');
   console.timeEnd('TimeToSave');
 
-  const graph = new GraphCH();
   console.time('TimeToLoad');
-  graph.loadCH(data);
+  const file_data = fs.readFileSync('./net.json', 'utf8');
   console.timeEnd('TimeToLoad');
 
+  const graph = new GraphCH();
+  console.time('TimeToRead');
+  graph.loadCH(file_data);
+  console.timeEnd('TimeToRead');
 
   const finder = graph.createPathfinder();
 
