@@ -18,14 +18,17 @@ async function main() {
   const geofile = await readyNetwork();
   const geojson = cleanseNetwork(geofile);
 
-  fs.writeFileSync('./raw_net.json', JSON.stringify(geojson), 'utf8');
-
-  const graph = new GraphCH(geojson, { debugMode: true });
+  // const graph = new GraphCH(geojson, { debugMode: true });
   const gdgraph = new Graph(geojson);
 
-  console.time('TimeToContract');
-  graph.contractGraph();
-  console.timeEnd('TimeToContract');
+  // console.time('TimeToContract');
+  // graph.contractGraph();
+  // console.timeEnd('TimeToContract');
+
+  const graph = new GraphCH(null, { debugMode: true });
+  const data = fs.readFileSync('./net.json', 'utf8');
+  graph.loadCH(data);
+
 
   const finder = graph.createPathfinder();
 
@@ -39,7 +42,7 @@ async function main() {
     distance(fromNode, toNode, link) {
       return link.data._cost;
     },
-    oriented: true
+    // oriented: true
   });
 
 

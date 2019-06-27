@@ -19,10 +19,12 @@ async function readyNetwork() {
 
   // clean network
   geojson.features = geojson.features.filter(feat => {
-    if (feat.properties._cost && feat.geometry.coordinates &&
-      ( /*feat.properties.STFIPS === 6 || feat.properties.STFIPS === 41 || */
-        feat.properties.STFIPS === 53
-      )
+    if (feat.properties._cost && feat.geometry.coordinates
+      /*&&
+           ( feat.properties.STFIPS === 6 || feat.properties.STFIPS === 41 || 
+             feat.properties.STFIPS === 53
+           )
+         */
     ) {
       return true;
     }
