@@ -2,6 +2,7 @@
 
 :scream: Scary-Fast Pathfinding for NodeJS using [Contraction Hierarchies](https://en.wikipedia.org/wiki/Contraction_hierarchies)
 
+Currently designed specifically for undirected GeoJSON networks. (future adaptations and enhancements likely!)
 
 ## Quickstart
 
@@ -84,15 +85,19 @@ const coords2 = lookup.getClosestNetworkPt(-91.669, 40.195);
 
 When using `queryContractionHierarchy`, your start and end points must correspond exactly with start/end points of lines in your graph.  Because this can be difficult to arrange without a lot of manual work, I've built a helper to be able to find the closest coordinates in your graph to any arbitrary coordinate you supply.
 
-## API (untested)
 
-**Directed graphs** can use the geojson extension defined by [geojson-dijkstra](https://github.com/royhobbstn/geojson-dijkstra).
+## Load and Save
 
-It *should* work as described, but since my own data are always undirected graphs, it doesn't get a lot of vigorous testing.
+Implemented.  TODO on documentation.
 
 
-The `Graph` object has `loadCH` and `saveCH` methods.  You can use these to serialize your graph and save them to file, and then load later without repeating the lengthy contraction hierarchy building process.  
+## Issues
 
-## Using a contraction hierarchy with custom data (non-geojson)
+Larger networks are problematic.  Time to contract is obviously much higher.  Memory issues start to become a factor as well.  Become aquainted with the `--max_old_space_size=` command line arg for now.
 
-I'll be exposing some low-level methods to allow the use of non-geojson data in the future.
+
+## Future
+
+**Directed graphs** I've had this piece *mostly* working in the past, and will likely revisit this again in the future.
+
+**Using a contraction hierarchy with custom data (non-geojson)** This should be possible with very little additional work after directed graphs are implemented.

@@ -702,6 +702,8 @@ Graph.prototype._createChShortcutter = function() {
 Graph.prototype.createPathfinder = function(options) {
 
   const adjacency_list = this.adjacency_list;
+  const properties = this._properties;
+  const geometry = this._geometry;
   const pool = this._createNodePool();
   const strCoordsToIndex = this._strCoordsToIndex;
 
@@ -791,24 +793,13 @@ Graph.prototype.createPathfinder = function(options) {
     }
 
     let result = { total_cost: tentative_shortest_path !== Infinity ? tentative_shortest_path : 0 };
-
-    let ids;
+    let ids = {};
 
     if (options.ids === true || options.path === true) {
-      // ids = buildIdsCH(graph, forward_nodeState, backward_nodeState, tentative_shortest_node, tentative_shortest_path, start_index, end_index);
+      ids = buildIdList(options, adjacency_list, properties, geometry, forward_nodeState, backward_nodeState, tentative_shortest_node, String(start));
     }
 
-    if (options.ids === true) {
-      // result = Object.assign(result, ids);
-    }
-
-    if (options.path === true) {
-      // const path = buildGeoJsonPath(graph, ids.ids, tentative_shortest_path, start_index, end_index);
-      // result = Object.assign(result, path);
-    }
-
-    return result;
-
+    return Object.assign(result, { ...ids });
 
     function* doDijkstra(
       adj,
@@ -886,13 +877,170 @@ Graph.prototype.createPathfinder = function(options) {
 };
 
 
+function buildIdList(options, adjacency_list, properties, geometry, forward_nodeState, backward_nodeState, tentative_shortest_node, start) {
+
+  const path = [];
+
+  let forward_shortest = tentative_shortest_node;
+  let current_forward_node = forward_nodeState[forward_shortest];
+
+  while (current_forward_node && current_forward_node.prev) {
+    for (let edge of adjacency_list[current_forward_node.prev]) {
+      if (edge.end === current_forward_node.id) {
+        path.push(edge.attrs);
+        break;
+      }
+    }
+
+    current_forward_node = forward_nodeState[current_forward_node.prev];
+  }
+
+  let backward_shortest = tentative_shortest_node;
+  let current_backward_node = backward_nodeState[backward_shortest];
+
+  while (current_backward_node && current_backward_node.prev) {
+    // on a directed graph, use reverse adj list here.  and swap prev, id (???)
+    for (let edge of adjacency_list[current_backward_node.prev]) {
+      if (edge.end === current_backward_node.id) {
+        path.push(edge.attrs);
+        break;
+      }
+    }
+
+    current_backward_node = backward_nodeState[current_backward_node.prev];
+  }
+
+  const ids = [];
+
+  while (path.length) {
+
+    const id = path.pop();
+
+    const p = properties[id];
+    const g = geometry[id];
+
+    // if geometry = null, must be a contracted node
+    if (!g) {
+      const split = p._id.split(',');
+      split.forEach(item => {
+        path.push(Number(item));
+      });
+    }
+    else {
+      // else put into a links object
+      ids.push({ id, start: g[0], end: g[g.length - 1] });
+    }
+  }
+
+  const links = {};
+
+  ids.forEach(id => {
+
+    if (!links[id.start]) {
+      links[id.start] = [id.id];
+    }
+    else {
+      links[id.start].push(id.id);
+    }
+
+    if (!links[id.end]) {
+      links[id.end] = [id.id];
+    }
+    else {
+      links[id.end].push(id.id);
+    }
+  });
+
+  // `links`:
+  // { '-122.521653,45.672558': [ 10165, 10164 ],
+  // '-122.552598,45.667629': [ 10165, 10166 ],
+  // '-122.505768,45.672218': [ 10164, 11680 ],
+  // '-122.560869,45.665279': [ 10166, 13514 ],
+  // '-122.572247,45.659981': [ 13514, 13513 ],
+  // '-122.577877,45.65563': [ 13513, 12027 ],
+  // '-122.400266,45.587041': [ 11716, 11721 ],
+  // '-122.407011,45.604287': [ 11716, 11680 ],
+  // '-122.368245,45.583623': [ 11721 ],
+  // '-122.6009,45.644779': [ 12027, 10404 ],
+  // '-122.601984,45.626598': [ 10404 ] }
+
+
+  const ordered = [];
+
+  let last = start;
+
+  let val = links[start][0];
+  // this value represents the attribute id of the first segment
+
+  while (val) {
+
+    ordered.push(val);
+    // put this in the ordered array of attribute segments
+
+    const coords = geometry[val];
+    // this represents the coordinate string of the first segment
+
+    const c1 = String(coords[0]);
+    const c2 = String(coords[coords.length - 1]);
+    // c1 and c2 represent the first and last coordinates of the line string
+    // these coordinates can be out of order; 50% chance
+    // so check to see if the first coordinate = start
+    // if it is, use c2, if not, use c1
+    const next = c1 === last ? c2 : c1;
+    last = next;
+
+    const arr = links[next];
+    // receive an array of 2 attribute segments.  
+    // we've already seen one of them, so grab the other
+
+    if (arr.length === 1) {
+      ordered.push(arr[0]);
+      // if the length of this is 1, it means we're at the end
+      break;
+    }
+
+    val = arr[0] === val ? arr[1] : arr[0];
+  }
+
+  if (options.path) {
+    return { ids: mapToIds(ordered, properties), path: mapToGeoJson(ordered, properties, geometry) };
+  }
+  else {
+    return { ids: mapToIds(ordered, properties) };
+  }
+
+}
+
+function mapToIds(ordered, properties) {
+  return ordered.map(attr_id => {
+    return properties[attr_id]._id;
+  });
+}
+
+function mapToGeoJson(ordered, properties, geometry) {
+  const features = ordered.map(attr_id => {
+    const props = properties[attr_id];
+    const geo = geometry[attr_id];
+    return {
+      "type": "Feature",
+      "properties": props,
+      "geometry": {
+        "type": "LineString",
+        "coordinates": geo
+      }
+    };
+  });
+
+  return detangle({ "type": "FeatureCollection", "features": features });
+}
 
 function detangle(geo) {
 
   // ------ de-tangle routine
+  // aligns start and end coordinate of each geojson linestring segment
 
-  // copy source to avoid mutation  // todo turf clone?
-  const features = JSON.parse(JSON.stringify(geo)).features;
+  // copy source to avoid mutation
+  const features = cloneGeoJson(geo).features;
 
   const collection = {
     type: "FeatureCollection",

@@ -1,8 +1,11 @@
 
+const coord = ['-90.763633,39.679612', '-92.653233,32.539979'];
+examine network: 
+tentative_shortest_node: null
+(node:12534) UnhandledPromiseRejectionWarning: TypeError: Cannot read property '0' of undefined
 
 
-return edge id and geojson representations
-
+also, network paths are wonky.  probably computing the _cost is bad.
 
 BENCHMARKS
 --------
@@ -14,9 +17,9 @@ ch:              14319,   5188,   6573,   7971,   5806,  2674
 
 
 All States, 10,000 routes --max_old_space_size=7000
+
 TimeToContract:     8316742 ms
-ngraph:              836551 ms  *Astar
-geojson-djikstra:   1279104 ms  *standard dijkstra
+geojson-djikstra:   1279104 ms
 ch:                   39203 ms
 
 TimeToContract:      632043 ms
