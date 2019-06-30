@@ -1,11 +1,7 @@
 
-const coord = ['-90.763633,39.679612', '-92.653233,32.539979'];
-examine network: 
-tentative_shortest_node: null
-(node:12534) UnhandledPromiseRejectionWarning: TypeError: Cannot read property '0' of undefined
+need to run USA network through refinement procedures
 
-
-also, network paths are wonky.  probably computing the _cost is bad.
+criminally slow conversion of CH to geojson
 
 BENCHMARKS
 --------

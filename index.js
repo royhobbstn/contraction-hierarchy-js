@@ -116,15 +116,13 @@ Graph.prototype._addEdge = function(startNode, endNode, properties, geometry, la
 
 };
 
-function Node(node, heuristic) {
+function Node(node) {
   this.id = node.id;
   this.dist = node.dist !== undefined ? node.dist : Infinity;
   this.prev = undefined;
   this.visited = undefined;
   this.opened = false; // whether has been put in queue
   this.heapIndex = -1;
-  this.score = Infinity;
-  this.heuristic = heuristic;
 }
 
 function createNodePool() {
@@ -140,7 +138,7 @@ function createNodePool() {
     currentInCache = 0;
   }
 
-  function createNewState(node, heuristic) {
+  function createNewState(node) {
     var cached = nodeCache[currentInCache];
     if (cached) {
       cached.id = node.id;
@@ -149,11 +147,9 @@ function createNodePool() {
       cached.visited = undefined;
       cached.opened = false;
       cached.heapIndex = -1;
-      cached.score = Infinity;
-      cached.heuristic = heuristic;
     }
     else {
-      cached = new Node(node, heuristic);
+      cached = new Node(node);
       nodeCache[currentInCache] = cached;
     }
     currentInCache++;
@@ -271,7 +267,6 @@ Graph.prototype.createFinder = function(opts) {
 
   const options = opts || {};
   const parseOutputFns = options.parseOutputFns || [];
-  const heuristicFn = options.heuristic || noOp;
   const pool = this._createNodePool();
   const adjacency_list = this.adjacency_list;
   const strCoordsToIndex = this._strCoordsToIndex;
@@ -291,11 +286,11 @@ Graph.prototype.createFinder = function(opts) {
 
     var openSet = new NodeHeap({
       compare(a, b) {
-        return a.score - b.score;
+        return a.dist - b.dist;
       }
     });
 
-    let current = pool.createNewState({ id: start_index, dist: 0 }, heuristicFn(start, end));
+    let current = pool.createNewState({ id: start_index, dist: 0 });
     nodeState[start_index] = current;
     current.opened = 1;
 
@@ -311,7 +306,7 @@ Graph.prototype.createFinder = function(opts) {
 
           let node = nodeState[edge.end];
           if (node === undefined) {
-            node = pool.createNewState({ id: edge.end }, heuristicFn([edge.end_lng, edge.end_lat], end));
+            node = pool.createNewState({ id: edge.end });
             nodeState[edge.end] = node;
           }
 
@@ -332,7 +327,6 @@ Graph.prototype.createFinder = function(opts) {
 
           node.dist = proposed_distance;
           node.prev = edge;
-          node.score = proposed_distance + node.heuristic;
 
           openSet.updateItem(node.heapIndex);
         });
@@ -796,7 +790,10 @@ Graph.prototype.createPathfinder = function(options) {
     let ids = {};
 
     if (options.ids === true || options.path === true) {
+      console.time('processing')
       ids = buildIdList(options, adjacency_list, properties, geometry, forward_nodeState, backward_nodeState, tentative_shortest_node, String(start));
+      console.timeEnd('processing')
+
     }
 
     return Object.assign(result, { ...ids });
@@ -878,6 +875,9 @@ Graph.prototype.createPathfinder = function(options) {
 
 
 function buildIdList(options, adjacency_list, properties, geometry, forward_nodeState, backward_nodeState, tentative_shortest_node, start) {
+
+
+  console.log({ tentative_shortest_node, node: forward_nodeState[tentative_shortest_node] })
 
   const path = [];
 

@@ -13,7 +13,7 @@ async function readyNetwork() {
   //set up cost field
   geojson.features.forEach(feat => {
     const mph = getMPH(feat.properties.NHS);
-    feat.properties._cost = (feat.properties.MILES / 60) * mph;
+    feat.properties._cost = (feat.properties.MILES / mph) * 60;
     feat.properties._id = feat.properties.ID;
   });
 
