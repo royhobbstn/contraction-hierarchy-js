@@ -20,6 +20,7 @@ function Graph(geojson, opt) {
   this._propertiesIndex = -1;
   this._properties = [];
   this._geometry = [];
+  this._maxID = 0;
 
   if (geojson) {
     this.loadFromGeoJson(geojson);
@@ -47,41 +48,76 @@ CoordinateLookup.prototype.getClosestNetworkPt = function(lng, lat) {
   return geokdbush.around(this.index, lng, lat, 1)[0];
 };
 
-Graph.prototype._addEdge = function(startNode, endNode, properties, geometry, lateAdd) {
+Graph.prototype._addEdge = function(startNode, endNode, properties, geometry) {
 
-  let start_index;
-  let end_index;
+  // input can now be String or Number coordinates (or anything!) makes no difference
+  const start_node = String(startNode);
+  const end_node = String(endNode);
 
-  if (!lateAdd) {
-    // input can now be String or Number coordinates (or anything!) makes no difference
-    const start_node = String(startNode);
-    const end_node = String(endNode);
-
-    if (start_node === end_node) {
-      if (this.debugMode) {
-        console.log("Start and End Nodes are the same.  Ignoring.");
-      }
-      return;
+  if (start_node === end_node) {
+    if (this.debugMode) {
+      console.log("Start and End Nodes are the same.  Ignoring.");
     }
+    return;
+  }
 
-    if (this._strCoordsToIndex[start_node] == null) {
-      this._coordsIndex++;
-      this._strCoordsToIndex[start_node] = this._coordsIndex;
-      this._indexToStrCoords[this._coordsIndex] = start_node;
-    }
-    if (this._strCoordsToIndex[end_node] == null) {
-      this._coordsIndex++;
-      this._strCoordsToIndex[end_node] = this._coordsIndex;
-      this._indexToStrCoords[this._coordsIndex] = end_node;
-    }
+  if (this._strCoordsToIndex[start_node] == null) {
+    this._coordsIndex++;
+    this._strCoordsToIndex[start_node] = this._coordsIndex;
+    this._indexToStrCoords[this._coordsIndex] = start_node;
+  }
+  if (this._strCoordsToIndex[end_node] == null) {
+    this._coordsIndex++;
+    this._strCoordsToIndex[end_node] = this._coordsIndex;
+    this._indexToStrCoords[this._coordsIndex] = end_node;
+  }
 
-    start_index = this._strCoordsToIndex[start_node];
-    end_index = this._strCoordsToIndex[end_node];
+  let start_index = this._strCoordsToIndex[start_node];
+  let end_index = this._strCoordsToIndex[end_node];
+
+  this._properties[properties._id] = properties;
+  this._geometry[properties._id] = geometry;
+
+  // so that we know what the max value for _id is
+  // contraction _ids will begin after this number
+  if (properties._id > this._maxID) {
+    this._maxID = properties._id;
+  }
+
+  // create object to push into adjacency list
+  const obj = {
+    end: end_index,
+    cost: properties._cost,
+    attrs: properties._id
+  };
+
+  if (this.adjacency_list[start_index]) {
+    this.adjacency_list[start_index].push(obj);
   }
   else {
-    start_index = startNode;
-    end_index = endNode;
+    this.adjacency_list[start_index] = [obj];
   }
+
+  const reverse_obj = {
+    end: start_index,
+    cost: properties._cost,
+    attrs: properties._id
+  };
+
+  if (this.adjacency_list[end_index]) {
+    this.adjacency_list[end_index].push(reverse_obj);
+  }
+  else {
+    this.adjacency_list[end_index] = [reverse_obj];
+  }
+
+};
+
+
+Graph.prototype._addContractedEdge = function(startNode, endNode, properties, geometry) {
+
+  let start_index = startNode;
+  let end_index = endNode;
 
   this._propertiesIndex++;
   this._properties[this._propertiesIndex] = properties;
@@ -90,7 +126,7 @@ Graph.prototype._addEdge = function(startNode, endNode, properties, geometry, la
   // create object to push into adjacency list
   const obj = {
     end: end_index,
-    cost: properties._forward_cost || properties._cost,
+    cost: properties._cost,
     attrs: this._propertiesIndex
   };
 
@@ -103,7 +139,7 @@ Graph.prototype._addEdge = function(startNode, endNode, properties, geometry, la
 
   const reverse_obj = {
     end: start_index,
-    cost: properties._backward_cost || properties._cost,
+    cost: properties._cost,
     attrs: this._propertiesIndex
   };
 
@@ -115,6 +151,7 @@ Graph.prototype._addEdge = function(startNode, endNode, properties, geometry, la
   }
 
 };
+
 
 function Node(node) {
   this.id = node.id;
@@ -167,7 +204,7 @@ Graph.prototype.loadFromGeoJson = function(filedata) {
   // cleans geojson (mutates in place)
   const features = this._cleanseGeoJsonNetwork(geo);
 
-  features.forEach(feature => {
+  features.forEach((feature, index) => {
     const coordinates = feature.geometry.coordinates;
     const properties = feature.properties;
 
@@ -182,10 +219,10 @@ Graph.prototype.loadFromGeoJson = function(filedata) {
     const end_vertex = coordinates[coordinates.length - 1];
 
 
-    this._addEdge(start_vertex, end_vertex, properties, coordinates, false);
-
-
+    this._addEdge(start_vertex, end_vertex, properties, coordinates);
   });
+
+  this._propertiesIndex = this._maxID;
 
 };
 
@@ -246,8 +283,6 @@ Graph.prototype._cleanseGeoJsonNetwork = function(file) {
         feature.properties.__markDelete = true;
       }
     }
-
-
   });
 
   // filter out marked items
@@ -256,12 +291,6 @@ Graph.prototype._cleanseGeoJsonNetwork = function(file) {
   });
 
 };
-
-
-function noOp() {
-  return 0;
-}
-
 
 Graph.prototype.createFinder = function(opts) {
 
@@ -527,6 +556,7 @@ Graph.prototype._contract = function(v, get_count_only, finder) {
       }
     });
 
+    // run a dijkstra from u to anything less than the existing dijkstra distance
     const path = finder.runDijkstra(
       u.end,
       null,
@@ -551,12 +581,20 @@ Graph.prototype._contract = function(v, get_count_only, finder) {
 
         if (!get_count_only) {
 
+          // TODO here, dig up the actual path.  Tap into the node [w.end] and trace a path via the .prev property
+          // for now, tack on an extra property to the object below
+
+          console.log("****")
+          console.log({ total, dijkstra })
+          console.log(path.nodeState[w.end]);
+          // TODO Dijkstra = inifinity === nothing here.  WHY?
+
           const attrs = {
             _cost: total,
-            _id: `${u.attrs},${w.attrs}`
+            _id: [u.attrs, w.attrs]
           };
 
-          this._addEdge(u.end, w.end, attrs, null, true);
+          this._addContractedEdge(u.end, w.end, attrs, null);
         }
       }
     });
@@ -684,7 +722,8 @@ Graph.prototype._createChShortcutter = function() {
       }
     }
 
-    let response = { distances };
+    // TODO need to return actual shortest path with IDs
+    let response = { distances, nodeState };
 
     return response;
   }
@@ -739,7 +778,6 @@ Graph.prototype.createPathfinder = function(options) {
     const searchForward = doDijkstra(
       adjacency_list,
       current_start,
-      'forward',
       forward_nodeState,
       forward_distances,
       backward_nodeState,
@@ -748,7 +786,6 @@ Graph.prototype.createPathfinder = function(options) {
     const searchBackward = doDijkstra(
       adjacency_list,
       current_end,
-      'backward',
       backward_nodeState,
       backward_distances,
       forward_nodeState,
@@ -790,9 +827,26 @@ Graph.prototype.createPathfinder = function(options) {
     let ids = {};
 
     if (options.ids === true || options.path === true) {
-      console.time('processing')
-      ids = buildIdList(options, adjacency_list, properties, geometry, forward_nodeState, backward_nodeState, tentative_shortest_node, String(start));
-      console.timeEnd('processing')
+      if (tentative_shortest_node != null) {
+        // tentative_shortest_path as falsy indicates no path found.
+        ids = buildIdList(options, adjacency_list, properties, geometry, forward_nodeState, backward_nodeState, tentative_shortest_node, String(start));
+      }
+      else {
+        // fill in object to prevent errors in the case of no path found
+        if (options.ids && options.path) {
+          ids = { ids: [], path: {} };
+        }
+        else if (!options.ids && options.path) {
+          ids = { path: {} };
+        }
+        else if (options.ids && !options.path) {
+          ids = { ids: [] };
+        }
+        else {
+          // should not happen
+          ids = {};
+        }
+      }
 
     }
 
@@ -801,13 +855,11 @@ Graph.prototype.createPathfinder = function(options) {
     function* doDijkstra(
       adj,
       current,
-      direction,
       nodeState,
       distances,
       reverse_nodeState,
       reverse_distances
     ) {
-
 
       var openSet = new NodeHeap({
         compare(a, b) {
@@ -821,6 +873,7 @@ Graph.prototype.createPathfinder = function(options) {
           let node = nodeState[edge.end];
           if (node === undefined) {
             node = pool.createNewState({ id: edge.end });
+            node.attrs = edge.attrs;
             nodeState[edge.end] = node;
           }
 
@@ -840,6 +893,7 @@ Graph.prototype.createPathfinder = function(options) {
 
           node.dist = proposed_distance;
           distances[node.id] = proposed_distance;
+          node.attrs = edge.attrs;
           node.prev = current.id;
 
           openSet.updateItem(node.heapIndex);
@@ -876,53 +930,44 @@ Graph.prototype.createPathfinder = function(options) {
 
 function buildIdList(options, adjacency_list, properties, geometry, forward_nodeState, backward_nodeState, tentative_shortest_node, start) {
 
-
-  console.log({ tentative_shortest_node, node: forward_nodeState[tentative_shortest_node] })
-
   const path = [];
 
-  let forward_shortest = tentative_shortest_node;
-  let current_forward_node = forward_nodeState[forward_shortest];
+  let current_forward_node = forward_nodeState[tentative_shortest_node];
+  let current_backward_node = backward_nodeState[tentative_shortest_node];
 
-  while (current_forward_node && current_forward_node.prev) {
-    for (let edge of adjacency_list[current_forward_node.prev]) {
-      if (edge.end === current_forward_node.id) {
-        path.push(edge.attrs);
-        break;
-      }
+  // first check necessary because may not be any nodes in forward or backward path
+  // (occasionally entire path may be ONLY in the backward or forward directions)
+  if (current_forward_node) {
+    while (current_forward_node.attrs) {
+      path.push(current_forward_node.attrs);
+      current_forward_node = forward_nodeState[current_forward_node.prev];
     }
-
-    current_forward_node = forward_nodeState[current_forward_node.prev];
   }
 
-  let backward_shortest = tentative_shortest_node;
-  let current_backward_node = backward_nodeState[backward_shortest];
-
-  while (current_backward_node && current_backward_node.prev) {
-    // on a directed graph, use reverse adj list here.  and swap prev, id (???)
-    for (let edge of adjacency_list[current_backward_node.prev]) {
-      if (edge.end === current_backward_node.id) {
-        path.push(edge.attrs);
-        break;
-      }
+  if (current_backward_node) {
+    while (current_backward_node.attrs) {
+      path.push(current_backward_node.attrs);
+      current_backward_node = backward_nodeState[current_backward_node.prev];
     }
-
-    current_backward_node = backward_nodeState[current_backward_node.prev];
   }
+
+
+  console.log({ path })
 
   const ids = [];
 
+  console.time('pop')
   while (path.length) {
 
     const id = path.pop();
 
     const p = properties[id];
-    const g = geometry[id];
+    const g = geometry[id]; // dont look up geometry too!
 
     // if geometry = null, must be a contracted node
     if (!g) {
-      const split = p._id.split(',');
-      split.forEach(item => {
+      const arr = p._id;
+      arr.forEach(item => {
         path.push(Number(item));
       });
     }
@@ -931,6 +976,9 @@ function buildIdList(options, adjacency_list, properties, geometry, forward_node
       ids.push({ id, start: g[0], end: g[g.length - 1] });
     }
   }
+  console.timeEnd('pop')
+
+  console.time('links')
 
   const links = {};
 
@@ -951,6 +999,9 @@ function buildIdList(options, adjacency_list, properties, geometry, forward_node
     }
   });
 
+  console.timeEnd('links')
+
+
   // `links`:
   // { '-122.521653,45.672558': [ 10165, 10164 ],
   // '-122.552598,45.667629': [ 10165, 10166 ],
@@ -964,6 +1015,7 @@ function buildIdList(options, adjacency_list, properties, geometry, forward_node
   // '-122.6009,45.644779': [ 12027, 10404 ],
   // '-122.601984,45.626598': [ 10404 ] }
 
+  console.time('ordered')
 
   const ordered = [];
 
@@ -1001,6 +1053,11 @@ function buildIdList(options, adjacency_list, properties, geometry, forward_node
 
     val = arr[0] === val ? arr[1] : arr[0];
   }
+
+  console.timeEnd('ordered')
+
+
+  console.log({ ordered })
 
   if (options.path) {
     return { ids: mapToIds(ordered, properties), path: mapToGeoJson(ordered, properties, geometry) };
