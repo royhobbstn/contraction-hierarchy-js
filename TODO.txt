@@ -1,50 +1,10 @@
 
-nGraph: 5.766ms
-pop: 0.091ms
-links: 1.984ms
-ordered: 0.826ms
-ch: 3.201ms
-
-REAL:
-
-{ path:
-   [ 193762,
-     191490,
-     189865,
-     167009,
-     167010,
-     194229,
-     194195,
-     193799,
-     193968,
-     193922,
-     193544,
-     182607,
-     13017 ] }
-     
-IMAGINED:
-
-{ path:
-   [ [{id: 1, start: [123.234, 54.545], end:  [123.234, 54.545]}, {id: 1, start: [123.234, 54.545], end:  [123.234, 54.545]}],
-     [{id: 1, start: [123.234, 54.545], end:  [123.234, 54.545]}],
-     [{id: 1, start: [123.234, 54.545], end:  [123.234, 54.545]}],
-     [{id: 1, start: [123.234, 54.545], end:  [123.234, 54.545]}, {id: 1, start: [123.234, 54.545], end:  [123.234, 54.545]}],
-     [{id: 1, start: [123.234, 54.545], end:  [123.234, 54.545]}],
-     etc... ] }
-     
- - organize within each array, align by start/end.  then arrange array as a whole by start end.
+line 500, then line 1007
  
-MAYBE these items are arranged during the contraction process itself!  so then only have to flip items as needed.
+these items are arranged during the contraction process itself!  so then only have to flip items as needed.
+ -you can do it in a SWEEP step at the end.
+ -detangle will still need to be done at query runtime (can be an option - not always needed)
 
-strongly suspect i'm doing contraction hierarchy just a tiny bit wrong
- if i reconstruct the length from the pieces, every so often there might be a route that doesnt add up the same as total_cost.
-  i know why, in that case.  the contraction is correct, but not storing the true contracted route.
-
-
-criminally slow conversion of CH to geojson
-  - array of attrs for contracted nodes
-  - got to figure out how to create a correctly ordered attrs array during contraction
-  - its okay to spend extra time during contraction!
 
 eventually need to run USA network through refinement procedures
 

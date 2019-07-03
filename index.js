@@ -491,8 +491,47 @@ Graph.prototype.contractGraph = function() {
   }
 
   this._cleanAdjList();
+  this._arrangeContractedPaths();
 
   return;
+
+};
+
+Graph.prototype._arrangeContractedPaths = function() {
+
+  this.adjacency_list.forEach((node, index) => {
+
+    node.forEach(edge => {
+
+      const attrIds = this._properties[edge.attrs]._id;
+
+      if (!Array.isArray(attrIds)) {
+        // todo do i need to fill out a simple property?
+        // todo maybe like a {start_coord, end_coord, ids in order from start to end?)
+        // todo which is a format we'll have to get BELOW into as well.
+        return;
+      }
+
+      const ids = [...attrIds];
+
+      const simpleIds = [];
+
+      while (ids.length) {
+        const id = ids.pop();
+        if (id <= this._maxID) {
+          simpleIds.push(id);
+        }
+        else {
+          ids.push(...this._properties[id]._id);
+        }
+      }
+
+      console.log({ simpleIds });
+      // TODO next step would be to order lists of ids.
+      // using start/end coords and choosing arbitrary 1 index as start
+
+    });
+  });
 
 };
 
@@ -581,20 +620,36 @@ Graph.prototype._contract = function(v, get_count_only, finder) {
 
         if (!get_count_only) {
 
-          // TODO here, dig up the actual path.  Tap into the node [w.end] and trace a path via the .prev property
-          // for now, tack on an extra property to the object below
+          let shortcut = [];
+          if (dijkstra === Infinity) {
+            // shortcut added is U to W if dijkstra === Infinity
+            shortcut = [u.attrs, w.attrs];
+          }
+          else {
+            // else a non-direct path is shorter
 
-          console.log("****")
-          console.log({ total, dijkstra })
-          console.log(path.nodeState[w.end]);
-          // TODO Dijkstra = inifinity === nothing here.  WHY?
+            // follow the path and push every attrs
+            let secret_path = [];
+            let node = path.nodeState[w.end];
+            do {
+              const adj = this.adjacency_list[node.id];
+              for (let edge of adj) {
+                if (edge.end === node.prev) {
+                  secret_path.push(edge.attrs);
+                }
+              }
+              node = path.nodeState[node.prev];
+            } while (node);
 
-          const attrs = {
+            shortcut = secret_path;
+          }
+
+          const props = {
             _cost: total,
-            _id: [u.attrs, w.attrs]
+            _id: shortcut
           };
 
-          this._addContractedEdge(u.end, w.end, attrs, null);
+          this._addContractedEdge(u.end, w.end, props, null);
         }
       }
     });
@@ -722,10 +777,8 @@ Graph.prototype._createChShortcutter = function() {
       }
     }
 
-    // TODO need to return actual shortest path with IDs
-    let response = { distances, nodeState };
+    return { distances, nodeState };
 
-    return response;
   }
 
 };
@@ -951,128 +1004,29 @@ function buildIdList(options, adjacency_list, properties, geometry, forward_node
     }
   }
 
+  // TODO above may want to get different property other than .attrs
+
+  // TODO ids is just flattened array result
 
   console.log({ path })
 
-  const ids = [];
-
-  console.time('pop')
-  while (path.length) {
-
-    const id = path.pop();
-
-    const p = properties[id];
-    const g = geometry[id]; // dont look up geometry too!
-
-    // if geometry = null, must be a contracted node
-    if (!g) {
-      const arr = p._id;
-      arr.forEach(item => {
-        path.push(Number(item));
-      });
-    }
-    else {
-      // else put into a links object
-      ids.push({ id, start: g[0], end: g[g.length - 1] });
-    }
-  }
-  console.timeEnd('pop')
-
-  console.time('links')
-
-  const links = {};
-
-  ids.forEach(id => {
-
-    if (!links[id.start]) {
-      links[id.start] = [id.id];
-    }
-    else {
-      links[id.start].push(id.id);
-    }
-
-    if (!links[id.end]) {
-      links[id.end] = [id.id];
-    }
-    else {
-      links[id.end].push(id.id);
-    }
+  path.forEach(p => {
+    console.log(p)
   });
 
-  console.timeEnd('links')
 
 
-  // `links`:
-  // { '-122.521653,45.672558': [ 10165, 10164 ],
-  // '-122.552598,45.667629': [ 10165, 10166 ],
-  // '-122.505768,45.672218': [ 10164, 11680 ],
-  // '-122.560869,45.665279': [ 10166, 13514 ],
-  // '-122.572247,45.659981': [ 13514, 13513 ],
-  // '-122.577877,45.65563': [ 13513, 12027 ],
-  // '-122.400266,45.587041': [ 11716, 11721 ],
-  // '-122.407011,45.604287': [ 11716, 11680 ],
-  // '-122.368245,45.583623': [ 11721 ],
-  // '-122.6009,45.644779': [ 12027, 10404 ],
-  // '-122.601984,45.626598': [ 10404 ] }
+  return {};
 
-  console.time('ordered')
-
-  const ordered = [];
-
-  let last = start;
-
-  let val = links[start][0];
-  // this value represents the attribute id of the first segment
-
-  while (val) {
-
-    ordered.push(val);
-    // put this in the ordered array of attribute segments
-
-    const coords = geometry[val];
-    // this represents the coordinate string of the first segment
-
-    const c1 = String(coords[0]);
-    const c2 = String(coords[coords.length - 1]);
-    // c1 and c2 represent the first and last coordinates of the line string
-    // these coordinates can be out of order; 50% chance
-    // so check to see if the first coordinate = start
-    // if it is, use c2, if not, use c1
-    const next = c1 === last ? c2 : c1;
-    last = next;
-
-    const arr = links[next];
-    // receive an array of 2 attribute segments.  
-    // we've already seen one of them, so grab the other
-
-    if (arr.length === 1) {
-      ordered.push(arr[0]);
-      // if the length of this is 1, it means we're at the end
-      break;
-    }
-
-    val = arr[0] === val ? arr[1] : arr[0];
-  }
-
-  console.timeEnd('ordered')
-
-
-  console.log({ ordered })
-
-  if (options.path) {
-    return { ids: mapToIds(ordered, properties), path: mapToGeoJson(ordered, properties, geometry) };
-  }
-  else {
-    return { ids: mapToIds(ordered, properties) };
-  }
+  // if (options.path) {
+  //   return { ids: mapToIds(ordered, properties), path: mapToGeoJson(ordered, properties, geometry) };
+  // }
+  // else {
+  //   return { ids: mapToIds(ordered, properties) };
+  // }
 
 }
 
-function mapToIds(ordered, properties) {
-  return ordered.map(attr_id => {
-    return properties[attr_id]._id;
-  });
-}
 
 function mapToGeoJson(ordered, properties, geometry) {
   const features = ordered.map(attr_id => {
