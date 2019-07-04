@@ -17,7 +17,7 @@ function Graph(geojson, opt) {
   this._strCoordsToIndex = {};
   this._indexToStrCoords = []; // todo may not ever be needed
 
-  this._propertiesIndex = -1;
+  this._propertiesIndex = 1;
   this._properties = [];
   this._geometry = [];
   this._maxID = 0;
@@ -74,6 +74,9 @@ Graph.prototype._addEdge = function(startNode, endNode, properties, geometry) {
 
   let start_index = this._strCoordsToIndex[start_node];
   let end_index = this._strCoordsToIndex[end_node];
+
+  properties._start_index = start_index;
+  properties._end_index = end_index;
 
   this._properties[properties._id] = properties;
   this._geometry[properties._id] = geometry;
@@ -500,21 +503,33 @@ Graph.prototype.contractGraph = function() {
 Graph.prototype._arrangeContractedPaths = function() {
 
   this.adjacency_list.forEach((node, index) => {
+    console.log('  next node')
 
     node.forEach(edge => {
+      console.log('    next edge')
 
-      const attrIds = this._properties[edge.attrs]._id;
+      const start_node = index;
+      const end_node = edge.end;
+
+      console.log();
+      console.log({ start_node, end_node });
+
+
+      let simpleIds = [];
+      let ids = [];
+
+      const attrIds = edge.attrs; // edgeAttrs is an edge id
+
+      console.log({ attrIds });
 
       if (!Array.isArray(attrIds)) {
-        // todo do i need to fill out a simple property?
-        // todo maybe like a {start_coord, end_coord, ids in order from start to end?)
-        // todo which is a format we'll have to get BELOW into as well.
-        return;
+        ids = [attrIds];
+        console.log('simple');
       }
-
-      const ids = [...attrIds];
-
-      const simpleIds = [];
+      else {
+        console.log('complex');
+        ids = [...attrIds];
+      }
 
       while (ids.length) {
         const id = ids.pop();
@@ -522,13 +537,88 @@ Graph.prototype._arrangeContractedPaths = function() {
           simpleIds.push(id);
         }
         else {
+          // todo
+          console.log(this._properties[id])
           ids.push(...this._properties[id]._id);
         }
       }
 
+      simpleIds = Array.from(new Set(simpleIds))
+
       console.log({ simpleIds });
-      // TODO next step would be to order lists of ids.
-      // using start/end coords and choosing arbitrary 1 index as start
+
+
+      //  now with simpleIds, get start and end index and make connection object
+      const links = {};
+      simpleIds.forEach(id => {
+        const properties = this._properties[id];
+        const start_index = properties._start_index;
+        const end_index = properties._end_index;
+
+        if (!links[start_index]) {
+          links[start_index] = [id];
+        }
+        else {
+          links[start_index].push(id);
+        }
+
+        if (!links[end_index]) {
+          links[end_index] = [id];
+        }
+        else {
+          links[end_index].push(id);
+        }
+      });
+
+      console.log({ links });
+
+      const ordered = [];
+
+      let last_node = String(start_node);
+
+      let current_edge_id = links[last_node][0];
+      // this value represents the attribute id of the first segment
+
+      while (current_edge_id) {
+
+        ordered.push(current_edge_id);
+        // put this in the ordered array of attribute segments
+
+        // this represents the nodes of the first segment
+        const props = this._properties[current_edge_id];
+        const c1 = String(props._start_index);
+        const c2 = String(props._end_index);
+
+        // c1 and c2 represent the first and last nodes of the line string
+        // these nodes can be out of order; in fact 50% chance
+        // so check to see if the first node = start
+        // if it is, use c2, if not, use c1
+        const next_node = c1 === last_node ? c2 : c1;
+
+        last_node = next_node;
+
+        const arr = links[next_node];
+        // receive an array of 2 attribute segments.  
+        // we've already seen one of them, so grab the other
+
+        if (arr.length === 1) {
+          // ordered.push(arr[0]);
+          // if the length of this is 1, it means we're at the end
+          break;
+          console.log('OMG')
+          process.exit()
+        }
+
+        if (arr.length > 2) {
+          console.log('too many edges in array');
+          process.exit();
+        }
+
+        current_edge_id = arr[0] === current_edge_id ? arr[1] : arr[0];
+      }
+
+      console.log({ ordered });
+      edge.ordered = ordered;
 
     });
   });
@@ -536,6 +626,12 @@ Graph.prototype._arrangeContractedPaths = function() {
 };
 
 Graph.prototype._cleanAdjList = function() {
+
+  // TODO 
+
+  return;
+
+  // thinking cleaning this list had unintended consequences
 
   // remove links to lower ranked nodes
   this.adjacency_list.forEach((node, index) => {
@@ -623,31 +719,43 @@ Graph.prototype._contract = function(v, get_count_only, finder) {
           let shortcut = [];
           if (dijkstra === Infinity) {
             // shortcut added is U to W if dijkstra === Infinity
+
+            // like: [176984 178567]
+            // these are edges
             shortcut = [u.attrs, w.attrs];
           }
           else {
             // else a non-direct path is shorter
 
             // follow the path and push every attrs
-            let secret_path = [];
             let node = path.nodeState[w.end];
-            do {
+            while (node.prev != null) {
               const adj = this.adjacency_list[node.id];
+
               for (let edge of adj) {
                 if (edge.end === node.prev) {
-                  secret_path.push(edge.attrs);
+                  shortcut.push(edge.attrs);
                 }
               }
-              node = path.nodeState[node.prev];
-            } while (node);
 
-            shortcut = secret_path;
+              node = path.nodeState[node.prev];
+            }
+
           }
 
+          // { _cost: 7.971907714285715,
+          //   _id:
+          //   [ 179214, 177275, 13266, 10212, 10213, 13260, 179135, 179136 ] }
           const props = {
             _cost: total,
             _id: shortcut
           };
+
+          if (shortcut.length === 1) {
+            // todo experiment with adding / removing this
+            console.log('one')
+            return;
+          }
 
           this._addContractedEdge(u.end, w.end, props, null);
         }

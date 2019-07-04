@@ -1,10 +1,18 @@
 
-line 500, then line 1007
+
+Uhg all messed up.
+
+think so much confusion when working with node ids and edge ids its easy to confuse the two.
+
+CRUX is that my link{} shows a very unusual distribution
+
+line 553, then line 1007
  
 these items are arranged during the contraction process itself!  so then only have to flip items as needed.
  -you can do it in a SWEEP step at the end.
  -detangle will still need to be done at query runtime (can be an option - not always needed)
 
+duplicating (reverse) geometry and attributes may make it possible to not need to detangle
 
 eventually need to run USA network through refinement procedures
 
