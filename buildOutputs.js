@@ -79,9 +79,9 @@ function buildIdList(options, adjacency_list, properties, geometry, forward_node
 
   if (options.path) {
     console.time('detangle')
-    const ret = { ids: flattened, path: detangle({ "type": "FeatureCollection", "features": features }) };
+    const ret = { ids: flattened, path: /*detangle*/ ({ "type": "FeatureCollection", "features": features }) };
 
-    console.log(JSON.stringify(ret.path))
+    // console.log(JSON.stringify(ret.path))
     console.timeEnd('detangle')
     return ret;
   }

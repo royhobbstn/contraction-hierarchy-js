@@ -142,7 +142,7 @@ Graph.prototype._addContractedEdge = function(startNode, endNode, properties, ge
     this.adjacency_list[start_index] = [obj];
   }
 
-  // TODO wait what add reverse contracted edge?
+  // TODO wait what add reverse contracted edge? NO!
 
   const reverse_obj = {
     end: start_index,

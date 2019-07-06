@@ -1,7 +1,8 @@
 
-
+SO... figure out where things start to get tangled.  start at _arrangeContractedPaths
 
 still this, but its all in the detangle, which is awesome because that's solvable IMO!
+ -- seems like if you double up the geometry and properties for each direction (when creating) then you might bypass the need to detangle.
 
 ----
 nGraph: 302.787ms
@@ -14,13 +15,18 @@ ch: 22.324ms
 Processing 83.00% complete... 83  -89.838311,43.016816,-72.465507,41.775534                 
 ----
 
- -- seems like if you double up the geometry and properties for each direction (when creating) then you might bypass the need to detangle.
- 
- explore using typescript, as this has been a nightmare to debug.  tests now that design has been firmed up.
 
 - variable names and comments to distinguish whether youre working on an edge id or a node
 - strike all language regarding coords, as that wont always be applicable, and you always mean NODES anyways
 - same for anything that says index
+
+
+WHY am i adding a contracted edge in the reverse direction.  seems like that would get deleted anyways
+  - see what it does for accuracy (will it still work if i remove it)
+  - and speed (was it faster before or after)
+
+ 
+ explore using typescript, as this has been a nightmare to debug.  tests now that design has been firmed up.
 
 
 eventually need to run USA network through refinement procedures

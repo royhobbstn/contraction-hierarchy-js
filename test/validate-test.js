@@ -51,7 +51,7 @@ async function main() {
 
   const coords = [];
 
-  for (let i = 0; i < 1; i++) {
+  for (let i = 0; i < 100; i++) {
     const rnd1 = Math.floor(Math.random() * adj_length);
     const rnd2 = Math.floor(Math.random() * adj_length);
     const coord = [adj_keys[rnd1], adj_keys[rnd2]];
