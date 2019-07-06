@@ -21,19 +21,19 @@ async function main() {
   const gdgraph = new Graph(geojson);
 
   // uncomment this block to re-run contraction / save
-  const cgraph = new GraphCH(geojson, { debugMode: true });
-  console.time('TimeToContract');
-  cgraph.contractGraph();
-  console.timeEnd('TimeToContract');
-  fs.writeFileSync('./net.json', cgraph.saveCH(), 'utf8');
-  process.exit();
+  // const cgraph = new GraphCH(geojson, { debugMode: true });
+  // console.time('TimeToContract');
+  // cgraph.contractGraph();
+  // console.timeEnd('TimeToContract');
+  // fs.writeFileSync('./net.json', cgraph.saveCH(), 'utf8');
+  // process.exit();
 
   const graph = new GraphCH(null, { debugMode: true });
   const data = fs.readFileSync('./net.json', 'utf8');
   graph.loadCH(data);
 
 
-  const finder = graph.createPathfinder({ ids: true, path: false, detangle: false });
+  const finder = graph.createPathfinder({ ids: true, path: true, detangle: true });
 
   const adj_keys = Object.keys(gdgraph.adjacency_list);
   const adj_length = adj_keys.length;

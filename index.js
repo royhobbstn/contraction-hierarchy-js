@@ -13,7 +13,7 @@ function Graph(geojson, opt) {
   this.adjacency_list = [];
   this._createNodePool = createNodePool;
 
-  this._coordsIndex = -1;
+  this._nodesIndex = -1;
   this._strCoordsToIndex = {};
   this._indexToStrCoords = []; // todo may not ever be needed
 
@@ -62,14 +62,14 @@ Graph.prototype._addEdge = function(startNode, endNode, properties, geometry) {
   }
 
   if (this._strCoordsToIndex[start_node] == null) {
-    this._coordsIndex++;
-    this._strCoordsToIndex[start_node] = this._coordsIndex;
-    this._indexToStrCoords[this._coordsIndex] = start_node;
+    this._nodesIndex++;
+    this._strCoordsToIndex[start_node] = this._nodesIndex;
+    this._indexToStrCoords[this._nodesIndex] = start_node;
   }
   if (this._strCoordsToIndex[end_node] == null) {
-    this._coordsIndex++;
-    this._strCoordsToIndex[end_node] = this._coordsIndex;
-    this._indexToStrCoords[this._coordsIndex] = end_node;
+    this._nodesIndex++;
+    this._strCoordsToIndex[end_node] = this._nodesIndex;
+    this._indexToStrCoords[this._nodesIndex] = end_node;
   }
 
   let start_index = this._strCoordsToIndex[start_node];
@@ -225,6 +225,8 @@ Graph.prototype.loadFromGeoJson = function(filedata) {
     this._addEdge(start_vertex, end_vertex, properties, coordinates);
   });
 
+  // after all geojson features are loaded, set propertiesIndex to the max Id value that was found
+  // new contracted edges will be added after this index
   this._propertiesIndex = this._maxID;
 
 };
@@ -503,50 +505,28 @@ Graph.prototype.contractGraph = function() {
 Graph.prototype._arrangeContractedPaths = function() {
 
   this.adjacency_list.forEach((node, index) => {
-    console.log('  next node')
 
     node.forEach(edge => {
-      console.log('    next edge')
 
       const start_node = index;
-      const end_node = edge.end;
-
-      console.log();
-      console.log({ start_node, end_node });
-
 
       let simpleIds = [];
       let ids = [];
 
-      const attrIds = edge.attrs; // edgeAttrs is an edge id
-
-      console.log({ attrIds });
-
-      if (!Array.isArray(attrIds)) {
-        ids = [attrIds];
-        console.log('simple');
-      }
-      else {
-        console.log('complex');
-        ids = [...attrIds];
-      }
+      ids = [edge.attrs]; // edge.attrs is an edge ID
 
       while (ids.length) {
         const id = ids.pop();
         if (id <= this._maxID) {
+          // this is an original network edge
           simpleIds.push(id);
         }
         else {
-          // todo
-          console.log(this._properties[id])
+          // these are shorcut edges (added during contraction process)
+          // where _id is an array of two items: edges of [u to v, v to w]
           ids.push(...this._properties[id]._id);
         }
       }
-
-      simpleIds = Array.from(new Set(simpleIds))
-
-      console.log({ simpleIds });
-
 
       //  now with simpleIds, get start and end index and make connection object
       const links = {};
@@ -569,8 +549,6 @@ Graph.prototype._arrangeContractedPaths = function() {
           links[end_index].push(id);
         }
       });
-
-      console.log({ links });
 
       const ordered = [];
 
@@ -602,23 +580,19 @@ Graph.prototype._arrangeContractedPaths = function() {
         // we've already seen one of them, so grab the other
 
         if (arr.length === 1) {
-          // ordered.push(arr[0]);
           // if the length of this is 1, it means we're at the end
           break;
-          console.log('OMG')
-          process.exit()
         }
 
         if (arr.length > 2) {
-          console.log('too many edges in array');
+          console.error('too many edges in array. unexpected. unrecoverable.');
           process.exit();
         }
 
         current_edge_id = arr[0] === current_edge_id ? arr[1] : arr[0];
       }
 
-      console.log({ ordered });
-      edge.ordered = ordered;
+      this._properties[edge.attrs]._ordered = ordered;
 
     });
   });
@@ -626,12 +600,6 @@ Graph.prototype._arrangeContractedPaths = function() {
 };
 
 Graph.prototype._cleanAdjList = function() {
-
-  // TODO 
-
-  return;
-
-  // thinking cleaning this list had unintended consequences
 
   // remove links to lower ranked nodes
   this.adjacency_list.forEach((node, index) => {
@@ -716,46 +684,12 @@ Graph.prototype._contract = function(v, get_count_only, finder) {
 
         if (!get_count_only) {
 
-          let shortcut = [];
-          if (dijkstra === Infinity) {
-            // shortcut added is U to W if dijkstra === Infinity
-
-            // like: [176984 178567]
-            // these are edges
-            shortcut = [u.attrs, w.attrs];
-          }
-          else {
-            // else a non-direct path is shorter
-
-            // follow the path and push every attrs
-            let node = path.nodeState[w.end];
-            while (node.prev != null) {
-              const adj = this.adjacency_list[node.id];
-
-              for (let edge of adj) {
-                if (edge.end === node.prev) {
-                  shortcut.push(edge.attrs);
-                }
-              }
-
-              node = path.nodeState[node.prev];
-            }
-
-          }
-
-          // { _cost: 7.971907714285715,
-          //   _id:
-          //   [ 179214, 177275, 13266, 10212, 10213, 13260, 179135, 179136 ] }
           const props = {
             _cost: total,
-            _id: shortcut
+            _id: [u.attrs, w.attrs],
+            _start_index: u.end,
+            _end_index: w.end
           };
-
-          if (shortcut.length === 1) {
-            // todo experiment with adding / removing this
-            console.log('one')
-            return;
-          }
 
           this._addContractedEdge(u.end, w.end, props, null);
         }
@@ -990,7 +924,7 @@ Graph.prototype.createPathfinder = function(options) {
     if (options.ids === true || options.path === true) {
       if (tentative_shortest_node != null) {
         // tentative_shortest_path as falsy indicates no path found.
-        ids = buildIdList(options, adjacency_list, properties, geometry, forward_nodeState, backward_nodeState, tentative_shortest_node, String(start));
+        ids = buildIdList(options, adjacency_list, properties, geometry, forward_nodeState, backward_nodeState, tentative_shortest_node, start_index);
       }
       else {
         // fill in object to prevent errors in the case of no path found
@@ -1089,7 +1023,8 @@ Graph.prototype.createPathfinder = function(options) {
 };
 
 
-function buildIdList(options, adjacency_list, properties, geometry, forward_nodeState, backward_nodeState, tentative_shortest_node, start) {
+function buildIdList(options, adjacency_list, properties, geometry, forward_nodeState, backward_nodeState, tentative_shortest_node, startNode) {
+  console.time('iterate')
 
   const path = [];
 
@@ -1105,53 +1040,75 @@ function buildIdList(options, adjacency_list, properties, geometry, forward_node
     }
   }
 
+  path.reverse();
+
   if (current_backward_node) {
     while (current_backward_node.attrs) {
       path.push(current_backward_node.attrs);
       current_backward_node = backward_nodeState[current_backward_node.prev];
     }
   }
+  console.timeEnd('iterate')
 
-  // TODO above may want to get different property other than .attrs
+  console.time('order')
 
-  // TODO ids is just flattened array result
+  let node = startNode;
 
-  console.log({ path })
+  const ordered = path.map(p => {
+    const start = properties[p]._start_index;
+    const end = properties[p]._end_index;
+    const props = [...properties[p]._ordered];
 
-  path.forEach(p => {
-    console.log(p)
+    if (node !== start) {
+      props.reverse();
+      node = start;
+    }
+    else {
+      node = end;
+    }
+
+    return props;
   });
+  console.timeEnd('order')
 
 
+  console.time('flatten')
 
-  return {};
-
-  // if (options.path) {
-  //   return { ids: mapToIds(ordered, properties), path: mapToGeoJson(ordered, properties, geometry) };
-  // }
-  // else {
-  //   return { ids: mapToIds(ordered, properties) };
-  // }
-
-}
+  const flattened = [].concat(...ordered);
+  console.timeEnd('flatten')
 
 
-function mapToGeoJson(ordered, properties, geometry) {
-  const features = ordered.map(attr_id => {
-    const props = properties[attr_id];
-    const geo = geometry[attr_id];
+  console.time('mapgeo')
+
+  const features = flattened.map(f => {
+
     return {
       "type": "Feature",
-      "properties": props,
+      "properties": properties[f],
       "geometry": {
         "type": "LineString",
-        "coordinates": geo
+        "coordinates": geometry[f]
       }
     };
+
   });
 
-  return detangle({ "type": "FeatureCollection", "features": features });
+  console.timeEnd('mapgeo')
+
+
+
+  if (options.path) {
+    console.time('detangle')
+    const ret = { ids: flattened, path: detangle({ "type": "FeatureCollection", "features": features }) };
+    console.timeEnd('detangle')
+    return ret;
+  }
+  else {
+    return { ids: flattened };
+  }
+
 }
+
 
 function detangle(geo) {
 

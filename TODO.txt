@@ -1,16 +1,27 @@
 
 
-Uhg all messed up.
+still this, but its all in the detangle, which is awesome because that's solvable IMO!
 
-think so much confusion when working with node ids and edge ids its easy to confuse the two.
+----
+nGraph: 302.787ms
+iterate: 0.005ms
+order: 0.033ms
+flatten: 0.010ms
+mapgeo: 0.080ms
+detangle: 21.467ms
+ch: 22.324ms
+Processing 83.00% complete... 83  -89.838311,43.016816,-72.465507,41.775534                 
+----
 
-CRUX is that my link{} shows a very unusual distribution
-
-line 553, then line 1007
+ -- seems like if you double up the geometry and properties for each direction (when creating) then you might bypass the need to detangle.
  
-these items are arranged during the contraction process itself!  so then only have to flip items as needed.
- -you can do it in a SWEEP step at the end.
- -detangle will still need to be done at query runtime (can be an option - not always needed)
+ explore using typescript, as this has been a nightmare to debug.  tests now that design has been firmed up.
+
+- variable names and comments to distinguish whether youre working on an edge id or a node
+- strike all language regarding coords, as that wont always be applicable, and you always mean NODES anyways
+- same for anything that says index
+
+detangling is the next big puzzle.
 
 duplicating (reverse) geometry and attributes may make it possible to not need to detangle
 
@@ -34,4 +45,3 @@ ch:                   39203 ms
 TimeToContract:      632043 ms
 GeoJSON-Dijkstra:   1150428 ms
 ContractionHierarchy: 10904 ms
-

@@ -21,22 +21,22 @@ async function main() {
   const geojson = cleanseNetwork(geofile);
 
   const graph = new GraphCH(geojson, { debugMode: true });
-  // const gdgraph = new GDGraph(geojson);
+  //const gdgraph = new GDGraph(geojson);
 
   console.time('TimeToContract');
   graph.contractGraph();
   console.timeEnd('TimeToContract');
 
-  console.time('TimeToSave');
-  const data = graph.saveCH();
-  console.timeEnd('TimeToSave');
+  // console.time('TimeToSave');
+  // const data = graph.saveCH();
+  // console.timeEnd('TimeToSave');
 
-  console.time('TimeToSave');
-  fs.writeFileSync('./net.json', data, 'utf8');
-  console.timeEnd('TimeToSave');
+  // console.time('TimeToSave');
+  // fs.writeFileSync('./net.json', data, 'utf8');
+  // console.timeEnd('TimeToSave');
 
-  process.exit();
-
+  // process.exit();
+  
   const finder = graph.createPathfinder();
   const gdfinder = gdgraph.createFinder({ parseOutputFns: [] });
 
