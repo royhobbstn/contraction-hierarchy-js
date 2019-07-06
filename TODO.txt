@@ -22,9 +22,6 @@ Processing 83.00% complete... 83  -89.838311,43.016816,-72.465507,41.775534
 - strike all language regarding coords, as that wont always be applicable, and you always mean NODES anyways
 - same for anything that says index
 
-detangling is the next big puzzle.
-
-duplicating (reverse) geometry and attributes may make it possible to not need to detangle
 
 eventually need to run USA network through refinement procedures
 
