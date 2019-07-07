@@ -1,5 +1,10 @@
 
+
 SO... figure out where things start to get tangled.  start at _arrangeContractedPaths
+
+FACT: when I'm creating a contracted edge, I'm not really considering segment order.
+ - does that matter?  fools errand to think i can arrange everything that perfectly so far downstream?
+ - i think do this anyways.  no downside.
 
 still this, but its all in the detangle, which is awesome because that's solvable IMO!
  -- seems like if you double up the geometry and properties for each direction (when creating) then you might bypass the need to detangle.
@@ -20,10 +25,11 @@ Processing 83.00% complete... 83  -89.838311,43.016816,-72.465507,41.775534
 - strike all language regarding coords, as that wont always be applicable, and you always mean NODES anyways
 - same for anything that says index
 
+Directed Networks
 
-WHY am i adding a contracted edge in the reverse direction.  seems like that would get deleted anyways
-  - see what it does for accuracy (will it still work if i remove it)
-  - and speed (was it faster before or after)
+Non-GeoJSON data
+
+reorganize code
 
  
  explore using typescript, as this has been a nightmare to debug.  tests now that design has been firmed up.

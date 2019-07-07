@@ -142,21 +142,6 @@ Graph.prototype._addContractedEdge = function(startNode, endNode, properties, ge
     this.adjacency_list[start_index] = [obj];
   }
 
-  // TODO wait what add reverse contracted edge? NO!
-
-  const reverse_obj = {
-    end: start_index,
-    cost: properties._cost,
-    attrs: this._edgeIndex
-  };
-
-  if (this.adjacency_list[end_index]) {
-    this.adjacency_list[end_index].push(reverse_obj);
-  }
-  else {
-    this.adjacency_list[end_index] = [reverse_obj];
-  }
-
 };
 
 
@@ -597,8 +582,117 @@ Graph.prototype._arrangeContractedPaths = function() {
 
       this._properties[edge.attrs]._ordered = ordered;
 
+      // console.log(this._properties[edge.attrs])
+
+      // { _cost: 1.5287260000000003,
+      //   _id: [ 3432, 10898 ],
+      //   _start_index: 1412,
+      //   _end_index: 1418,
+      //   _ordered: [ 3438, 3482, 3491, 3478, 3492, 3432 ] }
+
+      // 3438: [ [ -122.329088, 47.594543 ], [ -122.328966, 47.596307 ] ]
+      // 3482: [ [ -122.328988, 47.5923 ], [ -122.329088, 47.594543 ] ]
+      // 3491: [ [ -122.328988, 47.5923 ], [ -122.328996, 47.592175 ] ]
+      // 3478: [ [ -122.328996, 47.592175 ],
+      //         [ -122.328035, 47.591972 ],
+      //         [ -122.326616, 47.59201 ],
+      //         [ -122.325135, 47.59203 ],
+      //         [ -122.324251, 47.592259 ] ]
+      // 3492: [ [ -122.324251, 47.592259 ], [ -122.323747, 47.592419 ] ]
+      // 3432: [ [ -122.323747, 47.592419 ],
+      //         [ -122.321885, 47.593385 ],
+      //         [ -122.320145, 47.594559 ] ]
+
+      // { ID: 10323,
+      //   STATE: 'WA',
+      //   STFIPS: 53,
+      //   CTFIPS: 33,
+      //   LNAME: '4th Av S',
+      //   MILES: 0.122,
+      //   NHS: 8,
+      //   _cost: 0.366,
+      //   _id: 10323,
+      //   _start_index: 1417,
+      //   _end_index: 1418,
+      //   _ordered: [ 3438 ] }
+      // { ID: 10414,
+      //   STATE: 'WA',
+      //   STFIPS: 53,
+      //   CTFIPS: 33,
+      //   LNAME: '4th Av S',
+      //   MILES: 0.155029,
+      //   NHS: 7,
+      //   _cost: 0.310058,
+      //   _id: 10414,
+      //   _start_index: 1432,
+      //   _end_index: 1417,
+      //   _ordered: [ 3482 ] }
+      // { ID: 11933,
+      //   STATE: 'WA',
+      //   STFIPS: 53,
+      //   CTFIPS: 33,
+      //   LNAME: '4th Av S',
+      //   MILES: 0.008644,
+      //   NHS: 0,
+      //   _cost: 0.05186400000000001,
+      //   _id: 11933,
+      //   _start_index: 1265,
+      //   _end_index: 1432,
+      //   _ordered: [ 3491 ] }
+      // { ID: 12003,
+      //   STATE: 'WA',
+      //   STFIPS: 53,
+      //   CTFIPS: 33,
+      //   LNAME: null,
+      //   MILES: 0.226884,
+      //   NHS: 7,
+      //   _cost: 0.453768,
+      //   _id: 12003,
+      //   _start_index: 1265,
+      //   _end_index: 1431,
+      //   _ordered: [ 3478 ] }
+      // { ID: 12002,
+      //   STATE: 'WA',
+      //   STFIPS: 53,
+      //   CTFIPS: 33,
+      //   LNAME: null,
+      //   MILES: 0.026019,
+      //   NHS: 7,
+      //   _cost: 0.052038,
+      //   _id: 12002,
+      //   _start_index: 1431,
+      //   _end_index: 1411,
+      //   _ordered: [ 3492 ] }
+      // { ID: 13374,
+      //   STATE: 'WA',
+      //   STFIPS: 53,
+      //   CTFIPS: 33,
+      //   LNAME: null,
+      //   MILES: 0.147499,
+      //   NHS: 7,
+      //   _cost: 0.294998,
+      //   _id: 13374,
+      //   _start_index: 1411,
+      //   _end_index: 1412,
+      //   _ordered: [ 3432 ] }
+
+
+      // ---- 
+      // { _cost: 7.983288,
+      //   _id: [ 1535, 1536 ],
+      //   _start_index: 676,
+      //   _end_index: 678,
+      //   _ordered: [ 1536, 1535 ] }
+
     });
   });
+
+
+
+  // [1536, 1535].forEach(d => {
+  //   console.log(this._geometry[d])
+  //   console.log(this._properties[d])
+  // })
 
 };
 
