@@ -1,8 +1,8 @@
-const kdbush = require('kdbush');
-const geokdbush = require('geokdbush');
 const NodeHeap = require('./queue.js');
 const clone = require('@turf/clone').default;
 const buildIdList = require('./buildOutputs.js').buildIdList;
+const CoordinateLookup = require('./coordinate-lookup.js').CoordinateLookup;
+
 // objects
 exports.Graph = Graph;
 exports.CoordinateLookup = CoordinateLookup;
@@ -11,6 +11,7 @@ function Graph(geojson, opt) {
   const options = opt || {};
   this.debugMode = options.debugMode || false;
   this.adjacency_list = [];
+  this.reverse_adjacency_list = [];
   this._createNodePool = createNodePool;
 
   this._nodesIndex = -1;
@@ -26,32 +27,8 @@ function Graph(geojson, opt) {
   }
 }
 
-function CoordinateLookup(graph) {
 
-  const points_set = new Set();
-
-  Object.keys(graph.adjacency_list).forEach(key => {
-    points_set.add(key);
-  });
-
-  const coordinate_list = [];
-
-  points_set.forEach(pt_str => {
-    coordinate_list.push(pt_str.split(',').map(d => Number(d)));
-  });
-
-  this.index = kdbush(coordinate_list, (p) => p[0], (p) => p[1]);
-}
-
-CoordinateLookup.prototype.getClosestNetworkPt = function(lng, lat) {
-  return geokdbush.around(this.index, lng, lat, 1)[0];
-};
-
-Graph.prototype._addEdge = function(startNode, endNode, properties, geometry) {
-
-  // input can now be String or Number coordinates (or anything!) makes no difference
-  const start_node = String(startNode);
-  const end_node = String(endNode);
+Graph.prototype._addEdge = function(start_node, end_node, edge_properties, edge_geometry) {
 
   if (start_node === end_node) {
     if (this.debugMode) {
@@ -72,20 +49,18 @@ Graph.prototype._addEdge = function(startNode, endNode, properties, geometry) {
   let start_index = this._nodeToIndex[start_node];
   let end_index = this._nodeToIndex[end_node];
 
-  properties._start_index = start_index;
-  properties._end_index = end_index;
-
-  // FORWARDS
+  edge_properties._start_index = start_index;
+  edge_properties._end_index = end_index;
 
   this._edgeIndex++;
 
-  this._properties[this._edgeIndex] = properties;
-  this._geometry[this._edgeIndex] = geometry;
+  this._properties[this._edgeIndex] = edge_properties;
+  this._geometry[this._edgeIndex] = edge_geometry;
 
   // create object to push into adjacency list
   const obj = {
     end: end_index,
-    cost: properties._cost, // TODO forward cost or cost
+    cost: edge_properties._cost, // TODO forward cost or cost
     attrs: this._edgeIndex
   };
 
@@ -96,37 +71,35 @@ Graph.prototype._addEdge = function(startNode, endNode, properties, geometry) {
     this.adjacency_list[start_index] = [obj];
   }
 
-  // BACKWARDS
-
+  // add to reverse adjacency list
   this._edgeIndex++;
-
-  this._properties[this._edgeIndex] = properties;
-  this._geometry[this._edgeIndex] = JSON.parse(JSON.stringify(geometry)).reverse();
+  this._properties[this._edgeIndex] = edge_properties;
+  this._geometry[this._edgeIndex] = JSON.parse(JSON.stringify(edge_geometry)).reverse();
 
   const reverse_obj = {
     end: start_index,
-    cost: properties._cost, // TODO backward cost or cost
+    cost: edge_properties._cost, // TODO forward/reverse cost?
     attrs: this._edgeIndex
   };
 
-  if (this.adjacency_list[end_index]) {
-    this.adjacency_list[end_index].push(reverse_obj);
+  if (this.reverse_adjacency_list[end_index]) {
+    this.reverse_adjacency_list[end_index].push(reverse_obj);
   }
   else {
-    this.adjacency_list[end_index] = [reverse_obj];
+    this.reverse_adjacency_list[end_index] = [reverse_obj];
   }
 
 };
 
 
-Graph.prototype._addContractedEdge = function(startNode, endNode, properties, geometry) {
+Graph.prototype._addContractedEdge = function(start_index, end_index, properties, geometry) {
 
-  let start_index = startNode;
-  let end_index = endNode;
+  // geometry not applicable here
+  // TBH, maybe properties not applicable either
 
   this._edgeIndex++;
   this._properties[this._edgeIndex] = properties;
-  this._geometry[this._edgeIndex] = geometry;
+  this._geometry[this._edgeIndex] = null;
 
   // create object to push into adjacency list
   const obj = {
@@ -140,6 +113,24 @@ Graph.prototype._addContractedEdge = function(startNode, endNode, properties, ge
   }
   else {
     this.adjacency_list[start_index] = [obj];
+  }
+
+  // add it to reverse adjacency list
+  this._edgeIndex++;
+  this._properties[this._edgeIndex] = properties;
+  this._geometry[this._edgeIndex] = null;
+
+  const reverse_obj = {
+    end: start_index,
+    cost: properties._cost,
+    attrs: this._edgeIndex
+  };
+
+  if (this.reverse_adjacency_list[end_index]) {
+    this.reverse_adjacency_list[end_index].push(reverse_obj);
+  }
+  else {
+    this.reverse_adjacency_list[end_index] = [reverse_obj];
   }
 
 };
@@ -210,8 +201,12 @@ Graph.prototype.loadFromGeoJson = function(filedata) {
     const start_vertex = coordinates[0];
     const end_vertex = coordinates[coordinates.length - 1];
 
+    // add forward
+    this._addEdge(start_vertex, end_vertex, properties, JSON.parse(JSON.stringify(coordinates)));
 
-    this._addEdge(start_vertex, end_vertex, properties, coordinates);
+    // add backward
+    this._addEdge(end_vertex, start_vertex, properties, JSON.parse(JSON.stringify(coordinates)).reverse());
+
   });
 
   // new contracted edges will be added after this index
@@ -448,7 +443,8 @@ Graph.prototype.contractGraph = function() {
       // prune adj list of no longer valid paths occasionally
       // theres probably a better formula for determining how often this should run
       // (bigger networks = less often)
-      this._cleanAdjList();
+      this._cleanAdjList(this.adjacency_list);
+      this._cleanAdjList(this.reverse_adjacency_list);
     }
 
     // recompute to make sure that first node in priority queue
@@ -483,16 +479,20 @@ Graph.prototype.contractGraph = function() {
 
   }
 
-  this._cleanAdjList();
-  this._arrangeContractedPaths();
+  this._cleanAdjList(this.adjacency_list);
+  this._cleanAdjList(this.reverse_adjacency_list);
+  this._arrangeContractedPaths(this.adjacency_list);
+  this._arrangeContractedPaths(this.reverse_adjacency_list);
 
   return;
 
 };
 
-Graph.prototype._arrangeContractedPaths = function() {
+// do as much edge arrangement as possible ahead of times so that the cost is
+// not incurred at runtime
+Graph.prototype._arrangeContractedPaths = function(adj_list) {
 
-  this.adjacency_list.forEach((node, index) => {
+  adj_list.forEach((node, index) => {
 
     node.forEach(edge => {
 
@@ -696,17 +696,17 @@ Graph.prototype._arrangeContractedPaths = function() {
 
 };
 
-Graph.prototype._cleanAdjList = function() {
+Graph.prototype._cleanAdjList = function(adj_list) {
 
   // remove links to lower ranked nodes
-  this.adjacency_list.forEach((node, index) => {
-    const from_rank = this.contracted_nodes[index];
+  adj_list.forEach((node, node_id) => {
+    const from_rank = this.contracted_nodes[node_id];
     if (!from_rank) {
       return;
     }
-    this.adjacency_list[index] = this.adjacency_list[index].filter(
-      to_coords => {
-        const to_rank = this.contracted_nodes[to_coords.end];
+    adj_list[node_id] = adj_list[node_id].filter(
+      edge => {
+        const to_rank = this.contracted_nodes[edge.end];
         if (!to_rank) {
           return true;
         }
@@ -722,7 +722,7 @@ Graph.prototype._cleanAdjList = function() {
 // if node were to be contracted
 Graph.prototype._contract = function(v, get_count_only, finder) {
 
-  const from_connections = (this.adjacency_list[v] || []).filter(c => {
+  const from_connections = (this.reverse_adjacency_list[v] || []).filter(c => {
     return !this.contracted_nodes[c.end];
   });
 
@@ -801,6 +801,7 @@ Graph.prototype._contract = function(v, get_count_only, finder) {
 Graph.prototype.loadCH = function(ch) {
   const parsed = JSON.parse(ch);
   this.adjacency_list = parsed.adjacency_list;
+  this.reverse_adjacency_list = parsed.reverse_adjacency_list;
   this._nodeToIndex = parsed._nodeToIndex;
   this._properties = parsed._properties;
   this._geometry = parsed._geometry;
@@ -809,6 +810,7 @@ Graph.prototype.loadCH = function(ch) {
 Graph.prototype.saveCH = function() {
   return JSON.stringify({
     adjacency_list: this.adjacency_list,
+    reverse_adjacency_list: this.reverse_adjacency_list,
     _nodeToIndex: this._nodeToIndex,
     _properties: this._properties,
     _geometry: this._geometry
@@ -927,6 +929,7 @@ Graph.prototype._createChShortcutter = function() {
 Graph.prototype.createPathfinder = function(options) {
 
   const adjacency_list = this.adjacency_list;
+  const reverse_adjacency_list = this.reverse_adjacency_list;
   const properties = this._properties;
   const geometry = this._geometry;
   const pool = this._createNodePool();
@@ -976,7 +979,7 @@ Graph.prototype.createPathfinder = function(options) {
       backward_distances
     );
     const searchBackward = doDijkstra(
-      adjacency_list,
+      reverse_adjacency_list,
       current_end,
       backward_nodeState,
       backward_distances,
@@ -1021,7 +1024,7 @@ Graph.prototype.createPathfinder = function(options) {
     if (options.ids === true || options.path === true) {
       if (tentative_shortest_node != null) {
         // tentative_shortest_path as falsy indicates no path found.
-        ids = buildIdList(options, adjacency_list, properties, geometry, forward_nodeState, backward_nodeState, tentative_shortest_node, start_index);
+        ids = buildIdList(options, properties, geometry, forward_nodeState, backward_nodeState, tentative_shortest_node, start_index);
       }
       else {
         // fill in object to prevent errors in the case of no path found

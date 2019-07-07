@@ -1,4 +1,7 @@
 
+why did my recent changes add so much overhead to each CH call???
+ 
+explore what adding reverse adj list did to coordinate order.
 
 SO... figure out where things start to get tangled.  start at _arrangeContractedPaths
 
@@ -21,18 +24,20 @@ Processing 83.00% complete... 83  -89.838311,43.016816,-72.465507,41.775534
 ----
 
 
-- variable names and comments to distinguish whether youre working on an edge id or a node
+- variable names and comments to distinguish whether youre working on an edge id or a node or coordinate (addEdge)
 - strike all language regarding coords, as that wont always be applicable, and you always mean NODES anyways
 - same for anything that says index
 
-Directed Networks
-
 Non-GeoJSON data
+
+Directed Networks
+  - infra in place.  never been tested.  add non-geojson capability first
+
+coordinate lookup almost assuredly broken
 
 reorganize code
 
- 
- explore using typescript, as this has been a nightmare to debug.  tests now that design has been firmed up.
+explore using typescript, as this has been a nightmare to debug.  tests now that design has been firmed up.
 
 
 eventually need to run USA network through refinement procedures

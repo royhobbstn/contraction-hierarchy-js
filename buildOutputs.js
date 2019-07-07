@@ -3,7 +3,7 @@ const clone = require('@turf/clone').default;
 
 exports.buildIdList = buildIdList;
 
-function buildIdList(options, adjacency_list, properties, geometry, forward_nodeState, backward_nodeState, tentative_shortest_node, startNode) {
+function buildIdList(options, properties, geometry, forward_nodeState, backward_nodeState, tentative_shortest_node, startNode) {
   console.time('iterate')
 
   const path = [];
