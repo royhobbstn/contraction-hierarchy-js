@@ -49,13 +49,12 @@ Graph.prototype._addEdge = function(start_node, end_node, edge_properties, edge_
   let start_index = this._nodeToIndex[start_node];
   let end_index = this._nodeToIndex[end_node];
 
-  edge_properties._start_index = start_index;
-  edge_properties._end_index = end_index;
-
+  // add to adjacency list
   this._edgeIndex++;
-
-  this._properties[this._edgeIndex] = edge_properties;
-  this._geometry[this._edgeIndex] = edge_geometry;
+  this._properties[this._edgeIndex] = JSON.parse(JSON.stringify(edge_properties));
+  this._properties[this._edgeIndex]._start_index = start_index;
+  this._properties[this._edgeIndex]._end_index = end_index;
+  this._geometry[this._edgeIndex] = JSON.parse(JSON.stringify(edge_geometry));
 
   // create object to push into adjacency list
   const obj = {
@@ -72,10 +71,6 @@ Graph.prototype._addEdge = function(start_node, end_node, edge_properties, edge_
   }
 
   // add to reverse adjacency list
-  this._edgeIndex++;
-  this._properties[this._edgeIndex] = edge_properties;
-  this._geometry[this._edgeIndex] = JSON.parse(JSON.stringify(edge_geometry)).reverse();
-
   const reverse_obj = {
     end: start_index,
     cost: edge_properties._cost, // TODO forward/reverse cost?
@@ -92,13 +87,14 @@ Graph.prototype._addEdge = function(start_node, end_node, edge_properties, edge_
 };
 
 
-Graph.prototype._addContractedEdge = function(start_index, end_index, properties, geometry) {
+Graph.prototype._addContractedEdge = function(start_index, end_index, properties) {
 
   // geometry not applicable here
-  // TBH, maybe properties not applicable either
 
   this._edgeIndex++;
   this._properties[this._edgeIndex] = properties;
+  this._properties[this._edgeIndex]._start_index = start_index;
+  this._properties[this._edgeIndex]._end_index = end_index;
   this._geometry[this._edgeIndex] = null;
 
   // create object to push into adjacency list
@@ -116,10 +112,6 @@ Graph.prototype._addContractedEdge = function(start_index, end_index, properties
   }
 
   // add it to reverse adjacency list
-  this._edgeIndex++;
-  this._properties[this._edgeIndex] = properties;
-  this._geometry[this._edgeIndex] = null;
-
   const reverse_obj = {
     end: start_index,
     cost: properties._cost,
@@ -444,7 +436,7 @@ Graph.prototype.contractGraph = function() {
       // theres probably a better formula for determining how often this should run
       // (bigger networks = less often)
       this._cleanAdjList(this.adjacency_list);
-      this._cleanAdjList(this.reverse_adjacency_list);
+      // this._cleanAdjList(this.reverse_adjacency_list);
     }
 
     // recompute to make sure that first node in priority queue
@@ -584,112 +576,166 @@ Graph.prototype._arrangeContractedPaths = function(adj_list) {
 
       // console.log(this._properties[edge.attrs])
 
-      // { _cost: 1.5287260000000003,
-      //   _id: [ 3432, 10898 ],
-      //   _start_index: 1412,
-      //   _end_index: 1418,
-      //   _ordered: [ 3438, 3482, 3491, 3478, 3492, 3432 ] }
+      // {
+      //   _cost: 23.695577999999998,
+      //   _id: [12967, 10561],
+      //   _start_index: 895,
+      //   _end_index: 910,
+      //   _ordered: [2047, 2045, 2038, 2074, 2077, 2079, 2081, 1999, 2021]
+      // }
 
-      // 3438: [ [ -122.329088, 47.594543 ], [ -122.328966, 47.596307 ] ]
-      // 3482: [ [ -122.328988, 47.5923 ], [ -122.329088, 47.594543 ] ]
-      // 3491: [ [ -122.328988, 47.5923 ], [ -122.328996, 47.592175 ] ]
-      // 3478: [ [ -122.328996, 47.592175 ],
-      //         [ -122.328035, 47.591972 ],
-      //         [ -122.326616, 47.59201 ],
-      //         [ -122.325135, 47.59203 ],
-      //         [ -122.324251, 47.592259 ] ]
-      // 3492: [ [ -122.324251, 47.592259 ], [ -122.323747, 47.592419 ] ]
-      // 3432: [ [ -122.323747, 47.592419 ],
-      //         [ -122.321885, 47.593385 ],
-      //         [ -122.320145, 47.594559 ] ]
-
-      // { ID: 10323,
+      // [ [ -122.659141, 47.31853 ],
+      //   [ -122.659583, 47.319757 ],
+      //   [ -122.659316, 47.321901 ] ]
+      // { ID: 10185,
       //   STATE: 'WA',
       //   STFIPS: 53,
-      //   CTFIPS: 33,
-      //   LNAME: '4th Av S',
-      //   MILES: 0.122,
-      //   NHS: 8,
-      //   _cost: 0.366,
-      //   _id: 10323,
-      //   _start_index: 1417,
-      //   _end_index: 1418,
-      //   _ordered: [ 3438 ] }
-      // { ID: 10414,
-      //   STATE: 'WA',
-      //   STFIPS: 53,
-      //   CTFIPS: 33,
-      //   LNAME: '4th Av S',
-      //   MILES: 0.155029,
-      //   NHS: 7,
-      //   _cost: 0.310058,
-      //   _id: 10414,
-      //   _start_index: 1432,
-      //   _end_index: 1417,
-      //   _ordered: [ 3482 ] }
-      // { ID: 11933,
-      //   STATE: 'WA',
-      //   STFIPS: 53,
-      //   CTFIPS: 33,
-      //   LNAME: '4th Av S',
-      //   MILES: 0.008644,
+      //   CTFIPS: 53,
+      //   LNAME: 'Ray Nash Dr Nw',
+      //   MILES: 0.235912,
       //   NHS: 0,
-      //   _cost: 0.05186400000000001,
-      //   _id: 11933,
-      //   _start_index: 1265,
-      //   _end_index: 1432,
-      //   _ordered: [ 3491 ] }
-      // { ID: 12003,
+      //   _cost: 1.415472,
+      //   _id: 10185,
+      //   _start_index: 895,
+      //   _end_index: 926 }
+      // [ [ -122.659316, 47.321901 ],
+      //   [ -122.659278, 47.322214 ],
+      //   [ -122.657539, 47.322523 ],
+      //   [ -122.655181, 47.324263 ],
+      //   [ -122.655, 47.324498 ],
+      //   [ -122.653442, 47.326517 ],
+      //   [ -122.650054, 47.329713 ],
+      //   [ -122.649749, 47.33 ] ]
+      // { ID: 11781,
       //   STATE: 'WA',
       //   STFIPS: 53,
-      //   CTFIPS: 33,
-      //   LNAME: null,
-      //   MILES: 0.226884,
-      //   NHS: 7,
-      //   _cost: 0.453768,
-      //   _id: 12003,
-      //   _start_index: 1265,
-      //   _end_index: 1431,
-      //   _ordered: [ 3478 ] }
-      // { ID: 12002,
+      //   CTFIPS: 53,
+      //   LNAME: 'Ray Nash Dr Nw',
+      //   MILES: 0.742032,
+      //   NHS: 0,
+      //   _cost: 4.452192,
+      //   _id: 11781,
+      //   _start_index: 926,
+      //   _end_index: 921,
+      //   _ordered: [ 2045 ] }
+      // [ [ -122.649749, 47.33 ],
+      //   [ -122.649234, 47.329953 ],
+      //   [ -122.647498, 47.329794 ],
+      //   [ -122.643401, 47.329386 ],
+      //   [ -122.640326, 47.33 ],
+      //   [ -122.637763, 47.331023 ],
+      //   [ -122.636591, 47.331444 ],
+      //   [ -122.636336, 47.331537 ],
+      //   [ -122.635413, 47.33164 ],
+      //   [ -122.633871, 47.331125 ],
+      //   [ -122.63172, 47.33 ],
+      //   [ -122.624588, 47.330077 ],
+      //   [ -122.610624, 47.330225 ] ]
+      // { ID: 11779,
       //   STATE: 'WA',
       //   STFIPS: 53,
-      //   CTFIPS: 33,
-      //   LNAME: null,
-      //   MILES: 0.026019,
-      //   NHS: 7,
-      //   _cost: 0.052038,
-      //   _id: 12002,
-      //   _start_index: 1431,
-      //   _end_index: 1411,
-      //   _ordered: [ 3492 ] }
-      // { ID: 13374,
+      //   CTFIPS: 53,
+      //   LNAME: 'Rosedale St Nw',
+      //   MILES: 1.910131,
+      //   NHS: 0,
+      //   _cost: 11.460785999999999,
+      //   _id: 11779,
+      //   _start_index: 921,
+      //   _end_index: 922 }
+      // [ [ -122.610624, 47.330225 ],
+      //   [ -122.600147, 47.330336 ],
+      //   [ -122.599043, 47.330348 ] ]
+      // { ID: 11778,
       //   STATE: 'WA',
       //   STFIPS: 53,
-      //   CTFIPS: 33,
+      //   CTFIPS: 53,
+      //   LNAME: 'Rosedale St Nw',
+      //   MILES: 0.54399,
+      //   NHS: 0,
+      //   _cost: 3.26394,
+      //   _id: 11778,
+      //   _start_index: 922,
+      //   _end_index: 935,
+      //   _ordered: [ 2074 ] }
+      // [ [ -122.599043, 47.330348 ],
+      //   [ -122.598104, 47.329211 ],
+      //   [ -122.593204, 47.323814 ] ]
+      // { ID: 10369,
+      //   STATE: 'WA',
+      //   STFIPS: 53,
+      //   CTFIPS: 53,
       //   LNAME: null,
-      //   MILES: 0.147499,
-      //   NHS: 7,
-      //   _cost: 0.294998,
-      //   _id: 13374,
-      //   _start_index: 1411,
-      //   _end_index: 1412,
-      //   _ordered: [ 3432 ] }
-
-
-      // ---- 
-      // { _cost: 7.983288,
-      //   _id: [ 1535, 1536 ],
-      //   _start_index: 676,
-      //   _end_index: 678,
-      //   _ordered: [ 1536, 1535 ] }
+      //   MILES: 0.528234,
+      //   NHS: 4,
+      //   _cost: 0.792351,
+      //   _id: 10369,
+      //   _start_index: 935,
+      //   _end_index: 936 }
+      // [ [ -122.593204, 47.323814 ],
+      //   [ -122.592702, 47.32326 ],
+      //   [ -122.590382, 47.320746 ] ]
+      // { ID: 10372,
+      //   STATE: 'WA',
+      //   STFIPS: 53,
+      //   CTFIPS: 53,
+      //   LNAME: null,
+      //   MILES: 0.249986,
+      //   NHS: 4,
+      //   _cost: 0.37497900000000006,
+      //   _id: 10372,
+      //   _start_index: 936,
+      //   _end_index: 937,
+      //   _ordered: [ 2079 ] }
+      // [ [ -122.590382, 47.320746 ],
+      //   [ -122.588399, 47.31845 ],
+      //   [ -122.587922, 47.317925 ] ]
+      // { ID: 10373,
+      //   STATE: 'WA',
+      //   STFIPS: 53,
+      //   CTFIPS: 53,
+      //   LNAME: null,
+      //   MILES: 0.226577,
+      //   NHS: 4,
+      //   _cost: 0.3398655,
+      //   _id: 10373,
+      //   _start_index: 937,
+      //   _end_index: 899 }
+      // [ [ -122.587922, 47.317925 ],
+      //   [ -122.586293, 47.31613 ],
+      //   [ -122.583866, 47.313269 ],
+      //   [ -122.580616, 47.309791 ],
+      //   [ -122.579078, 47.307951 ] ]
+      // { ID: 10370,
+      //   STATE: 'WA',
+      //   STFIPS: 53,
+      //   CTFIPS: 53,
+      //   LNAME: null,
+      //   MILES: 0.804791,
+      //   NHS: 4,
+      //   _cost: 1.2071865,
+      //   _id: 10370,
+      //   _start_index: 899,
+      //   _end_index: 898 }
+      // [ [ -122.579078, 47.307951 ],
+      //   [ -122.578533, 47.3073 ],
+      //   [ -122.576206, 47.304748 ] ]
+      // { ID: 13437,
+      //   STATE: 'WA',
+      //   STFIPS: 53,
+      //   CTFIPS: 53,
+      //   LNAME: null,
+      //   MILES: 0.259204,
+      //   NHS: 4,
+      //   _cost: 0.388806,
+      //   _id: 13437,
+      //   _start_index: 898,
+      //   _end_index: 910,
+      //   _ordered: [ 2021 ] }
 
     });
   });
 
-
-
-  // [1536, 1535].forEach(d => {
+  // [2047, 2045, 2038, 2074, 2077, 2079, 2081, 1999, 2021].forEach(d => {
   //   console.log(this._geometry[d])
   //   console.log(this._properties[d])
   // })
@@ -722,10 +768,12 @@ Graph.prototype._cleanAdjList = function(adj_list) {
 // if node were to be contracted
 Graph.prototype._contract = function(v, get_count_only, finder) {
 
+  // all edges from anywhere to v
   const from_connections = (this.reverse_adjacency_list[v] || []).filter(c => {
     return !this.contracted_nodes[c.end];
   });
 
+  // all edges from v to somewhere else
   const to_connections = (this.adjacency_list[v] || []).filter(c => {
     return !this.contracted_nodes[c.end];
   });
@@ -788,7 +836,7 @@ Graph.prototype._contract = function(v, get_count_only, finder) {
             _end_index: w.end
           };
 
-          this._addContractedEdge(u.end, w.end, props, null);
+          this._addContractedEdge(u.end, w.end, props);
         }
       }
     });
@@ -805,6 +853,8 @@ Graph.prototype.loadCH = function(ch) {
   this._nodeToIndex = parsed._nodeToIndex;
   this._properties = parsed._properties;
   this._geometry = parsed._geometry;
+
+  // this._rebuildReverseAdjList();
 };
 
 Graph.prototype.saveCH = function() {
@@ -815,6 +865,39 @@ Graph.prototype.saveCH = function() {
     _properties: this._properties,
     _geometry: this._geometry
   });
+};
+
+
+Graph.prototype._rebuildReverseAdjList = function() {
+
+  // destroy and build anew
+  // TODO future, rename old one.  its not the same thing.
+  this.reverse_adjacency_list = [];
+
+  this.adjacency_list.forEach((node, index) => {
+
+    node.forEach(edge => {
+
+      const start_node = edge.end;
+      const end_node = index;
+
+      const obj = {
+        end: end_node,
+        cost: edge.cost,
+        attrs: edge.attrs
+      };
+
+      if (!this.reverse_adjacency_list[start_node]) {
+        this.reverse_adjacency_list[start_node] = [obj];
+      }
+      else {
+        this.reverse_adjacency_list[start_node].push(obj);
+      }
+
+    });
+
+  });
+
 };
 
 
@@ -1063,7 +1146,7 @@ Graph.prototype.createPathfinder = function(options) {
       });
 
       do {
-        adj[current.id].forEach(edge => {
+        (adj[current.id] || []).forEach(edge => {
 
           let node = nodeState[edge.end];
           if (node === undefined) {

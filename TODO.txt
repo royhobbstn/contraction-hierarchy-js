@@ -1,27 +1,12 @@
 
-why did my recent changes add so much overhead to each CH call???
- 
-explore what adding reverse adj list did to coordinate order.
 
-SO... figure out where things start to get tangled.  start at _arrangeContractedPaths
+... mostly untangled.
 
-FACT: when I'm creating a contracted edge, I'm not really considering segment order.
- - does that matter?  fools errand to think i can arrange everything that perfectly so far downstream?
- - i think do this anyways.  no downside.
+see console.logs:
+ - "ordered" isnt quite ordered.  individually each array row should be appropriately ordered.  together they are not.
 
-still this, but its all in the detangle, which is awesome because that's solvable IMO!
- -- seems like if you double up the geometry and properties for each direction (when creating) then you might bypass the need to detangle.
 
-----
-nGraph: 302.787ms
-iterate: 0.005ms
-order: 0.033ms
-flatten: 0.010ms
-mapgeo: 0.080ms
-detangle: 21.467ms
-ch: 22.324ms
-Processing 83.00% complete... 83  -89.838311,43.016816,-72.465507,41.775534                 
-----
+try to build reverse_adjacency_list (on Load) so that it doesn't have to be saved/reloaded
 
 
 - variable names and comments to distinguish whether youre working on an edge id or a node or coordinate (addEdge)

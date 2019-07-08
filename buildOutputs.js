@@ -4,7 +4,6 @@ const clone = require('@turf/clone').default;
 exports.buildIdList = buildIdList;
 
 function buildIdList(options, properties, geometry, forward_nodeState, backward_nodeState, tentative_shortest_node, startNode) {
-  console.time('iterate')
 
   const path = [];
 
@@ -28,9 +27,6 @@ function buildIdList(options, properties, geometry, forward_nodeState, backward_
       current_backward_node = backward_nodeState[current_backward_node.prev];
     }
   }
-  console.timeEnd('iterate')
-
-  console.time('order')
 
   let node = startNode;
 
@@ -49,16 +45,11 @@ function buildIdList(options, properties, geometry, forward_nodeState, backward_
 
     return props;
   });
-  console.timeEnd('order')
 
+  console.log({ ordered })
 
-  console.time('flatten')
 
   const flattened = [].concat(...ordered);
-  console.timeEnd('flatten')
-
-
-  console.time('mapgeo')
 
   const features = flattened.map(f => {
 
@@ -73,16 +64,8 @@ function buildIdList(options, properties, geometry, forward_nodeState, backward_
 
   });
 
-  console.timeEnd('mapgeo')
-
-
-
   if (options.path) {
-    console.time('detangle')
-    const ret = { ids: flattened, path: /*detangle*/ ({ "type": "FeatureCollection", "features": features }) };
-
-    // console.log(JSON.stringify(ret.path))
-    console.timeEnd('detangle')
+    const ret = { ids: flattened, path: { "type": "FeatureCollection", "features": features } };
     return ret;
   }
   else {
