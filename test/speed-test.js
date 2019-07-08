@@ -11,7 +11,7 @@ const GDGraph = require('geojson-dijkstra').Graph;
 const GraphCH = require('../index.js').Graph;
 
 
-const ITERATIONS = 10000;
+const ITERATIONS = 1000;
 
 main();
 
@@ -20,7 +20,7 @@ async function main() {
   const geofile = await readyNetwork();
   const geojson = cleanseNetwork(geofile);
 
-  const graph = new GraphCH(geojson, { debugMode: true });
+  const graph = new GraphCH(null, { debugMode: true });
   const gdgraph = new GDGraph(geojson);
 
   console.time('file loaded');
@@ -28,7 +28,7 @@ async function main() {
   graph.loadCH(data);
   console.timeEnd('file loaded');
 
-  const finder = graph.createPathfinder();
+  const finder = graph.createPathfinder({ ids: true, path: true });
   const gdfinder = gdgraph.createFinder({ parseOutputFns: [] });
 
   const ngraph = createGraph();
@@ -53,7 +53,7 @@ async function main() {
     const adj_length = adj_keys.length;
 
     console.time('ngraph');
-    for (let i = 0; i < 1; i++) {
+    for (let i = 0; i < ITERATIONS; i++) {
       let rnd1 = Math.floor(Math.random() * adj_length);
       let rnd2 = Math.floor(Math.random() * adj_length);
       getNGraphDist(pathFinder.find(adj_keys[rnd1], adj_keys[rnd2]));
@@ -61,7 +61,7 @@ async function main() {
     console.timeEnd('ngraph');
 
     console.time('GeoJSON-Dijkstra');
-    for (let i = 0; i < 1; i++) {
+    for (let i = 0; i < ITERATIONS; i++) {
       let rnd1 = Math.floor(Math.random() * adj_length);
       let rnd2 = Math.floor(Math.random() * adj_length);
       gdfinder.findPath(
@@ -72,7 +72,7 @@ async function main() {
     console.timeEnd('GeoJSON-Dijkstra');
 
     console.time('ContractionHierarchy');
-    for (let i = 0; i < 100000; i++) {
+    for (let i = 0; i < ITERATIONS; i++) {
       let rnd1 = Math.floor(Math.random() * adj_length);
       let rnd2 = Math.floor(Math.random() * adj_length);
       finder.queryContractionHierarchy(adj_keys[rnd1], adj_keys[rnd2]);

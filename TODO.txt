@@ -1,9 +1,9 @@
 
+just because its working doesnt mean its correct
 
-... mostly untangled.
+test a directed network
 
-see console.logs:
- - "ordered" isnt quite ordered.  individually each array row should be appropriately ordered.  together they are not.
+Non-GeoJSON data
 
 
 try to build reverse_adjacency_list (on Load) so that it doesn't have to be saved/reloaded
@@ -13,16 +13,12 @@ try to build reverse_adjacency_list (on Load) so that it doesn't have to be save
 - strike all language regarding coords, as that wont always be applicable, and you always mean NODES anyways
 - same for anything that says index
 
-Non-GeoJSON data
-
-Directed Networks
-  - infra in place.  never been tested.  add non-geojson capability first
 
 coordinate lookup almost assuredly broken
 
 reorganize code
 
-explore using typescript, as this has been a nightmare to debug.  tests now that design has been firmed up.
+tests now that design has been firmed up.
 
 
 eventually need to run USA network through refinement procedures

@@ -1,6 +1,3 @@
-const clone = require('@turf/clone').default;
-
-
 exports.buildIdList = buildIdList;
 
 function buildIdList(options, properties, geometry, forward_nodeState, backward_nodeState, tentative_shortest_node, startNode) {
@@ -14,7 +11,7 @@ function buildIdList(options, properties, geometry, forward_nodeState, backward_
   // (occasionally entire path may be ONLY in the backward or forward directions)
   if (current_forward_node) {
     while (current_forward_node.attrs) {
-      path.push(current_forward_node.attrs);
+      path.push({ id: current_forward_node.attrs, direction: 'f' });
       current_forward_node = forward_nodeState[current_forward_node.prev];
     }
   }
@@ -23,7 +20,7 @@ function buildIdList(options, properties, geometry, forward_nodeState, backward_
 
   if (current_backward_node) {
     while (current_backward_node.attrs) {
-      path.push(current_backward_node.attrs);
+      path.push({ id: current_backward_node.attrs, direction: 'b' });
       current_backward_node = backward_nodeState[current_backward_node.prev];
     }
   }
@@ -31,9 +28,9 @@ function buildIdList(options, properties, geometry, forward_nodeState, backward_
   let node = startNode;
 
   const ordered = path.map(p => {
-    const start = properties[p]._start_index;
-    const end = properties[p]._end_index;
-    const props = [...properties[p]._ordered];
+    const start = p.direction === 'f' ? properties[p.id]._start_index : properties[p.id]._end_index;
+    const end = p.direction === 'f' ? properties[p.id]._end_index : properties[p.id]._start_index;
+    const props = [...properties[p.id]._ordered];
 
     if (node !== start) {
       props.reverse();
@@ -45,9 +42,6 @@ function buildIdList(options, properties, geometry, forward_nodeState, backward_
 
     return props;
   });
-
-  console.log({ ordered })
-
 
   const flattened = [].concat(...ordered);
 
@@ -66,6 +60,7 @@ function buildIdList(options, properties, geometry, forward_nodeState, backward_
 
   if (options.path) {
     const ret = { ids: flattened, path: { "type": "FeatureCollection", "features": features } };
+    // console.log({ path: JSON.stringify(ret.path) })
     return ret;
   }
   else {

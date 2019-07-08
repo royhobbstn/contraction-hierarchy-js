@@ -28,12 +28,13 @@ async function main() {
   // fs.writeFileSync('./net.json', cgraph.saveCH(), 'utf8');
   // process.exit();
 
+
   const graph = new GraphCH(null, { debugMode: true });
   const data = fs.readFileSync('./net.json', 'utf8');
   graph.loadCH(data);
 
 
-  const finder = graph.createPathfinder({ ids: true, path: true, detangle: true });
+  const finder = graph.createPathfinder({ ids: true, path: true });
 
   const adj_keys = Object.keys(gdgraph.adjacency_list);
   const adj_length = adj_keys.length;
@@ -51,11 +52,11 @@ async function main() {
 
   const coords = [];
 
-  for (let i = 0; i < 1; i++) {
+  for (let i = 0; i < 100; i++) {
     const rnd1 = Math.floor(Math.random() * adj_length);
     const rnd2 = Math.floor(Math.random() * adj_length);
     const coord = [adj_keys[rnd1], adj_keys[rnd2]];
-    //const coord = ['-90.763633,39.679612', '-92.653233,32.539979'];
+    // const coord = ['-121.844376,39.73822', '-121.51242,38.495649'];
     coords.push(coord);
   }
 
