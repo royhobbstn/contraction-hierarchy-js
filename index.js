@@ -22,13 +22,20 @@ function Graph(geojson, opt) {
   this._geometry = [];
   this._maxEdgeID = 0;
 
+  this._locked = false;
+
   if (geojson) {
     this.loadFromGeoJson(geojson);
   }
 }
 
 
-Graph.prototype._addEdge = function(start_node, end_node, edge_properties, edge_geometry) {
+Graph.prototype.addEdge = function(start_node, end_node, edge_properties, edge_geometry) {
+
+  if (this._locked) {
+    console.log('Graph has been contracted.  No additional edges can be added.');
+    return;
+  }
 
   if (start_node === end_node) {
     if (this.debugMode) {
@@ -54,7 +61,7 @@ Graph.prototype._addEdge = function(start_node, end_node, edge_properties, edge_
   this._properties[this._edgeIndex] = JSON.parse(JSON.stringify(edge_properties));
   this._properties[this._edgeIndex]._start_index = start_index;
   this._properties[this._edgeIndex]._end_index = end_index;
-  this._geometry[this._edgeIndex] = JSON.parse(JSON.stringify(edge_geometry));
+  this._geometry[this._edgeIndex] = edge_geometry ? JSON.parse(JSON.stringify(edge_geometry)) : null;
 
   // create object to push into adjacency list
   const obj = {
@@ -88,6 +95,8 @@ Graph.prototype._addEdge = function(start_node, end_node, edge_properties, edge_
 
 
 Graph.prototype._addContractedEdge = function(start_index, end_index, properties) {
+
+  console.log('ADDDING', start_index, end_index, properties)
 
   // geometry not applicable here
 
@@ -194,15 +203,13 @@ Graph.prototype.loadFromGeoJson = function(filedata) {
     const end_vertex = coordinates[coordinates.length - 1];
 
     // add forward
-    this._addEdge(start_vertex, end_vertex, properties, JSON.parse(JSON.stringify(coordinates)));
+    this.addEdge(start_vertex, end_vertex, properties, JSON.parse(JSON.stringify(coordinates)));
 
     // add backward
-    this._addEdge(end_vertex, start_vertex, properties, JSON.parse(JSON.stringify(coordinates)).reverse());
+    this.addEdge(end_vertex, start_vertex, properties, JSON.parse(JSON.stringify(coordinates)).reverse());
 
   });
 
-  // new contracted edges will be added after this index
-  this._maxEdgeID = this._edgeIndex;
 
 };
 
@@ -386,19 +393,30 @@ Graph.prototype.createFinder = function(opts) {
 
 Graph.prototype.contractGraph = function() {
 
+  console.log('adj')
+  console.log(this.adjacency_list)
+  console.log('rev')
+  console.log(this.reverse_adjacency_list)
+
+  // prevent more edges from being added
+  this._locked = true;
+
+  // new contracted edges will be added after this index
+  this._maxEdgeID = this._edgeIndex;
+
   // initialize dijkstra shortcut/path finder
   const finder = this._createChShortcutter();
 
   const getVertexScore = (v) => {
     const shortcut_count = this._contract(v, true, finder); /**/
-    const edge_count = this.adjacency_list[v].length;
+    const edge_count = (this.adjacency_list[v] || []).length;
     const edge_difference = shortcut_count - edge_count;
     const contracted_neighbors = getContractedNeighborCount(v);
     return edge_difference + contracted_neighbors;
   };
 
   const getContractedNeighborCount = (v) => {
-    return this.adjacency_list[v].reduce((acc, node) => {
+    return (this.adjacency_list[v] || []).reduce((acc, node) => {
       const is_contracted = this.contracted_nodes[node.end] ? 1 : 0;
       return acc + is_contracted;
     }, 0);
@@ -413,11 +431,17 @@ Graph.prototype.contractGraph = function() {
   this.contracted_nodes = [];
 
   // create an additional node ordering
-  this.adjacency_list.forEach((vertex, index) => {
+  Object.keys(this._nodeToIndex).forEach(key => {
+    const index = this._nodeToIndex[key];
     const score = getVertexScore(index);
     const node = new OrderNode(score, index);
     nh.push(node);
   });
+  // this.adjacency_list.forEach((vertex, index) => {
+  //   const score = getVertexScore(index);
+  //   const node = new OrderNode(score, index);
+  //   nh.push(node);
+  // });
 
   let contraction_level = 1;
 
@@ -435,7 +459,7 @@ Graph.prototype.contractGraph = function() {
       // prune adj list of no longer valid paths occasionally
       // theres probably a better formula for determining how often this should run
       // (bigger networks = less often)
-      this._cleanAdjList(this.adjacency_list);
+      // this._cleanAdjList(this.adjacency_list);
       // this._cleanAdjList(this.reverse_adjacency_list);
     }
 
@@ -471,8 +495,8 @@ Graph.prototype.contractGraph = function() {
 
   }
 
-  this._cleanAdjList(this.adjacency_list);
-  this._cleanAdjList(this.reverse_adjacency_list);
+  // this._cleanAdjList(this.adjacency_list);
+  // this._cleanAdjList(this.reverse_adjacency_list);
   this._arrangeContractedPaths(this.adjacency_list);
   this._arrangeContractedPaths(this.reverse_adjacency_list);
 
@@ -483,6 +507,11 @@ Graph.prototype.contractGraph = function() {
 // do as much edge arrangement as possible ahead of times so that the cost is
 // not incurred at runtime
 Graph.prototype._arrangeContractedPaths = function(adj_list) {
+
+  console.log('adj')
+  console.log(this.adjacency_list)
+  console.log('rev')
+  console.log(this.reverse_adjacency_list)
 
   adj_list.forEach((node, index) => {
 
@@ -504,6 +533,7 @@ Graph.prototype._arrangeContractedPaths = function(adj_list) {
         else {
           // these are shorcut edges (added during contraction process)
           // where _id is an array of two items: edges of [u to v, v to w]
+          console.log(this._properties[id])
           ids.push(...this._properties[id]._id);
         }
       }
@@ -605,15 +635,24 @@ Graph.prototype._cleanAdjList = function(adj_list) {
 // if node were to be contracted
 Graph.prototype._contract = function(v, get_count_only, finder) {
 
+  if (!get_count_only) {
+    console.log({ v })
+  }
+
   // all edges from anywhere to v
   const from_connections = (this.reverse_adjacency_list[v] || []).filter(c => {
     return !this.contracted_nodes[c.end];
   });
 
+
   // all edges from v to somewhere else
   const to_connections = (this.adjacency_list[v] || []).filter(c => {
     return !this.contracted_nodes[c.end];
   });
+
+  if (!get_count_only) {
+    console.log({ from_connections, to_connections })
+  }
 
   let shortcut_count = 0;
 
@@ -648,6 +687,11 @@ Graph.prototype._contract = function(v, get_count_only, finder) {
       v,
       max_total
     );
+
+
+    if (!get_count_only) {
+      console.log({ path })
+    }
 
     to_connections.forEach(w => {
       if (u.end === w.end) {

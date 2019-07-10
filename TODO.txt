@@ -1,5 +1,7 @@
+see unit test file:
 
-just because its working doesnt mean its correct
+NO contracted edges added?
+ - see console output and keep trying
 
 test a directed network
 
@@ -7,7 +9,6 @@ Non-GeoJSON data
 
 
 try to build reverse_adjacency_list (on Load) so that it doesn't have to be saved/reloaded
-
 
 - variable names and comments to distinguish whether youre working on an edge id or a node or coordinate (addEdge)
 - strike all language regarding coords, as that wont always be applicable, and you always mean NODES anyways
@@ -38,6 +39,11 @@ TimeToContract:     8316742 ms
 geojson-djikstra:   1279104 ms
 ch:                   39203 ms
 
-TimeToContract:      632043 ms
-GeoJSON-Dijkstra:   1150428 ms
-ContractionHierarchy: 10904 ms
+TimeToContract:       632043 ms
+GeoJSON-Dijkstra:    1150428 ms
+ContractionHierarchy:  10904 ms
+
+1000
+ngraph:               128067.515ms
+GeoJSON-Dijkstra:     124170.780ms
+ContractionHierarchy:    501.988ms ??

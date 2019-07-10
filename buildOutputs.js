@@ -16,6 +16,9 @@ function buildIdList(options, properties, geometry, forward_nodeState, backward_
     }
   }
 
+  console.log(path)
+
+
   path.reverse();
 
   if (current_backward_node) {
@@ -24,6 +27,8 @@ function buildIdList(options, properties, geometry, forward_nodeState, backward_
       current_backward_node = backward_nodeState[current_backward_node.prev];
     }
   }
+
+  console.log(path)
 
   let node = startNode;
 
