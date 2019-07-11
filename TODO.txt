@@ -1,7 +1,10 @@
 see unit test file:
 
-NO contracted edges added?
- - see console output and keep trying
+first unit test works, but:
+  - need to map edge index to _id
+  - with a fine tooth comb, look over shorthand if(!something).  so much stuff broken when moving to array index format.  theres probably more.
+  - unit test a bigger bidirectional network
+  - unit test the backwards path of the graph
 
 test a directed network
 

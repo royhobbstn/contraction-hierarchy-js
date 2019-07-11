@@ -96,8 +96,6 @@ Graph.prototype.addEdge = function(start_node, end_node, edge_properties, edge_g
 
 Graph.prototype._addContractedEdge = function(start_index, end_index, properties) {
 
-  console.log('ADDDING', start_index, end_index, properties)
-
   // geometry not applicable here
 
   this._edgeIndex++;
@@ -393,11 +391,6 @@ Graph.prototype.createFinder = function(opts) {
 
 Graph.prototype.contractGraph = function() {
 
-  console.log('adj')
-  console.log(this.adjacency_list)
-  console.log('rev')
-  console.log(this.reverse_adjacency_list)
-
   // prevent more edges from being added
   this._locked = true;
 
@@ -417,7 +410,7 @@ Graph.prototype.contractGraph = function() {
 
   const getContractedNeighborCount = (v) => {
     return (this.adjacency_list[v] || []).reduce((acc, node) => {
-      const is_contracted = this.contracted_nodes[node.end] ? 1 : 0;
+      const is_contracted = this.contracted_nodes[node.end] != null ? 1 : 0;
       return acc + is_contracted;
     }, 0);
   };
@@ -459,8 +452,8 @@ Graph.prototype.contractGraph = function() {
       // prune adj list of no longer valid paths occasionally
       // theres probably a better formula for determining how often this should run
       // (bigger networks = less often)
-      // this._cleanAdjList(this.adjacency_list);
-      // this._cleanAdjList(this.reverse_adjacency_list);
+      this._cleanAdjList(this.adjacency_list);
+      this._cleanAdjList(this.reverse_adjacency_list);
     }
 
     // recompute to make sure that first node in priority queue
@@ -495,8 +488,8 @@ Graph.prototype.contractGraph = function() {
 
   }
 
-  // this._cleanAdjList(this.adjacency_list);
-  // this._cleanAdjList(this.reverse_adjacency_list);
+  this._cleanAdjList(this.adjacency_list);
+  this._cleanAdjList(this.reverse_adjacency_list);
   this._arrangeContractedPaths(this.adjacency_list);
   this._arrangeContractedPaths(this.reverse_adjacency_list);
 
@@ -507,11 +500,6 @@ Graph.prototype.contractGraph = function() {
 // do as much edge arrangement as possible ahead of times so that the cost is
 // not incurred at runtime
 Graph.prototype._arrangeContractedPaths = function(adj_list) {
-
-  console.log('adj')
-  console.log(this.adjacency_list)
-  console.log('rev')
-  console.log(this.reverse_adjacency_list)
 
   adj_list.forEach((node, index) => {
 
@@ -533,10 +521,10 @@ Graph.prototype._arrangeContractedPaths = function(adj_list) {
         else {
           // these are shorcut edges (added during contraction process)
           // where _id is an array of two items: edges of [u to v, v to w]
-          console.log(this._properties[id])
           ids.push(...this._properties[id]._id);
         }
       }
+
 
       //  now with simpleIds, get start and end index and make connection object
       const links = {};
@@ -567,7 +555,7 @@ Graph.prototype._arrangeContractedPaths = function(adj_list) {
       let current_edge_id = links[last_node][0];
       // this value represents the attribute id of the first segment
 
-      while (current_edge_id) {
+      while (current_edge_id != null) {
 
         ordered.push(current_edge_id);
         // put this in the ordered array of attribute segments
@@ -614,13 +602,13 @@ Graph.prototype._cleanAdjList = function(adj_list) {
   // remove links to lower ranked nodes
   adj_list.forEach((node, node_id) => {
     const from_rank = this.contracted_nodes[node_id];
-    if (!from_rank) {
+    if (from_rank == null) {
       return;
     }
     adj_list[node_id] = adj_list[node_id].filter(
       edge => {
         const to_rank = this.contracted_nodes[edge.end];
-        if (!to_rank) {
+        if (to_rank == null) {
           return true;
         }
         return from_rank < to_rank;
@@ -635,24 +623,16 @@ Graph.prototype._cleanAdjList = function(adj_list) {
 // if node were to be contracted
 Graph.prototype._contract = function(v, get_count_only, finder) {
 
-  if (!get_count_only) {
-    console.log({ v })
-  }
-
   // all edges from anywhere to v
   const from_connections = (this.reverse_adjacency_list[v] || []).filter(c => {
-    return !this.contracted_nodes[c.end];
+    return !this.contracted_nodes[c.end] != null;
   });
 
 
   // all edges from v to somewhere else
   const to_connections = (this.adjacency_list[v] || []).filter(c => {
-    return !this.contracted_nodes[c.end];
+    return !this.contracted_nodes[c.end] != null;
   });
-
-  if (!get_count_only) {
-    console.log({ from_connections, to_connections })
-  }
 
   let shortcut_count = 0;
 
@@ -680,6 +660,12 @@ Graph.prototype._contract = function(v, get_count_only, finder) {
       }
     });
 
+
+    if (!to_connections.length) {
+      // no sense in running dijkstra
+      return;
+    }
+
     // run a dijkstra from u to anything less than the existing dijkstra distance
     const path = finder.runDijkstra(
       u.end,
@@ -687,11 +673,6 @@ Graph.prototype._contract = function(v, get_count_only, finder) {
       v,
       max_total
     );
-
-
-    if (!get_count_only) {
-      console.log({ path })
-    }
 
     to_connections.forEach(w => {
       if (u.end === w.end) {
