@@ -60,8 +60,8 @@ typings/
 # next.js build output
 .next
 
-networks/*.geojson
-networks/*.json
+networks/faf.geojson
+networks/full-network.json
 
 test/*.json
 

@@ -45,6 +45,8 @@ function buildIdList(options, properties, geometry, forward_nodeState, backward_
 
   const flattened = [].concat(...ordered);
 
+  const ids = flattened.map(d => properties[d]._id);
+
   const features = flattened.map(f => {
 
     return {
@@ -59,12 +61,12 @@ function buildIdList(options, properties, geometry, forward_nodeState, backward_
   });
 
   if (options.path) {
-    const ret = { ids: flattened, path: { "type": "FeatureCollection", "features": features } };
+    const ret = { ids, path: { "type": "FeatureCollection", "features": features } };
     // console.log({ path: JSON.stringify(ret.path) })
     return ret;
   }
   else {
-    return { ids: flattened };
+    return { ids };
   }
 
 }
