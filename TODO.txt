@@ -1,28 +1,15 @@
-see unit test file:
-
-first unit test works, but:
-  - need to map edge index to _id
-  - with a fine tooth comb, look over shorthand if(!something).  so much stuff broken when moving to array index format.  theres probably more.
-  - unit test a bigger bidirectional network
-  - unit test the backwards path of the graph
-
-test a directed network
-
-Non-GeoJSON data
-
-
-try to build reverse_adjacency_list (on Load) so that it doesn't have to be saved/reloaded
 
 - variable names and comments to distinguish whether youre working on an edge id or a node or coordinate (addEdge)
 - strike all language regarding coords, as that wont always be applicable, and you always mean NODES anyways
 - same for anything that says index
 
+try to build reverse_adjacency_list (on Load) so that it doesn't have to be saved/reloaded
+
+-- remove extra attributes put on {properties} in geojson
 
 coordinate lookup almost assuredly broken
 
 reorganize code
-
-tests now that design has been firmed up.
 
 
 eventually need to run USA network through refinement procedures

@@ -10,19 +10,21 @@ exports.CoordinateLookup = CoordinateLookup;
 function Graph(geojson, opt) {
   const options = opt || {};
   this.debugMode = options.debugMode || false;
+
   this.adjacency_list = [];
   this.reverse_adjacency_list = [];
+
   this._createNodePool = createNodePool;
 
-  this._nodesIndex = -1;
-  this._nodeToIndex = {};
+  this._currentNodeIndex = -1;
+  this._nodeToIndexLookup = {};
 
-  this._edgeIndex = -1;
-  this._properties = [];
-  this._geometry = [];
-  this._maxEdgeID = 0;
+  this._currentEdgeIndex = -1;
+  this._edgeProperties = [];
+  this._edgeGeometry = [];
+  this._maxUncontractedEdgeIndex = 0;
 
-  this._locked = false;
+  this._locked = false; // locked if contraction has already been run
 
   if (geojson) {
     this.loadFromGeoJson(geojson);
@@ -30,7 +32,10 @@ function Graph(geojson, opt) {
 }
 
 
-Graph.prototype.addEdge = function(start_node, end_node, edge_properties, edge_geometry) {
+Graph.prototype.addEdge = function(start, end, edge_properties, edge_geometry) {
+
+  const start_node = String(start);
+  const end_node = String(end);
 
   if (this._locked) {
     console.log('Graph has been contracted.  No additional edges can be added.');
@@ -44,51 +49,51 @@ Graph.prototype.addEdge = function(start_node, end_node, edge_properties, edge_g
     return;
   }
 
-  if (this._nodeToIndex[start_node] == null) {
-    this._nodesIndex++;
-    this._nodeToIndex[start_node] = this._nodesIndex;
+  if (this._nodeToIndexLookup[start_node] == null) {
+    this._currentNodeIndex++;
+    this._nodeToIndexLookup[start_node] = this._currentNodeIndex;
   }
-  if (this._nodeToIndex[end_node] == null) {
-    this._nodesIndex++;
-    this._nodeToIndex[end_node] = this._nodesIndex;
+  if (this._nodeToIndexLookup[end_node] == null) {
+    this._currentNodeIndex++;
+    this._nodeToIndexLookup[end_node] = this._currentNodeIndex;
   }
 
-  let start_index = this._nodeToIndex[start_node];
-  let end_index = this._nodeToIndex[end_node];
+  let start_node_index = this._nodeToIndexLookup[start_node];
+  let end_node_index = this._nodeToIndexLookup[end_node];
 
   // add to adjacency list
-  this._edgeIndex++;
-  this._properties[this._edgeIndex] = JSON.parse(JSON.stringify(edge_properties));
-  this._properties[this._edgeIndex]._start_index = start_index;
-  this._properties[this._edgeIndex]._end_index = end_index;
-  this._geometry[this._edgeIndex] = edge_geometry ? JSON.parse(JSON.stringify(edge_geometry)) : null;
+  this._currentEdgeIndex++;
+  this._edgeProperties[this._currentEdgeIndex] = JSON.parse(JSON.stringify(edge_properties));
+  this._edgeProperties[this._currentEdgeIndex]._start_index = start_node_index;
+  this._edgeProperties[this._currentEdgeIndex]._end_index = end_node_index;
+  this._edgeGeometry[this._currentEdgeIndex] = edge_geometry ? JSON.parse(JSON.stringify(edge_geometry)) : null;
 
   // create object to push into adjacency list
   const obj = {
-    end: end_index,
-    cost: edge_properties._cost, // TODO forward cost or cost
-    attrs: this._edgeIndex
+    end: end_node_index,
+    cost: edge_properties._cost,
+    attrs: this._currentEdgeIndex
   };
 
-  if (this.adjacency_list[start_index]) {
-    this.adjacency_list[start_index].push(obj);
+  if (this.adjacency_list[start_node_index]) {
+    this.adjacency_list[start_node_index].push(obj);
   }
   else {
-    this.adjacency_list[start_index] = [obj];
+    this.adjacency_list[start_node_index] = [obj];
   }
 
   // add to reverse adjacency list
   const reverse_obj = {
-    end: start_index,
-    cost: edge_properties._cost, // TODO forward/reverse cost?
-    attrs: this._edgeIndex
+    end: start_node_index,
+    cost: edge_properties._cost,
+    attrs: this._currentEdgeIndex
   };
 
-  if (this.reverse_adjacency_list[end_index]) {
-    this.reverse_adjacency_list[end_index].push(reverse_obj);
+  if (this.reverse_adjacency_list[end_node_index]) {
+    this.reverse_adjacency_list[end_node_index].push(reverse_obj);
   }
   else {
-    this.reverse_adjacency_list[end_index] = [reverse_obj];
+    this.reverse_adjacency_list[end_node_index] = [reverse_obj];
   }
 
 };
@@ -98,17 +103,17 @@ Graph.prototype._addContractedEdge = function(start_index, end_index, properties
 
   // geometry not applicable here
 
-  this._edgeIndex++;
-  this._properties[this._edgeIndex] = properties;
-  this._properties[this._edgeIndex]._start_index = start_index;
-  this._properties[this._edgeIndex]._end_index = end_index;
-  this._geometry[this._edgeIndex] = null;
+  this._currentEdgeIndex++;
+  this._edgeProperties[this._currentEdgeIndex] = properties;
+  this._edgeProperties[this._currentEdgeIndex]._start_index = start_index;
+  this._edgeProperties[this._currentEdgeIndex]._end_index = end_index;
+  this._edgeGeometry[this._currentEdgeIndex] = null;
 
   // create object to push into adjacency list
   const obj = {
     end: end_index,
     cost: properties._cost,
-    attrs: this._edgeIndex
+    attrs: this._currentEdgeIndex
   };
 
   if (this.adjacency_list[start_index]) {
@@ -122,7 +127,7 @@ Graph.prototype._addContractedEdge = function(start_index, end_index, properties
   const reverse_obj = {
     end: start_index,
     cost: properties._cost,
-    attrs: this._edgeIndex
+    attrs: this._currentEdgeIndex
   };
 
   if (this.reverse_adjacency_list[end_index]) {
@@ -277,114 +282,6 @@ Graph.prototype._cleanseGeoJsonNetwork = function(file) {
 
 };
 
-Graph.prototype.createFinder = function(opts) {
-
-  const options = opts || {};
-  const parseOutputFns = options.parseOutputFns || [];
-  const pool = this._createNodePool();
-  const adjacency_list = this.adjacency_list;
-  const nodeToIndex = this._nodeToIndex;
-
-  return {
-    findPath
-  };
-
-  function findPath(start, end) {
-
-    pool.reset();
-
-    const start_index = nodeToIndex[String(start)];
-    const end_index = nodeToIndex[String(end)];
-
-    const nodeState = [];
-
-    var openSet = new NodeHeap({
-      compare(a, b) {
-        return a.dist - b.dist;
-      }
-    });
-
-    let current = pool.createNewState({ id: start_index, dist: 0 });
-    nodeState[start_index] = current;
-    current.opened = 1;
-
-    // quick exit for start === end	
-    if (start_index === end_index) {
-      current = '';
-    }
-
-    while (current) {
-
-      adjacency_list[current.id]
-        .forEach(edge => {
-
-          let node = nodeState[edge.end];
-          if (node === undefined) {
-            node = pool.createNewState({ id: edge.end });
-            nodeState[edge.end] = node;
-          }
-
-          if (node.visited === true) {
-            return;
-          }
-
-          if (!node.opened) {
-            openSet.push(node);
-            node.opened = true;
-          }
-
-          const proposed_distance = current.dist + edge.cost;
-          if (proposed_distance >= node.dist) {
-            // longer path	
-            return;
-          }
-
-          node.dist = proposed_distance;
-          node.prev = edge;
-
-          openSet.updateItem(node.heapIndex);
-        });
-
-      current.visited = true;
-
-      // get lowest value from heap	
-      current = openSet.pop();
-
-      if (!current) {
-        // there is no path.  distance will be set to 0	
-        break;
-      }
-
-      // exit early if current node becomes end node	
-      if (current.id === end_index) {
-        current = '';
-      }
-    }
-
-    // total cost included by default	
-    const last_node = nodeState[end_index];
-    let response = { total_cost: (last_node && last_node.dist) || 0 };
-
-    // if no output fns specified	
-    if (!parseOutputFns) {
-      return response;
-    }
-
-    // one callback function	
-    if (!Array.isArray(parseOutputFns)) {
-      return Object.assign({}, response, parseOutputFns(this, nodeState, start_index, end_index));
-    }
-
-    // array of callback functions	
-    parseOutputFns.forEach(fn => {
-      response = Object.assign({}, response, fn(this, nodeState, start_index, end_index));
-    });
-
-    return response;
-  }
-};
-
-
 
 
 // Start CH specific
@@ -395,7 +292,7 @@ Graph.prototype.contractGraph = function() {
   this._locked = true;
 
   // new contracted edges will be added after this index
-  this._maxEdgeID = this._edgeIndex;
+  this._maxUncontractedEdgeIndex = this._currentEdgeIndex;
 
   // initialize dijkstra shortcut/path finder
   const finder = this._createChShortcutter();
@@ -424,17 +321,12 @@ Graph.prototype.contractGraph = function() {
   this.contracted_nodes = [];
 
   // create an additional node ordering
-  Object.keys(this._nodeToIndex).forEach(key => {
-    const index = this._nodeToIndex[key];
+  Object.keys(this._nodeToIndexLookup).forEach(key => {
+    const index = this._nodeToIndexLookup[key];
     const score = getVertexScore(index);
     const node = new OrderNode(score, index);
     nh.push(node);
   });
-  // this.adjacency_list.forEach((vertex, index) => {
-  //   const score = getVertexScore(index);
-  //   const node = new OrderNode(score, index);
-  //   nh.push(node);
-  // });
 
   let contraction_level = 1;
 
@@ -512,16 +404,20 @@ Graph.prototype._arrangeContractedPaths = function(adj_list) {
 
       ids = [edge.attrs]; // edge.attrs is an edge ID
 
+      console.log({ ids })
+
+
       while (ids.length) {
         const id = ids.pop();
-        if (id <= this._maxEdgeID) {
+        console.log(this._maxUncontractedEdgeIndex)
+        if (id <= this._maxUncontractedEdgeIndex) {
           // this is an original network edge
           simpleIds.push(id);
         }
         else {
           // these are shorcut edges (added during contraction process)
           // where _id is an array of two items: edges of [u to v, v to w]
-          ids.push(...this._properties[id]._id);
+          ids.push(...this._edgeProperties[id]._id);
         }
       }
 
@@ -529,7 +425,7 @@ Graph.prototype._arrangeContractedPaths = function(adj_list) {
       //  now with simpleIds, get start and end index and make connection object
       const links = {};
       simpleIds.forEach(id => {
-        const properties = this._properties[id];
+        const properties = this._edgeProperties[id];
         const start_index = properties._start_index;
         const end_index = properties._end_index;
 
@@ -548,6 +444,8 @@ Graph.prototype._arrangeContractedPaths = function(adj_list) {
         }
       });
 
+      console.log({ links })
+
       const ordered = [];
 
       let last_node = String(start_node);
@@ -561,7 +459,7 @@ Graph.prototype._arrangeContractedPaths = function(adj_list) {
         // put this in the ordered array of attribute segments
 
         // this represents the nodes of the first segment
-        const props = this._properties[current_edge_id];
+        const props = this._edgeProperties[current_edge_id];
         const c1 = String(props._start_index);
         const c2 = String(props._end_index);
 
@@ -590,7 +488,7 @@ Graph.prototype._arrangeContractedPaths = function(adj_list) {
         current_edge_id = arr[0] === current_edge_id ? arr[1] : arr[0];
       }
 
-      this._properties[edge.attrs]._ordered = ordered;
+      this._edgeProperties[edge.attrs]._ordered = ordered;
 
     });
   });
@@ -712,9 +610,9 @@ Graph.prototype.loadCH = function(ch) {
   const parsed = JSON.parse(ch);
   this.adjacency_list = parsed.adjacency_list;
   this.reverse_adjacency_list = parsed.reverse_adjacency_list;
-  this._nodeToIndex = parsed._nodeToIndex;
-  this._properties = parsed._properties;
-  this._geometry = parsed._geometry;
+  this._nodeToIndexLookup = parsed._nodeToIndexLookup;
+  this._edgeProperties = parsed._edgeProperties;
+  this._edgeGeometry = parsed._edgeGeometry;
 
   // this._rebuildReverseAdjList();
 };
@@ -723,9 +621,9 @@ Graph.prototype.saveCH = function() {
   return JSON.stringify({
     adjacency_list: this.adjacency_list,
     reverse_adjacency_list: this.reverse_adjacency_list,
-    _nodeToIndex: this._nodeToIndex,
-    _properties: this._properties,
-    _geometry: this._geometry
+    _nodeToIndexLookup: this._nodeToIndexLookup,
+    _edgeProperties: this._edgeProperties,
+    _edgeGeometry: this._edgeGeometry
   });
 };
 
@@ -875,10 +773,10 @@ Graph.prototype.createPathfinder = function(options) {
 
   const adjacency_list = this.adjacency_list;
   const reverse_adjacency_list = this.reverse_adjacency_list;
-  const properties = this._properties;
-  const geometry = this._geometry;
+  const edgeProperties = this._edgeProperties;
+  const edgeGeometry = this._edgeGeometry;
   const pool = this._createNodePool();
-  const nodeToIndex = this._nodeToIndex;
+  const nodeToIndexLookup = this._nodeToIndexLookup;
 
   if (!options) {
     options = {};
@@ -895,8 +793,8 @@ Graph.prototype.createPathfinder = function(options) {
 
     pool.reset();
 
-    const start_index = nodeToIndex[String(start)];
-    const end_index = nodeToIndex[String(end)];
+    const start_index = nodeToIndexLookup[String(start)];
+    const end_index = nodeToIndexLookup[String(end)];
 
     const forward_nodeState = [];
     const backward_nodeState = [];
@@ -969,7 +867,7 @@ Graph.prototype.createPathfinder = function(options) {
     if (options.ids === true || options.path === true) {
       if (tentative_shortest_node != null) {
         // tentative_shortest_path as falsy indicates no path found.
-        ids = buildIdList(options, properties, geometry, forward_nodeState, backward_nodeState, tentative_shortest_node, start_index);
+        ids = buildIdList(options, edgeProperties, edgeGeometry, forward_nodeState, backward_nodeState, tentative_shortest_node, start_index);
       }
       else {
         // fill in object to prevent errors in the case of no path found
