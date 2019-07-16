@@ -21,12 +21,12 @@ async function main() {
   const gdgraph = new Graph(geojson);
 
   // uncomment this block to re-run contraction / save
-  const cgraph = new GraphCH(geojson, { debugMode: true });
-  console.time('TimeToContract');
-  cgraph.contractGraph();
-  console.timeEnd('TimeToContract');
-  fs.writeFileSync('./net.json', cgraph.saveCH(), 'utf8');
-  process.exit();
+  // const cgraph = new GraphCH(geojson, { debugMode: true });
+  // console.time('TimeToContract');
+  // cgraph.contractGraph();
+  // console.timeEnd('TimeToContract');
+  // fs.writeFileSync('./net.json', cgraph.saveCH(), 'utf8');
+  // process.exit();
 
 
   const graph = new GraphCH(null, { debugMode: true });
@@ -104,7 +104,7 @@ async function main() {
       }
     });
 
-    if (max - min > 0.000001) {
+    if (true /*max - min > 0.000001*/ ) {
       error_count++;
       console.log(
         i,
