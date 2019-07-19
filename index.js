@@ -304,7 +304,7 @@ Graph.prototype.contractGraph = function() {
 
   const getContractedNeighborCount = (v) => {
     return (this.adjacency_list[v] || []).reduce((acc, node) => {
-      const is_contracted = this.contracted_nodes[node.end] ? 1 : 0;
+      const is_contracted = this.contracted_nodes[node.end] != null ? 1 : 0;
       return acc + is_contracted;
     }, 0);
   };
@@ -444,7 +444,7 @@ Graph.prototype._arrangeContractedPaths = function(adj_list) {
       let current_edge_id = links[last_node][0];
       // this value represents the attribute id of the first segment
 
-      while (current_edge_id) {
+      while (current_edge_id != null) {
 
         ordered.push(current_edge_id);
         // put this in the ordered array of attribute segments
@@ -491,13 +491,13 @@ Graph.prototype._cleanAdjList = function(adj_list) {
   // remove links to lower ranked nodes
   adj_list.forEach((node, node_id) => {
     const from_rank = this.contracted_nodes[node_id];
-    if (!from_rank) {
+    if (from_rank == null) {
       return;
     }
     adj_list[node_id] = adj_list[node_id].filter(
       edge => {
         const to_rank = this.contracted_nodes[edge.end];
-        if (!to_rank) {
+        if (to_rank == null) {
           return true;
         }
         return from_rank < to_rank;
