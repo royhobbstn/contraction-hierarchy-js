@@ -49,9 +49,12 @@ function buildIdList(options, edgeProperties, edgeGeometry, forward_nodeState, b
 
   const features = flattened.map(f => {
 
+    // remove internal properties
+    const { _start_index, _end_index, _ordered, ...originalProperties } = edgeProperties[f];
+
     return {
       "type": "Feature",
-      "properties": edgeProperties[f],
+      "properties": originalProperties,
       "geometry": {
         "type": "LineString",
         "coordinates": edgeGeometry[f]

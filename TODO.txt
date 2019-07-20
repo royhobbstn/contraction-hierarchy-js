@@ -1,21 +1,19 @@
 
-coordinate lookup almost assuredly broken
-
-
 - variable names and comments to distinguish whether youre working on an edge id or a node or coordinate (addEdge)
 - same for anything that says index
 
--- remove extra attributes put on {properties} in geojson
-
 
 -- need non-geojson output for manually entered graphs
+ - {nodes, properties}
 
 reorganize code
-
-file naming is very inconsistent
+ - file naming is very inconsistent
 
 re-document
 
+examples online
+
+ES6 Module ?
 
 eventually need to run USA network through refinement procedures
 
