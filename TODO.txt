@@ -1,13 +1,6 @@
 
-- variable names and comments to distinguish whether youre working on an edge id or a node or coordinate (addEdge)
-- same for anything that says index
-
-
 -- need non-geojson output for manually entered graphs
  - {nodes, properties}
-
-reorganize code
- - file naming is very inconsistent
 
 re-document
 
