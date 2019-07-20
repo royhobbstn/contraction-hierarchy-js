@@ -5,12 +5,13 @@ exports.CoordinateLookup = CoordinateLookup;
 
 function CoordinateLookup(graph) {
 
-  // TODO coordinate lookup almost assuredly broken
-  // should only apply on GeoJSON datasets ??
+  if (!graph._geoJsonFlag) {
+    throw new Error('Cannot use Coordinate Lookup on a non-GeoJson network.');
+  }
 
   const points_set = new Set();
 
-  Object.keys(graph.adjacency_list).forEach(key => {
+  Object.keys(graph._nodeToIndexLookup).forEach(key => {
     points_set.add(key);
   });
 

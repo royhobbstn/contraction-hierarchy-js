@@ -1,9 +1,8 @@
 const createGraph = require('ngraph.graph');
 const pathNGraph = require('ngraph.path');
-const fs = require('fs');
 
 // load utility functions
-const { readyNetwork, cleanseNetwork, getNGraphDist, populateNGraph } = require('./test-util.js');
+const { readyNetwork, getNGraphDist, populateNGraph } = require('./test-util.js');
 
 const GDGraph = require('geojson-dijkstra').Graph;
 
@@ -11,22 +10,18 @@ const GDGraph = require('geojson-dijkstra').Graph;
 const GraphCH = require('../index.js').Graph;
 
 
-const ITERATIONS = 1000;
+const ITERATIONS = 10000;
 
 main();
 
 async function main() {
 
-  const geofile = await readyNetwork();
-  const geojson = cleanseNetwork(geofile);
+  const geojson = await readyNetwork();
 
-  const graph = new GraphCH(null, { debugMode: true });
+  const graph = new GraphCH(geojson, { debugMode: true });
+  graph.contractGraph();
+
   const gdgraph = new GDGraph(geojson);
-
-  console.time('file loaded');
-  const data = fs.readFileSync('./net.json', 'utf8');
-  graph.loadCH(data);
-  console.timeEnd('file loaded');
 
   const finder = graph.createPathfinder({ ids: true, path: true });
   const gdfinder = gdgraph.createFinder({ parseOutputFns: [] });

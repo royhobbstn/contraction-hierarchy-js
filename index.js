@@ -426,6 +426,10 @@ Graph.prototype.contractGraph = function() {
   this._arrangeContractedPaths(this.adjacency_list);
   this._arrangeContractedPaths(this.reverse_adjacency_list);
 
+  if (this.debugMode) {
+    console.log('Contraction complete');
+  }
+
   return;
 
 };
