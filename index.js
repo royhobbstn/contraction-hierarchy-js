@@ -3,11 +3,11 @@ const clone = require('@turf/clone').default;
 const buildIdList = require('./buildOutputs.js').buildIdList;
 const CoordinateLookup = require('./coordinate-lookup.js').CoordinateLookup;
 
-const fs = require('fs');
 
 // objects
 exports.Graph = Graph;
 exports.CoordinateLookup = CoordinateLookup;
+
 
 function Graph(geojson, opt) {
   const options = opt || {};
@@ -27,22 +27,33 @@ function Graph(geojson, opt) {
   this._maxUncontractedEdgeIndex = 0;
 
   this._locked = false; // locked if contraction has already been run
+  this._geoJsonFlag = false; // if data was loaded as geoJson
+  this._manualAdd = false; // if the API was used directly to add edges
 
   if (geojson) {
     this.loadFromGeoJson(geojson);
   }
 }
 
-
+// public API for adding edges
 Graph.prototype.addEdge = function(start, end, edge_properties, edge_geometry) {
+
+  if (this._locked) {
+    throw new Error('Graph has been contracted.  No additional edges can be added.');
+  }
+
+  if (this._geoJsonFlag) {
+    throw new Error('Can not add additional edges manually to a GeoJSON network.');
+  }
+
+  this._manualAdd = true;
+  this._addEdge(start, end, edge_properties, edge_geometry);
+};
+
+Graph.prototype._addEdge = function(start, end, edge_properties, edge_geometry) {
 
   const start_node = String(start);
   const end_node = String(end);
-
-  if (this._locked) {
-    console.log('Graph has been contracted.  No additional edges can be added.');
-    return;
-  }
 
   if (start_node === end_node) {
     if (this.debugMode) {
@@ -187,6 +198,19 @@ function createNodePool() {
 
 Graph.prototype.loadFromGeoJson = function(filedata) {
 
+  if (this._locked) {
+    throw new Error('Cannot add GeoJSON to a contracted network');
+  }
+
+  if (this._geoJsonFlag) {
+    throw new Error('Cannot load more than one GeoJSON file.');
+  }
+
+  if (this._manualAdd) {
+    throw new Error('Cannot load GeoJSON file after adding Edges manually via the API.');
+  }
+
+
   // make a copy
   const geo = clone(filedata);
 
@@ -208,12 +232,15 @@ Graph.prototype.loadFromGeoJson = function(filedata) {
     const end_vertex = coordinates[coordinates.length - 1];
 
     // add forward
-    this.addEdge(start_vertex, end_vertex, properties, JSON.parse(JSON.stringify(coordinates)));
+    this._addEdge(start_vertex, end_vertex, properties, JSON.parse(JSON.stringify(coordinates)));
 
     // add backward
-    this.addEdge(end_vertex, start_vertex, properties, JSON.parse(JSON.stringify(coordinates)).reverse());
+    this._addEdge(end_vertex, start_vertex, properties, JSON.parse(JSON.stringify(coordinates)).reverse());
 
   });
+
+  // after loading a GeoJSON, no further edges can be added
+  this._geoJsonFlag = true;
 
 
 };
@@ -239,6 +266,11 @@ Graph.prototype._cleanseGeoJsonNetwork = function(file) {
       inventory[id] = feature;
     }
     else {
+
+      if (this.debugMode) {
+        console.log('Duplicate feature found, choosing shortest.');
+      }
+
       // a segment with the same origin/dest exists.  choose shortest.
       const old_cost = inventory[id].properties._cost;
       const new_cost = feature.properties._cost;
@@ -261,6 +293,9 @@ Graph.prototype._cleanseGeoJsonNetwork = function(file) {
       inventory[reverse_id] = feature;
     }
     else {
+
+      // In theory this error is already pointed out in the block above
+
       // a segment with the same origin/dest exists.  choose shortest.
       const old_cost = inventory[reverse_id].properties._cost;
       const new_cost = feature.properties._cost;
@@ -289,6 +324,10 @@ Graph.prototype._cleanseGeoJsonNetwork = function(file) {
 // Start CH specific
 
 Graph.prototype.contractGraph = function() {
+
+  if (this._locked) {
+    throw new Error('Network has already been contracted');
+  }
 
   // prevent more edges from being added
   this._locked = true;
@@ -604,17 +643,24 @@ Graph.prototype._contract = function(v, get_count_only, finder) {
 
 Graph.prototype.loadCH = function(ch) {
   const parsed = JSON.parse(ch);
+  this._locked = parsed._locked;
+  this._geoJsonFlag = parsed._geoJsonFlag;
   this.adjacency_list = parsed.adjacency_list;
   this.reverse_adjacency_list = parsed.reverse_adjacency_list;
   this._nodeToIndexLookup = parsed._nodeToIndexLookup;
   this._edgeProperties = parsed._edgeProperties;
   this._edgeGeometry = parsed._edgeGeometry;
-
-  // this._rebuildReverseAdjList();
 };
 
 Graph.prototype.saveCH = function() {
+
+  if (!this._locked) {
+    throw new Error('No sense in saving network before it is contracted.');
+  }
+
   return JSON.stringify({
+    _locked: this._locked,
+    _geoJsonFlag: this._geoJsonFlag,
     adjacency_list: this.adjacency_list,
     reverse_adjacency_list: this.reverse_adjacency_list,
     _nodeToIndexLookup: this._nodeToIndexLookup,

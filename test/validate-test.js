@@ -6,7 +6,7 @@ const fs = require('fs');
 const { Graph } = require('geojson-dijkstra');
 
 // load utility functions
-const { getNGraphDist, populateNGraph, readyNetwork, cleanseNetwork } = require('./test-util.js');
+const { getNGraphDist, populateNGraph, readyNetwork } = require('./test-util.js');
 
 // load contraction hierarchy
 const GraphCH = require('../index.js').Graph;
@@ -15,18 +15,16 @@ main();
 
 async function main() {
 
-  const geofile = await readyNetwork();
-  const geojson = cleanseNetwork(geofile);
-
+  const geojson = await readyNetwork();
   const gdgraph = new Graph(geojson);
 
   // uncomment this block to re-run contraction / save
-  const cgraph = new GraphCH(geojson, { debugMode: true });
-  console.time('TimeToContract');
-  cgraph.contractGraph();
-  console.timeEnd('TimeToContract');
-  fs.writeFileSync('./net.json', cgraph.saveCH(), 'utf8');
-  process.exit();
+  // const cgraph = new GraphCH(geojson, { debugMode: true });
+  // console.time('TimeToContract');
+  // cgraph.contractGraph();
+  // console.timeEnd('TimeToContract');
+  // fs.writeFileSync('./net.json', cgraph.saveCH(), 'utf8');
+  // process.exit();
 
 
   const graph = new GraphCH(null, { debugMode: true });

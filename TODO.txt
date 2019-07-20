@@ -1,11 +1,15 @@
 
+coordinate lookup almost assuredly broken
+
+
 - variable names and comments to distinguish whether youre working on an edge id or a node or coordinate (addEdge)
 - same for anything that says index
 
 
+-- need non-geojson output for manually entered graphs
+
 -- remove extra attributes put on {properties} in geojson
 
-coordinate lookup almost assuredly broken
 
 reorganize code
 
