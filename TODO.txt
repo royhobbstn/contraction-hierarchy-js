@@ -1,17 +1,15 @@
 
-interesting that load/save path is fine, but running straight through without saving doesnt work
-
 - variable names and comments to distinguish whether youre working on an edge id or a node or coordinate (addEdge)
-- strike all language regarding coords, as that wont always be applicable, and you always mean NODES anyways
 - same for anything that says index
 
-try to build reverse_adjacency_list (on Load) so that it doesn't have to be saved/reloaded
 
 -- remove extra attributes put on {properties} in geojson
 
 coordinate lookup almost assuredly broken
 
 reorganize code
+
+re-document
 
 
 eventually need to run USA network through refinement procedures

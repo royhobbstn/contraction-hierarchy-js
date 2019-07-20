@@ -3,6 +3,8 @@ const clone = require('@turf/clone').default;
 const buildIdList = require('./buildOutputs.js').buildIdList;
 const CoordinateLookup = require('./coordinate-lookup.js').CoordinateLookup;
 
+const fs = require('fs');
+
 // objects
 exports.Graph = Graph;
 exports.CoordinateLookup = CoordinateLookup;
@@ -622,46 +624,11 @@ Graph.prototype.saveCH = function() {
 };
 
 
-Graph.prototype._rebuildReverseAdjList = function() {
-
-  // destroy and build anew
-  // TODO future, rename old one.  its not the same thing.
-  this.reverse_adjacency_list = [];
-
-  this.adjacency_list.forEach((node, index) => {
-
-    node.forEach(edge => {
-
-      const start_node = edge.end;
-      const end_node = index;
-
-      const obj = {
-        end: end_node,
-        cost: edge.cost,
-        attrs: edge.attrs
-      };
-
-      if (!this.reverse_adjacency_list[start_node]) {
-        this.reverse_adjacency_list[start_node] = [obj];
-      }
-      else {
-        this.reverse_adjacency_list[start_node].push(obj);
-      }
-
-    });
-
-  });
-
-};
-
-
 // node containing contraction order score
 function OrderNode(score, id) {
   this.score = score;
   this.id = id;
 }
-
-
 
 Graph.prototype._createChShortcutter = function() {
 
