@@ -3,7 +3,7 @@ const pathNGraph = require('ngraph.path');
 const fs = require('fs');
 
 // load utility functions
-const { getNGraphDist, populateNGraph, readyNetwork } = require('./test-util.js');
+const { getNGraphDist, populateNGraph, readyNetwork, cleanseNetwork } = require('./test-util.js');
 
 // load contraction hierarchy
 const GraphCH = require('../index.js').Graph;
@@ -12,7 +12,8 @@ main();
 
 async function main() {
 
-  const geojson = await readyNetwork();
+  const geofile = await readyNetwork();
+  const geojson = cleanseNetwork(geofile);
 
   // uncomment this block to re-run contraction / save
   // const cgraph = new GraphCH(geojson, { debugMode: true });
@@ -46,7 +47,7 @@ async function main() {
 
   const coords = [];
 
-  for (let i = 0; i < 100; i++) {
+  for (let i = 0; i < 1000; i++) {
     const rnd1 = Math.floor(Math.random() * adj_length);
     const rnd2 = Math.floor(Math.random() * adj_length);
     const coord = [adj_keys[rnd1], adj_keys[rnd2]];

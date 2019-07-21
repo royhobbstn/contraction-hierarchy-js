@@ -1,5 +1,6 @@
 const createGraph = require('ngraph.graph');
 const pathNGraph = require('ngraph.path');
+const fs = require('fs');
 
 // load utility functions
 const { readyNetwork, getNGraphDist, populateNGraph } = require('./test-util.js');
@@ -16,13 +17,16 @@ async function main() {
 
   const geojson = await readyNetwork();
 
-  const graph = new GraphCH(geojson, { debugMode: true });
+  const graph = new GraphCH(null, { debugMode: true });
 
-  console.time("Contracted");
-  graph.contractGraph();
-  console.timeEnd("Contracted");
+  // console.time("Contracted");
+  // graph.contractGraph();
+  // console.timeEnd("Contracted");
 
-  const finder = graph.createPathfinder();
+  const data = fs.readFileSync('./net.json', 'utf8');
+  graph.loadCH(data);
+
+  const finder = graph.createPathfinder({});
 
   const ngraph = createGraph();
   populateNGraph(ngraph, geojson);
@@ -38,13 +42,13 @@ async function main() {
     const adj_keys = Object.keys(graph._nodeToIndexLookup);
     const adj_length = adj_keys.length;
 
-    console.time('ngraph');
-    for (let i = 0; i < ITERATIONS; i++) {
-      let rnd1 = Math.floor(Math.random() * adj_length);
-      let rnd2 = Math.floor(Math.random() * adj_length);
-      getNGraphDist(pathFinder.find(adj_keys[rnd1], adj_keys[rnd2]));
-    }
-    console.timeEnd('ngraph');
+    // console.time('ngraph');
+    // for (let i = 0; i < ITERATIONS; i++) {
+    //   let rnd1 = Math.floor(Math.random() * adj_length);
+    //   let rnd2 = Math.floor(Math.random() * adj_length);
+    //   getNGraphDist(pathFinder.find(adj_keys[rnd1], adj_keys[rnd2]));
+    // }
+    // console.timeEnd('ngraph');
 
     console.time('ContractionHierarchy');
     for (let i = 0; i < ITERATIONS; i++) {

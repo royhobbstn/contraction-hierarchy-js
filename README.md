@@ -13,8 +13,13 @@ The typical use case of using a Contraction hierarchy over Dijkstras Algorithm o
  - Ability to work with directed networks (using the manual API)
  - Export data as GeoJSON, edge _id list, node list, or edge properties array.
 
-## Quickstart
+## Install
 
+```
+npm install --save contraction-hierarchy-js
+```
+
+## Quickstart
 
 ```
 const fs = require('fs');
@@ -135,11 +140,39 @@ When using `queryContractionHierarchy`, your start and end points must correspon
 
 ## Performance
 
-This is not benchmarking per se, as comparing a dijkstra implementation to a contraction hierarchy is not a fair comparison.  (Contraction hierarchies require a lengthy pre-processing step, whearas Dijkstras algorithm does not.)
+This is not benchmarking per se, as comparing a dijkstra implementation to a contraction hierarchy is not an apples to apples comparison.  (Contraction hierarchies require a lengthy pre-processing step, whearas Dijkstras algorithm does not.)
 
+Here is a comparison against a very fast implementation of Dijkstra via [Ngraph Path](https://github.com/anvaka/ngraph.path)
+
+Dataset: USA major roads network (via freight analysis framework)
+Nodes:  135308
+Edges:  340981
+
+`--max_old_space_size=7000` AWS t2.large (2vCPU, 8GB)
+
+|                             | Contraction Time | 10,000 Random Routes |  ms per route |
+| --------------------------- | ---------------- | -------------------- | ------------- |
+| * Dijkstra (via Ngraph)     |            0 ms  |           1232269 ms |     123.23 ms |
+| * Contraction Hierarchy JS  |       972786 ms  |              3616 ms |       0.36 ms |
+| ** Contraction Hierarchy JS |       972786 ms  |             24013 ms |       2.40 ms |
+
+* Basic (only distance calculated) 
+
+** Enriched (construct GeoJSON path)
+
+
+As you can see, if your data is not highly dynamic, it makes sense to contract your network to get a tremendous runtime boost in speed.
+
+I don't quite believe it myself, TBH, but there it is.
+
+# Credits
+
+Quite a few of the program internals were inspired from or directly ported from the excellent project NGraph.  If you need a feature rich pathfinding solution and a contraction step is a dealbreaker, I highly recommend checking out [NGraph](https://github.com/anvaka/ngraph.path).
+
+The coordinate lookup would not have been possible without the [geokdbush](https://github.com/mourner/geokdbush) library.  [Mourner](https://github.com/mourner) is also the original creator of [TinyQueue](https://github.com/mourner/tinyqueue), a derivation of which is included in this program.  Including this queue brought about some unbelievable performance improvements. 
 
 ## Issues
 
-Larger networks are problematic.  Time to contract is obviously much higher.  Memory issues start to become a factor as well.  Become aquainted with the NodeJS command line argument: `--max_old_space_size=`.
+Larger networks are problematic.  Time to contract is obviously much higher.  Memory issues start to become a factor as well.  Become aquainted with the NodeJS command line argument: `--max_old_space_size=`.  If you run into this, check out [this stackoverflow post](https://stackoverflow.com/questions/38558989/node-js-heap-out-of-memory).
 
 
