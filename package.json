@@ -1,6 +1,6 @@
 {
   "name": "contraction-hierarchy-js",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "description": "Contraction Hierarchy",
   "main": "index.js",
   "scripts": {
@@ -28,7 +28,6 @@
     "nanoclone": "0.2.1"
   },
   "devDependencies": {
-    "geojson-dijkstra": "^1.0.4",
     "ngraph.graph": "0.0.18",
     "ngraph.path": "1.1.0"
   }

@@ -2,9 +2,6 @@ const createGraph = require('ngraph.graph');
 const pathNGraph = require('ngraph.path');
 const fs = require('fs');
 
-// load original geojson-dijkstra for sanity check
-const { Graph } = require('geojson-dijkstra');
-
 // load utility functions
 const { getNGraphDist, populateNGraph, readyNetwork } = require('./test-util.js');
 
@@ -16,7 +13,6 @@ main();
 async function main() {
 
   const geojson = await readyNetwork();
-  const gdgraph = new Graph(geojson);
 
   // uncomment this block to re-run contraction / save
   // const cgraph = new GraphCH(geojson, { debugMode: true });
@@ -34,7 +30,7 @@ async function main() {
 
   const finder = graph.createPathfinder({ ids: true, path: true });
 
-  const adj_keys = Object.keys(gdgraph.adjacency_list);
+  const adj_keys = Object.keys(graph._nodeToIndexLookup);
   const adj_length = adj_keys.length;
 
   const ngraph = createGraph();
@@ -102,7 +98,7 @@ async function main() {
       }
     });
 
-    if (true /*max - min > 0.000001*/ ) {
+    if (max - min > 0.000001) {
       error_count++;
       console.log(
         i,

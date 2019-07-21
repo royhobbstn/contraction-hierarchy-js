@@ -42,10 +42,12 @@ async function readyNetwork() {
 
   // clean network
   geojson.features = geojson.features.filter(feat => {
-    if (feat.properties._cost && feat.geometry.coordinates &&
-      ( /*feat.properties.STFIPS === 6 || feat.properties.STFIPS === 41 || */
-        feat.properties.STFIPS === 53
-      )
+    if (feat.properties._cost && feat.geometry.coordinates
+      /* &&
+           (
+             feat.properties.STFIPS === 6 || feat.properties.STFIPS === 41 ||
+             feat.properties.STFIPS === 53
+           ) */
 
     ) {
       return true;
@@ -98,7 +100,7 @@ function populateNGraph(ngraph, geojson) {
 
 function getNGraphDist(path) {
 
-  const edge_ids = [];
+  //const edge_ids = [];
   let distance = 0;
 
   for (let i = 0; i < path.length - 1; i++) {
@@ -107,7 +109,7 @@ function getNGraphDist(path) {
 
     path[i]['links'].forEach(link => {
       if ((link.toId === start_node && link.fromId === end_node)) {
-        edge_ids.push(link.data._id);
+        // edge_ids.push(link.data._id);
         distance += link.data._cost;
       }
 
@@ -115,5 +117,5 @@ function getNGraphDist(path) {
 
   }
 
-  return { edgelist: edge_ids.reverse(), distance };
+  return { distance };
 }

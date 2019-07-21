@@ -1,6 +1,6 @@
 const clone = require('nanoclone');
 
-exports.loadFromGeoJson = function(filedata) {
+exports._loadFromGeoJson = function(filedata) {
 
   if (this._locked) {
     throw new Error('Cannot add GeoJSON to a contracted network');

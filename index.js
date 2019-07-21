@@ -1,6 +1,6 @@
 const { CoordinateLookup } = require('./js/coordinateLookup.js');
 const { createPathfinder } = require('./js/pathfinding.js');
-const { loadFromGeoJson, _cleanseGeoJsonNetwork } = require('./js/geojson.js');
+const { _loadFromGeoJson, _cleanseGeoJsonNetwork } = require('./js/geojson.js');
 const { addEdge, _addEdge, _addContractedEdge } = require('./js/addEdge.js');
 const { loadCH, saveCH } = require('./js/serialize.js');
 const { createNodePool } = require('./js/nodePool.js');
@@ -33,13 +33,19 @@ function Graph(geojson, opt) {
   this._manualAdd = false; // if the API was used directly to add edges
 
   if (geojson) {
-    this.loadFromGeoJson(geojson);
+    this._loadFromGeoJson(geojson);
+
+    if (this.debugMode) {
+      console.log('Nodes: ', this._currentNodeIndex);
+      console.log('Edges: ', this._currentEdgeIndex);
+    }
   }
+
 }
 
 Graph.prototype.createPathfinder = createPathfinder;
 
-Graph.prototype.loadFromGeoJson = loadFromGeoJson;
+Graph.prototype._loadFromGeoJson = _loadFromGeoJson;
 Graph.prototype._cleanseGeoJsonNetwork = _cleanseGeoJsonNetwork;
 
 Graph.prototype._addContractedEdge = _addContractedEdge;
