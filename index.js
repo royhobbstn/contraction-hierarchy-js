@@ -1,4 +1,4 @@
-const CoordinateLookup = require('./js/coordinateLookup.js').CoordinateLookup;
+const { CoordinateLookup } = require('./js/coordinateLookup.js');
 const { createPathfinder } = require('./js/pathfinding.js');
 const { loadFromGeoJson, _cleanseGeoJsonNetwork } = require('./js/geojson.js');
 const { addEdge, _addEdge, _addContractedEdge } = require('./js/addEdge.js');
@@ -21,6 +21,7 @@ function Graph(geojson, opt) {
 
   this._currentNodeIndex = -1;
   this._nodeToIndexLookup = {};
+  this._indexToNodeLookup = {};
 
   this._currentEdgeIndex = -1;
   this._edgeProperties = [];

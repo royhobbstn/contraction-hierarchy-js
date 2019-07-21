@@ -1,12 +1,12 @@
 
-need non-geojson output for manually entered graphs
- - {nodes, properties}
 
 re-document
 
-ES6 Module ?
+bump version 2.0
 
-examples online
+examples online: road tripper with elevation relief profile map, geojson download, states delineated in profile etc
+
+cross post dev-to
 
 eventually need to run USA network through refinement procedures
 

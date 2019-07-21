@@ -28,10 +28,12 @@ exports._addEdge = function(start, end, edge_properties, edge_geometry) {
   if (this._nodeToIndexLookup[start_node] == null) {
     this._currentNodeIndex++;
     this._nodeToIndexLookup[start_node] = this._currentNodeIndex;
+    this._indexToNodeLookup[this._currentNodeIndex] = start_node;
   }
   if (this._nodeToIndexLookup[end_node] == null) {
     this._currentNodeIndex++;
     this._nodeToIndexLookup[end_node] = this._currentNodeIndex;
+    this._indexToNodeLookup[this._currentNodeIndex] = end_node;
   }
 
   let start_node_index = this._nodeToIndexLookup[start_node];

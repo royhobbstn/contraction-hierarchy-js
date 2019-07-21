@@ -9,6 +9,7 @@ exports.createPathfinder = function(options) {
   const edgeGeometry = this._edgeGeometry;
   const pool = this._createNodePool();
   const nodeToIndexLookup = this._nodeToIndexLookup;
+  const indexToNodeLookup = this._indexToNodeLookup;
 
   if (!options) {
     options = {};
@@ -94,33 +95,43 @@ exports.createPathfinder = function(options) {
     }
 
     let result = { total_cost: tentative_shortest_path !== Infinity ? tentative_shortest_path : 0 };
-    let ids = {};
 
-    if (options.ids === true || options.path === true) {
+
+    let extra_attrs;
+
+    if (options.ids || options.path || options.nodes || options.properties) {
       if (tentative_shortest_node != null) {
         // tentative_shortest_path as falsy indicates no path found.
-        ids = buildIdList(options, edgeProperties, edgeGeometry, forward_nodeState, backward_nodeState, tentative_shortest_node, start_index);
+        extra_attrs = buildIdList(options, edgeProperties, edgeGeometry, forward_nodeState, backward_nodeState, tentative_shortest_node, indexToNodeLookup, start_index);
       }
       else {
+
+        let ids, path, properties, nodes;
+
         // fill in object to prevent errors in the case of no path found
-        if (options.ids && options.path) {
-          ids = { ids: [], path: {} };
+        if (options.ids) {
+          ids = [];
         }
-        else if (!options.ids && options.path) {
-          ids = { path: {} };
+        if (options.path) {
+          path = {};
         }
-        else if (options.ids && !options.path) {
-          ids = { ids: [] };
+        if (options.properties) {
+          properties = [];
         }
-        else {
-          // should not happen
-          ids = {};
+        if (options.nodes) {
+          nodes = [];
         }
+
+        extra_attrs = { ids, path, properties, nodes };
       }
 
     }
 
-    return Object.assign(result, { ...ids });
+    // the end.  results sent to user
+    return Object.assign(result, { ...extra_attrs });
+
+
+    //
 
     function* doDijkstra(
       adj,

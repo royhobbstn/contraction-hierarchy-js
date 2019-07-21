@@ -151,7 +151,7 @@ const assert = require('assert');
   const graph = new Graph(geojson);
 
   graph.contractGraph();
-  const finder = graph.createPathfinder({ ids: true, path: true });
+  const finder = graph.createPathfinder({ ids: true, path: true, properties: true, nodes: true });
   const result = finder.queryContractionHierarchy([-117.452899, 40.967659], [-116.452899, 41.967659]);
 
   assert(result.total_cost === 22);
@@ -200,6 +200,17 @@ const assert = require('assert');
       }
     }]
   });
+  assert.deepEqual(result.properties, [{ _id: 4, _cost: 11 },
+    { _id: 3, _cost: 7 },
+    { _id: 2, _cost: 3 },
+    { _id: 1, _cost: 1 }
+  ]);
+  assert.deepEqual(result.nodes, ['-117.452899,40.967659',
+    '-113.132497,41.902277',
+    '-109.306339,42.244785',
+    '-113.330402,43.245203',
+    '-116.452899,41.967659'
+  ]);
 }());
 
 console.log('Done.');
