@@ -101,7 +101,7 @@ const assert = require('assert');
     "type": "FeatureCollection",
     "features": [{
       "type": "Feature",
-      "properties": { "_id": 1, "_cost": 1, "_start_index": 0, "_end_index": 1, "_ordered": [0] },
+      "properties": { "_id": 1, "_cost": 1 },
       "geometry": {
         "type": "LineString",
         "coordinates": [
@@ -111,7 +111,7 @@ const assert = require('assert');
       }
     }, {
       "type": "Feature",
-      "properties": { "_id": 2, "_cost": 3, "_start_index": 1, "_end_index": 2, "_ordered": [2] },
+      "properties": { "_id": 2, "_cost": 3 },
       "geometry": {
         "type": "LineString",
         "coordinates": [
@@ -121,7 +121,7 @@ const assert = require('assert');
       }
     }, {
       "type": "Feature",
-      "properties": { "_id": 3, "_cost": 7, "_start_index": 2, "_end_index": 3, "_ordered": [4] },
+      "properties": { "_id": 3, "_cost": 7 },
       "geometry": {
         "type": "LineString",
         "coordinates": [
@@ -131,7 +131,7 @@ const assert = require('assert');
       }
     }, {
       "type": "Feature",
-      "properties": { "_id": 4, "_cost": 11, "_start_index": 3, "_end_index": 4, "_ordered": [6] },
+      "properties": { "_id": 4, "_cost": 11 },
       "geometry": {
         "type": "LineString",
         "coordinates": [
@@ -160,7 +160,7 @@ const assert = require('assert');
     "type": "FeatureCollection",
     "features": [{
       "type": "Feature",
-      "properties": { "_id": 4, "_cost": 11, "_start_index": 4, "_end_index": 3, "_ordered": [7] },
+      "properties": { "_id": 4, "_cost": 11 },
       "geometry": {
         "type": "LineString",
         "coordinates": [
@@ -170,7 +170,7 @@ const assert = require('assert');
       }
     }, {
       "type": "Feature",
-      "properties": { "_id": 3, "_cost": 7, "_start_index": 3, "_end_index": 2, "_ordered": [5] },
+      "properties": { "_id": 3, "_cost": 7 },
       "geometry": {
         "type": "LineString",
         "coordinates": [
@@ -180,7 +180,7 @@ const assert = require('assert');
       }
     }, {
       "type": "Feature",
-      "properties": { "_id": 2, "_cost": 3, "_start_index": 2, "_end_index": 1, "_ordered": [3] },
+      "properties": { "_id": 2, "_cost": 3 },
       "geometry": {
         "type": "LineString",
         "coordinates": [
@@ -190,7 +190,7 @@ const assert = require('assert');
       }
     }, {
       "type": "Feature",
-      "properties": { "_id": 1, "_cost": 1, "_start_index": 1, "_end_index": 0, "_ordered": [1] },
+      "properties": { "_id": 1, "_cost": 1 },
       "geometry": {
         "type": "LineString",
         "coordinates": [

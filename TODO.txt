@@ -1,12 +1,12 @@
 
--- need non-geojson output for manually entered graphs
+need non-geojson output for manually entered graphs
  - {nodes, properties}
 
 re-document
 
-examples online
-
 ES6 Module ?
+
+examples online
 
 eventually need to run USA network through refinement procedures
 

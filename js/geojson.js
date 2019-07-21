@@ -1,5 +1,4 @@
-const clone = require('@turf/clone').default;
-
+const clone = require('nanoclone');
 
 exports.loadFromGeoJson = function(filedata) {
 
@@ -37,10 +36,10 @@ exports.loadFromGeoJson = function(filedata) {
     const end_vertex = coordinates[coordinates.length - 1];
 
     // add forward
-    this._addEdge(start_vertex, end_vertex, properties, JSON.parse(JSON.stringify(coordinates)));
+    this._addEdge(start_vertex, end_vertex, properties, clone(coordinates));
 
     // add backward
-    this._addEdge(end_vertex, start_vertex, properties, JSON.parse(JSON.stringify(coordinates)).reverse());
+    this._addEdge(end_vertex, start_vertex, properties, clone(coordinates).reverse());
 
   });
 

@@ -19,7 +19,10 @@ async function main() {
   const geojson = await readyNetwork();
 
   const graph = new GraphCH(geojson, { debugMode: true });
+
+  console.time("Contracted");
   graph.contractGraph();
+  console.timeEnd("Contracted");
 
   const gdgraph = new GDGraph(geojson);
 
