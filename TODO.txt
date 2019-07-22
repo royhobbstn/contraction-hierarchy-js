@@ -1,6 +1,16 @@
 
+see exampleSaveCH.json
+
+surely seems like i can put properties straight into the adj list to save space
+
+surely seems like i can get away with one adj list for a undirected network (space cut 1/2!)
+
+USE A NEW BRANCH!!!!!!!!!!!!
 
 examples online: road tripper with elevation relief profile map, geojson download, states delineated in profile etc
+
+- full USA for Desktop
+- California only for mobile.
 
 cross post dev-to
 
