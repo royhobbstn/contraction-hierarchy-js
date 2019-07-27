@@ -1,5 +1,5 @@
 // public API for adding edges
-exports.addEdge = function(start, end, edge_properties, edge_geometry) {
+export const addEdge = function(start, end, edge_properties, edge_geometry) {
 
   if (this._locked) {
     throw new Error('Graph has been contracted.  No additional edges can be added.');
@@ -13,7 +13,7 @@ exports.addEdge = function(start, end, edge_properties, edge_geometry) {
   this._addEdge(start, end, edge_properties, edge_geometry);
 };
 
-exports._addEdge = function(start, end, edge_properties, edge_geometry) {
+export const _addEdge = function(start, end, edge_properties, edge_geometry) {
 
   const start_node = String(start);
   const end_node = String(end);
@@ -77,7 +77,7 @@ exports._addEdge = function(start, end, edge_properties, edge_geometry) {
 };
 
 
-exports._addContractedEdge = function(start_index, end_index, properties) {
+export const _addContractedEdge = function(start_index, end_index, properties) {
 
   // geometry not applicable here
 

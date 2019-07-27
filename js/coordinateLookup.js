@@ -1,9 +1,8 @@
-const kdbush = require('kdbush');
-const geokdbush = require('geokdbush');
+import kdbush from 'kdbush';
+import geokdbush from 'geokdbush';
 
-exports.CoordinateLookup = CoordinateLookup;
 
-function CoordinateLookup(graph) {
+export function CoordinateLookup(graph) {
 
   if (!graph._geoJsonFlag) {
     throw new Error('Cannot use Coordinate Lookup on a non-GeoJson network.');

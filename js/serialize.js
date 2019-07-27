@@ -1,4 +1,4 @@
-exports.loadCH = function(ch) {
+export const loadCH = function(ch) {
   const parsed = JSON.parse(ch);
   this._locked = parsed._locked;
   this._geoJsonFlag = parsed._geoJsonFlag;
@@ -9,7 +9,7 @@ exports.loadCH = function(ch) {
   this._edgeGeometry = parsed._edgeGeometry;
 };
 
-exports.saveCH = function() {
+export const saveCH = function() {
 
   if (!this._locked) {
     throw new Error('No sense in saving network before it is contracted.');

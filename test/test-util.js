@@ -16,6 +16,7 @@ async function readyNetwork() {
     delete feat.properties.DIR;
     delete feat.properties.RECTYPE;
     delete feat.properties.VERSION;
+    delete feat.properties.STATE;
     delete feat.properties.SIGN1;
     delete feat.properties.SIGNT1;
     delete feat.properties.SIGNN1;
@@ -28,6 +29,7 @@ async function readyNetwork() {
     delete feat.properties.SIGNT3;
     delete feat.properties.SIGNN3;
     delete feat.properties.SIGNQ3;
+    delete feat.properties.LNAME;
     delete feat.properties.KM;
     delete feat.properties.FCLASS;
     delete feat.properties.RUCODE;
@@ -38,16 +40,17 @@ async function readyNetwork() {
     const mph = getMPH(feat.properties.NHS);
     feat.properties._cost = (feat.properties.MILES / mph) * 60;
     feat.properties._id = feat.properties.ID;
+    delete feat.properties.ID;
+    delete feat.properties.NHS;
   });
 
   // clean network
   geojson.features = geojson.features.filter(feat => {
-    if (feat.properties._cost && feat.geometry.coordinates
-      /* &&
-           (
-             feat.properties.STFIPS === 6 || feat.properties.STFIPS === 41 || 
-             feat.properties.STFIPS === 53
-           ) */
+    if (feat.properties._cost && feat.geometry.coordinates &&
+      (
+        /* feat.properties.STFIPS === 6 || feat.properties.STFIPS === 41 ||*/
+        feat.properties.STFIPS === 53
+      )
 
     ) {
       return true;

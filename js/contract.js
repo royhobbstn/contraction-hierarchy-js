@@ -1,7 +1,7 @@
-const NodeHeap = require('./queue.js');
+import { NodeHeap } from './queue.js';
 
 
-exports.contractGraph = function() {
+export const contractGraph = function() {
 
   if (this._locked) {
     throw new Error('Network has already been contracted');
@@ -114,7 +114,7 @@ exports.contractGraph = function() {
 
 // do as much edge arrangement as possible ahead of times so that the cost is
 // not incurred at runtime
-exports._arrangeContractedPaths = function(adj_list) {
+export const _arrangeContractedPaths = function(adj_list) {
 
   adj_list.forEach((node, index) => {
 
@@ -212,7 +212,7 @@ exports._arrangeContractedPaths = function(adj_list) {
 
 };
 
-exports._cleanAdjList = function(adj_list) {
+export const _cleanAdjList = function(adj_list) {
 
   // remove links to lower ranked nodes
   adj_list.forEach((node, node_id) => {
@@ -236,7 +236,7 @@ exports._cleanAdjList = function(adj_list) {
 // this function is multi-use:  actually contract a node  OR
 // with `get_count_only = true` find number of shortcuts added
 // if node were to be contracted
-exports._contract = function(v, get_count_only, finder) {
+export const _contract = function(v, get_count_only, finder) {
 
   // all edges from anywhere to v
   const from_connections = (this.reverse_adjacency_list[v] || []).filter(c => {
@@ -332,7 +332,7 @@ function OrderNode(score, id) {
   this.id = id;
 }
 
-exports._createChShortcutter = function() {
+export const _createChShortcutter = function() {
 
   const pool = this._createNodePool();
   const adjacency_list = this.adjacency_list;

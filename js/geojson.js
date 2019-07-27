@@ -1,6 +1,6 @@
-const clone = require('nanoclone');
+import clone from 'nanoclone';
 
-exports._loadFromGeoJson = function(filedata) {
+export const _loadFromGeoJson = function(filedata) {
 
   if (this._locked) {
     throw new Error('Cannot add GeoJSON to a contracted network');
@@ -50,7 +50,7 @@ exports._loadFromGeoJson = function(filedata) {
 };
 
 
-exports._cleanseGeoJsonNetwork = function(file) {
+export const _cleanseGeoJsonNetwork = function(file) {
 
   // get rid of duplicate edges (same origin to dest)
   const inventory = {};

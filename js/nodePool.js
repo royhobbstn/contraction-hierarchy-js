@@ -1,6 +1,3 @@
-exports.createNodePool = createNodePool;
-
-
 function Node(node) {
   this.id = node.id;
   this.dist = node.dist !== undefined ? node.dist : Infinity;
@@ -10,7 +7,7 @@ function Node(node) {
   this.heapIndex = -1;
 }
 
-function createNodePool() {
+export function createNodePool() {
   var currentInCache = 0;
   var nodeCache = [];
 

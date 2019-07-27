@@ -66,3 +66,5 @@ networks/full-network.json
 test/*.json
 
 .idea
+
+dist/

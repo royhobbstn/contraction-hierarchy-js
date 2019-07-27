@@ -1,6 +1,4 @@
-exports.buildIdList = buildIdList;
-
-function buildIdList(options, edgeProperties, edgeGeometry, forward_nodeState, backward_nodeState, tentative_shortest_node, indexToNodeLookup, startNode) {
+export function buildIdList(options, edgeProperties, edgeGeometry, forward_nodeState, backward_nodeState, tentative_shortest_node, indexToNodeLookup, startNode) {
 
   const pathway = [];
   const node_list = [tentative_shortest_node];

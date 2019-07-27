@@ -1,7 +1,7 @@
-const { buildIdList } = require('./buildOutputs.js');
-const NodeHeap = require('./queue.js');
+import { buildIdList } from './buildOutputs.js';
+import { NodeHeap } from './queue.js';
 
-exports.createPathfinder = function(options) {
+export const createPathfinder = function(options) {
 
   const adjacency_list = this.adjacency_list;
   const reverse_adjacency_list = this.reverse_adjacency_list;

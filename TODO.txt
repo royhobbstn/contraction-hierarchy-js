@@ -1,6 +1,21 @@
 
+can simplify points in road network??
+
+no AK, HI.  
 
 examples online: road tripper with elevation relief profile map, geojson download, states delineated in profile etc
+
+progress events?
+
+shorten geojson coordinate precision?
+
+shorten cost coordinate precision?
+
+msgpack?
+
+no react?
+
+import script build, es6 build of contraction hierarchy
 
 cross post dev-to
 

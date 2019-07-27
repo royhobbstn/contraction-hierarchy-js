@@ -9,9 +9,8 @@
  * 
  **/
 
-module.exports = NodeHeap;
 
-function NodeHeap(options) {
+export function NodeHeap(options) {
   if (!(this instanceof NodeHeap)) return new NodeHeap(options);
 
   options = options || {};
