@@ -1,5 +1,5 @@
 export const loadCH = function(ch) {
-  const parsed = JSON.parse(ch);
+  const parsed = (typeof ch === 'object') ? ch : JSON.parse(ch);
   this._locked = parsed._locked;
   this._geoJsonFlag = parsed._geoJsonFlag;
   this.adjacency_list = parsed.adjacency_list;

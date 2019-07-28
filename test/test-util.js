@@ -8,7 +8,7 @@ exports.cleanseNetwork = cleanseNetwork;
 
 async function readyNetwork() {
 
-  const geojson_raw = await fs.readFile('../networks/faf.geojson'); // full_network
+  const geojson_raw = await fs.readFile('../networks/faf_simple_40.geojson'); // full_network
   const geojson = JSON.parse(geojson_raw);
   //set up cost field
   geojson.features.forEach(feat => {
@@ -46,9 +46,11 @@ async function readyNetwork() {
 
   // clean network
   geojson.features = geojson.features.filter(feat => {
-    if (feat.properties._cost && feat.geometry.coordinates &&
+
+
+    if (feat.geometry && feat.properties._cost && feat.geometry.coordinates && feat.properties.STFIPS && feat.properties.STFIPS !== 2 && feat.properties.STFIPS !== 15 &&
       (
-        /* feat.properties.STFIPS === 6 || feat.properties.STFIPS === 41 ||*/
+        feat.properties.STFIPS === 6 || feat.properties.STFIPS === 41 ||
         feat.properties.STFIPS === 53
       )
 

@@ -80,12 +80,10 @@ export const _addEdge = function(start, end, edge_properties, edge_geometry) {
 export const _addContractedEdge = function(start_index, end_index, properties) {
 
   // geometry not applicable here
-
   this._currentEdgeIndex++;
   this._edgeProperties[this._currentEdgeIndex] = properties;
   this._edgeProperties[this._currentEdgeIndex]._start_index = start_index;
   this._edgeProperties[this._currentEdgeIndex]._end_index = end_index;
-  this._edgeGeometry[this._currentEdgeIndex] = null;
 
   // create object to push into adjacency list
   const obj = {

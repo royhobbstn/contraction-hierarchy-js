@@ -1,10 +1,10 @@
-import { CoordinateLookup as CL } from './js/coordinateLookup.js';
-import { createPathfinder } from './js/pathfinding.js';
-import { _loadFromGeoJson, _cleanseGeoJsonNetwork } from './js/geojson.js';
-import { addEdge, _addEdge, _addContractedEdge } from './js/addEdge.js';
-import { loadCH, saveCH } from './js/serialize.js';
-import { createNodePool } from './js/nodePool.js';
-import { contractGraph, _arrangeContractedPaths, _cleanAdjList, _contract, _createChShortcutter } from './js/contract.js';
+import { CoordinateLookup as CL } from './src/coordinateLookup.js';
+import { createPathfinder } from './src/pathfinding.js';
+import { _loadFromGeoJson, _cleanseGeoJsonNetwork } from './src/geojson.js';
+import { addEdge, _addEdge, _addContractedEdge } from './src/addEdge.js';
+import { loadCH, saveCH } from './src/serialize.js';
+import { createNodePool } from './src/nodePool.js';
+import { contractGraph, _arrangeContractedPaths, _cleanAdjList, _contract, _createChShortcutter } from './src/contract.js';
 
 export const CoordinateLookup = CL;
 

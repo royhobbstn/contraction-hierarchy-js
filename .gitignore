@@ -61,10 +61,11 @@ typings/
 .next
 
 networks/faf.geojson
-networks/full-network.json
+networks/faf_simple_40.geojson
 
 test/*.json
 
 .idea
 
 dist/
+
