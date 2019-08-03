@@ -10,13 +10,9 @@ message ContractionHierarchy {
     double  cost = 2;
     uint32 attrs = 3;
   }
-
-  message Edge {
-    EdgeAttrs edge = 1;
-  }
   
   message AdjList {
-    repeated Edge edges = 1;
+    repeated EdgeAttrs edges = 1;
   }
   
   repeated AdjList adjacency_list = 3;

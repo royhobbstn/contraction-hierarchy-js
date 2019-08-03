@@ -45,14 +45,15 @@ async function readyNetwork() {
   });
 
   // clean network
-  geojson.features = geojson.features.filter(feat => {
+  geojson.features = geojson.features.slice(0, 1200).filter(feat => {
 
 
-    if (feat.geometry && feat.properties._cost && feat.geometry.coordinates && feat.properties.STFIPS && feat.properties.STFIPS !== 2 && feat.properties.STFIPS !== 15 &&
-      (
-        feat.properties.STFIPS === 6 || feat.properties.STFIPS === 41 ||
-        feat.properties.STFIPS === 53
-      )
+    if (feat.geometry && feat.properties._cost && feat.geometry.coordinates && feat.properties.STFIPS && feat.properties.STFIPS !== 2 && feat.properties.STFIPS !== 15
+      /* &&
+           (
+             feat.properties.STFIPS === 6 || feat.properties.STFIPS === 41 ||
+             feat.properties.STFIPS === 53
+           ) */
 
     ) {
       return true;

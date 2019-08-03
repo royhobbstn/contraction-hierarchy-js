@@ -1,3 +1,6 @@
+import { CH } from './structure.js';
+import Pbf from 'pbf';
+
 export const loadCH = function(ch) {
   const parsed = (typeof ch === 'object') ? ch : JSON.parse(ch);
   this._locked = parsed._locked;
@@ -24,4 +27,98 @@ export const saveCH = function() {
     _edgeProperties: this._edgeProperties,
     _edgeGeometry: this._edgeGeometry
   });
+};
+
+
+export const loadPbfCH = function(buffer) {
+
+  var readpbf = new Pbf(buffer);
+  var obj = CH.read(readpbf);
+
+  // back to graph compatible structure
+  obj.adjacency_list = obj.adjacency_list.map(list => {
+    return list.edges;
+  });
+
+  obj.reverse_adjacency_list = obj.reverse_adjacency_list.map(list => {
+    return list.edges;
+  });
+
+  obj._edgeGeometry = obj._edgeGeometry.map(l => {
+    return l.linestrings.map(c => {
+      return c.coords;
+    });
+  });
+
+  this._locked = obj._locked;
+  this._geoJsonFlag = obj._geoJsonFlag;
+  this.adjacency_list = obj.adjacency_list;
+  this.reverse_adjacency_list = obj.reverse_adjacency_list;
+  this._nodeToIndexLookup = obj._nodeToIndexLookup;
+  this._edgeProperties = obj._edgeProperties; // TODO... misc user properties
+  this._edgeGeometry = obj._edgeGeometry;
+
+  console.log(`done loading pbf`);
+
+};
+
+export const savePbfCH = function(path) {
+
+  if (!require) {
+    console.log('saving as PBF only works in NodeJS');
+    return;
+  }
+
+  const fs = require("fs");
+
+  if (!this._locked) {
+    throw new Error('No sense in saving network before it is contracted.');
+  }
+
+  const data = {
+    _locked: this._locked,
+    _geoJsonFlag: this._geoJsonFlag,
+    adjacency_list: this.adjacency_list,
+    reverse_adjacency_list: this.reverse_adjacency_list,
+    _nodeToIndexLookup: this._nodeToIndexLookup,
+    _edgeProperties: this._edgeProperties,
+    _edgeGeometry: this._edgeGeometry
+  };
+
+  // convert to protobuf compatible
+
+  data.adjacency_list = data.adjacency_list.map(list => {
+    return {
+      edges: list.map(edge => {
+        return edge;
+      })
+    };
+  });
+
+  data.reverse_adjacency_list = data.reverse_adjacency_list.map(list => {
+    return {
+      edges: list.map(edge => {
+        return edge;
+      })
+    };
+  });
+
+  data._edgeGeometry = data._edgeGeometry.map(linestring => {
+    return {
+      linestrings: linestring.map(coords => {
+        return { coords };
+      })
+    };
+  });
+
+  // write
+  var pbf = new Pbf();
+  CH.write(data, pbf);
+
+  var buffer = pbf.finish();
+
+  fs.writeFileSync(path, buffer, null);
+
+  console.log(`done saving ${path}`);
+
 };

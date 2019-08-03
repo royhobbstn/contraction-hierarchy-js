@@ -2,7 +2,7 @@ import { CoordinateLookup as CL } from './src/coordinateLookup.js';
 import { createPathfinder } from './src/pathfinding.js';
 import { _loadFromGeoJson, _cleanseGeoJsonNetwork } from './src/geojson.js';
 import { addEdge, _addEdge, _addContractedEdge } from './src/addEdge.js';
-import { loadCH, saveCH } from './src/serialize.js';
+import { loadCH, saveCH, loadPbfCH, savePbfCH } from './src/serialize.js';
 import { createNodePool } from './src/nodePool.js';
 import { contractGraph, _arrangeContractedPaths, _cleanAdjList, _contract, _createChShortcutter } from './src/contract.js';
 
@@ -52,6 +52,8 @@ Graph.prototype._addEdge = _addEdge;
 
 Graph.prototype.loadCH = loadCH;
 Graph.prototype.saveCH = saveCH;
+Graph.prototype.loadPbfCH = loadPbfCH;
+Graph.prototype.savePbfCH = savePbfCH;
 
 Graph.prototype.contractGraph = contractGraph;
 Graph.prototype._arrangeContractedPaths = _arrangeContractedPaths;

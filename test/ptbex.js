@@ -3,19 +3,16 @@ const fs = require('fs');
 var Pbf = require('pbf');
 var Structure = require('./structure.js').ContractionHierarchy;
 
-const netfile = JSON.parse(fs.readFileSync('./f.json', 'utf8'));
+const netfile = JSON.parse(fs.readFileSync('./net.json', 'utf8'));
 
-console.log(JSON.stringify(netfile).length)
-
-
-console.log(JSON.stringify(netfile.adjacency_list))
+console.log(JSON.stringify(netfile).length);
 
 // convert to protobuf compatible
 
 netfile.adjacency_list = netfile.adjacency_list.map(list => {
   return {
     edges: list.map(edge => {
-      return { edge };
+      return edge;
     })
   };
 });
@@ -23,7 +20,7 @@ netfile.adjacency_list = netfile.adjacency_list.map(list => {
 netfile.reverse_adjacency_list = netfile.reverse_adjacency_list.map(list => {
   return {
     edges: list.map(edge => {
-      return { edge };
+      return edge;
     })
   };
 });
@@ -36,7 +33,7 @@ netfile._edgeGeometry = netfile._edgeGeometry.map(linestring => {
   };
 });
 
-console.log(JSON.stringify(netfile.adjacency_list))
+console.log(JSON.stringify(netfile.adjacency_list));
 
 
 // write
@@ -50,20 +47,15 @@ fs.writeFileSync('./binary.bs', buffer, null);
 var readpbf = new Pbf(buffer);
 var obj = Structure.read(readpbf);
 
-console.log(JSON.stringify(obj.adjacency_list))
 
 // back to graph compatible
 
 obj.adjacency_list = obj.adjacency_list.map(list => {
-  return list.edges.map(edge => {
-    return edge.edge;
-  });
+  return list.edges;
 });
 
 obj.reverse_adjacency_list = obj.reverse_adjacency_list.map(list => {
-  return list.edges.map(edge => {
-    return edge.edge;
-  });
+  return list.edges;
 });
 
 obj._edgeGeometry = obj._edgeGeometry.map(l => {
@@ -73,4 +65,4 @@ obj._edgeGeometry = obj._edgeGeometry.map(l => {
 });
 
 
-console.log(JSON.stringify(obj).length)
+console.log(JSON.stringify(obj).length);

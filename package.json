@@ -1,6 +1,6 @@
 {
   "name": "contraction-hierarchy-js",
-  "version": "1.0.4",
+  "version": "1.1.0",
   "description": "Contraction Hierarchy",
   "main": "index.js",
   "module": "main.js",
@@ -29,7 +29,8 @@
     "esm": "3.2.25",
     "geokdbush": "1.1.0",
     "kdbush": "2.0.1",
-    "nanoclone": "0.2.1"
+    "nanoclone": "0.2.1",
+    "pbf": "^3.2.0"
   },
   "devDependencies": {
     "ngraph.graph": "0.0.18",
