@@ -1,0 +1,49 @@
+syntax = "proto3";
+
+
+message ContractionHierarchy {
+  bool _locked = 1;
+  bool _geoJsonFlag = 2;
+  
+  message EdgeAttrs {
+    uint32 end = 1;
+    double  cost = 2;
+    uint32 attrs = 3;
+  }
+
+  message Edge {
+    EdgeAttrs edge = 1;
+  }
+  
+  message AdjList {
+    repeated Edge edges = 1;
+  }
+  
+  repeated AdjList adjacency_list = 3;
+  repeated AdjList reverse_adjacency_list = 4;
+  map<string, uint32> _nodeToIndexLookup = 5;
+  
+  message _EDGEPROPERTIES {
+    uint32 STFIPS = 1;
+    uint32 CTFIPS = 2;
+    double  MILES = 3;
+    double  _cost = 4;
+    uint32 _id = 5;
+    uint32 _start_index = 6;
+    uint32 _end_index = 7;
+    repeated uint32 _ordered = 8;
+  }
+
+  repeated _EDGEPROPERTIES _edgeProperties = 6;
+  
+  message LineStringAray {
+    repeated double coords = 1;
+  }
+  
+  message GeometryArray {
+    repeated LineStringAray linestrings = 1;
+  }
+  
+  repeated GeometryArray _edgeGeometry = 7;
+
+}
