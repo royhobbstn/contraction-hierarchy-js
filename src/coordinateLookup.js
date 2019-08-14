@@ -26,3 +26,5 @@ export function CoordinateLookup(graph) {
 CoordinateLookup.prototype.getClosestNetworkPt = function(lng, lat) {
   return geokdbush.around(this.index, lng, lat, 1)[0];
 };
+
+export const __geoindex = geokdbush;

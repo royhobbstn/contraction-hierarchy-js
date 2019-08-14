@@ -1,5 +1,5 @@
 // public API for adding edges
-export const addEdge = function(start, end, edge_properties, edge_geometry) {
+export const addEdge = function(start, end, edge_properties, edge_geometry, is_undirected) {
 
   if (this._locked) {
     throw new Error('Graph has been contracted.  No additional edges can be added.');
@@ -10,10 +10,10 @@ export const addEdge = function(start, end, edge_properties, edge_geometry) {
   }
 
   this._manualAdd = true;
-  this._addEdge(start, end, edge_properties, edge_geometry);
+  this._addEdge(start, end, edge_properties, edge_geometry, is_undirected);
 };
 
-export const _addEdge = function(start, end, edge_properties, edge_geometry) {
+export const _addEdge = function(start, end, edge_properties, edge_geometry, is_undirected) {
 
   const start_node = String(start);
   const end_node = String(end);
@@ -44,7 +44,10 @@ export const _addEdge = function(start, end, edge_properties, edge_geometry) {
   this._edgeProperties[this._currentEdgeIndex] = JSON.parse(JSON.stringify(edge_properties));
   this._edgeProperties[this._currentEdgeIndex]._start_index = start_node_index;
   this._edgeProperties[this._currentEdgeIndex]._end_index = end_node_index;
-  this._edgeGeometry[this._currentEdgeIndex] = edge_geometry ? JSON.parse(JSON.stringify(edge_geometry)) : null;
+
+  if (edge_geometry) {
+    this._edgeGeometry[this._currentEdgeIndex] = JSON.parse(JSON.stringify(edge_geometry));
+  }
 
   // create object to push into adjacency list
   const obj = {
@@ -72,6 +75,24 @@ export const _addEdge = function(start, end, edge_properties, edge_geometry) {
   }
   else {
     this.reverse_adjacency_list[end_node_index] = [reverse_obj];
+  }
+
+
+  // specifying is_undirected=true allows us to save space by not duplicating properties
+  if (is_undirected) {
+    if (this.adjacency_list[end_node_index]) {
+      this.adjacency_list[end_node_index].push(reverse_obj);
+    }
+    else {
+      this.adjacency_list[end_node_index] = [reverse_obj];
+    }
+
+    if (this.reverse_adjacency_list[start_node_index]) {
+      this.reverse_adjacency_list[start_node_index].push(obj);
+    }
+    else {
+      this.reverse_adjacency_list[start_node_index] = [obj];
+    }
   }
 
 };

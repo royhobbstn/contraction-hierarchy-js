@@ -16,11 +16,19 @@ async function main() {
   const geojson = cleanseNetwork(geofile);
 
   // uncomment this block to re - run contraction / save
-  const cgraph = new GraphCH(geojson, { debugMode: true });
+  const cgraph = new GraphCH(null, { debugMode: true });
+
+  geojson.features.forEach(feature => {
+    const start = String(feature.geometry.coordinates[0]);
+    const end = String(feature.geometry.coordinates[feature.geometry.coordinates.length - 1]);
+    cgraph.addEdge(start, end, feature.properties, null, true);
+  });
+
   console.time('TimeToContract');
   cgraph.contractGraph();
   console.timeEnd('TimeToContract');
-  fs.writeFileSync('./net.json', cgraph.saveCH(), 'utf8');
+  cgraph.savePbfCH('./net.pbf');
+  // fs.writeFileSync('./net.json', cgraph.saveCH(), 'utf8');
   process.exit();
 
 

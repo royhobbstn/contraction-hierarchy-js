@@ -62,6 +62,7 @@ typings/
 
 networks/faf.geojson
 networks/faf_simple_40.geojson
+networks/contiguous.geojson
 
 test/*.json
 
@@ -69,3 +70,7 @@ test/*.json
 
 dist/
 
+*.pbf
+*.br
+
+tiles/

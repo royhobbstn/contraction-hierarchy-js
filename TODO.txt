@@ -1,34 +1,17 @@
 
-can simplify points in road network??
-
-no AK, HI.  
 
 examples online: road tripper with elevation relief profile map, geojson download, states delineated in profile etc
 
-progress events?
 
-shorten geojson coordinate precision?
+progress events download / processing
 
-shorten cost coordinate precision?
+whats a mobile equivalent?
 
-msgpack?
+different networks
 
-no react?
-
-import script build, es6 build of contraction hierarchy
-
-cross post dev-to
-
-eventually need to run USA network through refinement procedures
-
-BENCHMARKS
---------
-Benchmark faf.geojson, CA, OR, WA: 10,000 routes
-
-TimeToContract: 209868, 163293, 183686, 217732, 145840, 67919, 43402
-ngraph:          92250, 118702, 108889, 111203, 107243, 83573, 90132
-ch:              14319,   5188,   6573,   7971,   5806,  2674,  1311
+export misc geojson properties in pbf
 
 
-All States, 10,000 routes --max_old_space_size=7000
+tippecanoe -f -y _id -S 9 -D8 -pS -z11 -l main -e ./tiles ../networks/contiguous.geojson 
 
+aws s3 sync ./tiles s3://route-explorer-tiles --content-encoding gzip 
