@@ -7,7 +7,7 @@ message ContractionHierarchy {
   
   message EdgeAttrs {
     uint32 end = 1;
-    double  cost = 2;
+    double cost = 2;
     uint32 attrs = 3;
   }
   
@@ -19,7 +19,7 @@ message ContractionHierarchy {
   repeated AdjList reverse_adjacency_list = 4;
   map<string, uint32> _nodeToIndexLookup = 5;
   
-  repeated google.protobuf.Struct _edgeProperties = 6;
+  repeated string _edgeProperties = 6;
 
   message LineStringAray {
     repeated double coords = 1;

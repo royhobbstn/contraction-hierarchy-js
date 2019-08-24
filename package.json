@@ -7,7 +7,8 @@
   "scripts": {
     "test": "cd test && node routing-tests.js",
     "build": "rollup -c",
-    "prepublishOnly": "npm run build"
+    "prepublishOnly": "npm run build",
+    "proto": "pbf src/structure.proto > src/structure.js"
   },
   "repository": {
     "type": "git",

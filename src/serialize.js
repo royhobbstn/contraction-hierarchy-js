@@ -1,4 +1,4 @@
-import { CH } from './structure.js';
+import { ContractionHierarchy as CH } from './structure.js';
 import Pbf from 'pbf';
 
 export const loadCH = function(ch) {
@@ -49,6 +49,11 @@ export const loadPbfCH = function(buffer) {
       return c.coords;
     });
   });
+
+  obj._edgeProperties = obj._edgeProperties.map(props => {
+    return JSON.parse(props);
+  });
+
 
   this._locked = obj._locked;
   this._geoJsonFlag = obj._geoJsonFlag;
@@ -109,6 +114,11 @@ export const savePbfCH = function(path) {
         return { coords };
       })
     };
+  });
+
+  // a poor solution.  seek a better way to serialize arbitrary properties
+  data._edgeProperties = data._edgeProperties.map(props => {
+    return JSON.stringify(props);
   });
 
   // write

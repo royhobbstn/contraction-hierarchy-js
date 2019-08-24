@@ -1,13 +1,16 @@
 
 necessary
 ----------
-export misc geojson properties in pbf
- - pre-process stringify them
- - post-process un-stringify them... ugh
+contractionHierarchy.
+ - document PBF serialization
+ - remove stringify
+ - bump version major
 
 
 route-explorer UI
 ----------
+fetch coordinates from tiles when pbf.br file is downloading!
+
 all the below require a status window:
  - progress events download / processing
 

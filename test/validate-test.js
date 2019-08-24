@@ -16,38 +16,22 @@ async function main() {
   const geojson = cleanseNetwork(geofile);
 
   // uncomment this block to re - run contraction / save
-  const cgraph = new GraphCH(null, { debugMode: true });
+  // const cgraph = new GraphCH(geojson, { debugMode: true });
 
-  const points_set = new Set();
+  // console.time('TimeToContract');
+  // cgraph.contractGraph();
+  // console.timeEnd('TimeToContract');
 
-  geojson.features.forEach(feature => {
-    const start = String(feature.geometry.coordinates[0]);
-    const end = String(feature.geometry.coordinates[feature.geometry.coordinates.length - 1]);
-    points_set.add(start);
-    points_set.add(end);
-    cgraph.addEdge(start, end, feature.properties, null, true);
-  });
+  // console.time("TimeToSerialize");
+  // cgraph.savePbfCH('./net.pbf');
+  // console.timeEnd("TimeToSerialize");
 
-  const coordinate_list = [];
-
-  points_set.forEach(pt_str => {
-    coordinate_list.push(pt_str.split(',').map(d => Number(d)));
-  });
-
-  fs.writeFileSync('./net_coordinates.json', JSON.stringify(coordinate_list), 'utf8');
-  process.exit();
-
-  console.time('TimeToContract');
-  cgraph.contractGraph();
-  console.timeEnd('TimeToContract');
-  cgraph.savePbfCH('./net.pbf');
-  // fs.writeFileSync('./net.json', cgraph.saveCH(), 'utf8');
-  process.exit();
+  // process.exit();
 
 
   const graph = new GraphCH(null, { debugMode: true });
-  const data = fs.readFileSync('./net.json', 'utf8');
-  graph.loadCH(data);
+  const data = fs.readFileSync('./net.pbf');
+  graph.loadPbfCH(data);
 
 
   const finder = graph.createPathfinder({ ids: true, path: true });
@@ -96,7 +80,9 @@ async function main() {
     console.timeEnd('nGraph');
 
     console.time('ch');
-    ch[index] = finder.queryContractionHierarchy(pair[0], pair[1]).total_cost;
+    ch[index] = finder.queryContractionHierarchy(pair[0], pair[1]);
+    console.log(JSON.stringify(ch[index]));
+    process.exit();
     console.timeEnd('ch');
 
   });
