@@ -1,14 +1,8 @@
 
-necessary
-----------
-contractionHierarchy.
- - document PBF serialization
- - remove stringify
- - bump version major
-
 
 route-explorer UI
 ----------
+no more coordinate file.
 fetch coordinates from tiles when pbf.br file is downloading!
 
 all the below require a status window:

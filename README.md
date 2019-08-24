@@ -117,6 +117,24 @@ const graph = graph.loadCH(network)
 
 Load a stringified serialized contracted network (that was saved previously via the `saveCH` method).
 
+```
+graph.savePbfCH(filename);
+```
+
+Save network as a PBF file (much more compact!)  NodeJS only.
+
+```
+graph.savePbfCH(filename);
+```
+
+Save network as a PBF file (much more compact!)  NodeJS only.
+
+```
+graph.loadPbfCH(buffer);
+```
+
+Load a network that was saved to PBF.  Can be used in the browser or NodeJS.
+
 
 ### Finder Methods
 
