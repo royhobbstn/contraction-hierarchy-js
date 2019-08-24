@@ -19,19 +19,8 @@ message ContractionHierarchy {
   repeated AdjList reverse_adjacency_list = 4;
   map<string, uint32> _nodeToIndexLookup = 5;
   
-  message _EDGEPROPERTIES {
-    uint32 STFIPS = 1;
-    uint32 CTFIPS = 2;
-    double  MILES = 3;
-    double  _cost = 4;
-    uint32 _id = 5;
-    uint32 _start_index = 6;
-    uint32 _end_index = 7;
-    repeated uint32 _ordered = 8;
-  }
+  repeated google.protobuf.Struct _edgeProperties = 6;
 
-  repeated _EDGEPROPERTIES _edgeProperties = 6;
-  
   message LineStringAray {
     repeated double coords = 1;
   }

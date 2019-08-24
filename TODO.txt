@@ -1,16 +1,29 @@
 
-
-examples online: road tripper with elevation relief profile map, geojson download, states delineated in profile etc
-
-
-progress events download / processing
-
-whats a mobile equivalent?
-
-different networks
-
+necessary
+----------
 export misc geojson properties in pbf
+ - pre-process stringify them
+ - post-process un-stringify them... ugh
 
+
+route-explorer UI
+----------
+all the below require a status window:
+ - progress events download / processing
+
+
+
+optimizations
+----------
+
+NBD. not quite as coarse for each successive zoom
+NBD. seems like i should find closest point on a line, because its all or nothing for a segment.
+NBD. brotli coordinate file rather than gzip?
+mousemove only available (default off, but toggleable) on desktop
+choose appropriate cursors: not available, pointer (before first click), ???
+
+different networks, set map boundaries appropriately
+- all have access to these, but mobile defaults to California
 
 tippecanoe -f -y _id -S 9 -D8 -pS -z11 -l main -e ./tiles ../networks/contiguous.geojson 
 

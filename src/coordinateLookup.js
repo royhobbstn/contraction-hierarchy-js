@@ -28,3 +28,4 @@ CoordinateLookup.prototype.getClosestNetworkPt = function(lng, lat) {
 };
 
 export const __geoindex = geokdbush;
+export const __kdindex = kdbush;

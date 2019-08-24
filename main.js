@@ -1,4 +1,4 @@
-import { CoordinateLookup as CL } from './src/coordinateLookup.js';
+import { CoordinateLookup as CL, __geoindex as GI, __kdindex as KD } from './src/coordinateLookup.js';
 import { createPathfinder } from './src/pathfinding.js';
 import { _loadFromGeoJson, _cleanseGeoJsonNetwork } from './src/geojson.js';
 import { addEdge, _addEdge, _addContractedEdge } from './src/addEdge.js';
@@ -7,6 +7,10 @@ import { createNodePool } from './src/nodePool.js';
 import { contractGraph, _arrangeContractedPaths, _cleanAdjList, _contract, _createChShortcutter } from './src/contract.js';
 
 export const CoordinateLookup = CL;
+
+// backdoor to export spatial indexing for custom solutions
+export const __geoindex = GI;
+export const __kdindex = KD;
 
 export function Graph(geojson, opt) {
   const options = opt || {};

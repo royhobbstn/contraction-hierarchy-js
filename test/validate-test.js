@@ -18,11 +18,24 @@ async function main() {
   // uncomment this block to re - run contraction / save
   const cgraph = new GraphCH(null, { debugMode: true });
 
+  const points_set = new Set();
+
   geojson.features.forEach(feature => {
     const start = String(feature.geometry.coordinates[0]);
     const end = String(feature.geometry.coordinates[feature.geometry.coordinates.length - 1]);
+    points_set.add(start);
+    points_set.add(end);
     cgraph.addEdge(start, end, feature.properties, null, true);
   });
+
+  const coordinate_list = [];
+
+  points_set.forEach(pt_str => {
+    coordinate_list.push(pt_str.split(',').map(d => Number(d)));
+  });
+
+  fs.writeFileSync('./net_coordinates.json', JSON.stringify(coordinate_list), 'utf8');
+  process.exit();
 
   console.time('TimeToContract');
   cgraph.contractGraph();
