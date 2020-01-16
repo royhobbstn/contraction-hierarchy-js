@@ -4,7 +4,7 @@
 
 ## When to Use a Contraction Hierarchy
 
-The typical use case of using a Contraction hierarchy over Dijkstras Algorithm or a heuristic-based approach like A* is where you have static data that changes infrequently.  A good example would be a road network (one that doesnt not attempt to account for road closures and traffic).  Being able to pre-process networks up front allows for a greatly increased speed of pathfinding at runtime.
+The typical use case of using a Contraction hierarchy over Dijkstras Algorithm or a heuristic-based approach like A* is where you have static data that changes infrequently.  A good example would be a road network (one that does not attempt to account for road closures and traffic).  Being able to pre-process networks up front allows for a greatly increased speed of pathfinding at runtime.
 
 
 ## Changes in 1.0
