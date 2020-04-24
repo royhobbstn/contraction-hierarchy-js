@@ -213,4 +213,18 @@ const assert = require('assert');
   ]);
 }());
 
+// undirected graph, backward path, geojson
+(function() {
+  const Graph = require('../index.js').Graph;
+  const g = new Graph();
+  g.addEdge("n:24", "n:76", { "_id": 44, "_cost": 0.002 }, null, false);
+  g.addEdge("n:76", "n:24", { "_id": 45, "_cost": 0.002 }, null, false);
+  g.addEdge("n:76", "n:67", { "_id": 210, "_cost": 0.01 }, null, false);
+  g.contractGraph();
+  const p = g.createPathfinder({ ids: true, path: false, nodes: true, properties: false });
+  const result = p.queryContractionHierarchy("n:24", "n:67");
+  assert.deepEqual(result.ids, [44, 210]);
+  assert.deepEqual(result.nodes, ["n:24", "n:76", "n:67"]);
+}());
+
 console.log('Done.');

@@ -371,8 +371,8 @@ export const _createChShortcutter = function() {
 
     while (current) {
 
-      adjacency_list[current.id]
-        .filter(edge => {
+      (adjacency_list[current.id] || [])
+      .filter(edge => {
           // this is a modification for contraction hierarchy
           // otherwise vertex===undefined
           return edge.end !== vertex;
