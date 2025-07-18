@@ -69,15 +69,19 @@ export const loadPbfCH = function(buffer) {
 
 export const savePbfCH = function(path) {
 
-  if (!require) {
-    console.log('saving as PBF only works in NodeJS');
-    return;
-  }
-
-  const fs = require("fs");
-
   if (!this._locked) {
     throw new Error('No sense in saving network before it is contracted.');
+  }
+
+  // Check if we're in Node.js environment
+  let fs;
+  try {
+    // Use dynamic import for ES modules
+    const fsModule = eval('require')('fs');
+    fs = fsModule;
+  } catch (e) {
+    console.log('saving as PBF only works in NodeJS');
+    return;
   }
 
   const data = {
