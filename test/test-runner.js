@@ -13,16 +13,16 @@ class TestRunner {
     this.currentSuite = null;
   }
 
-  describe(suiteName, fn) {
+  async describe(suiteName, fn) {
     this.currentSuite = suiteName;
     console.log(`\n📋 ${suiteName}`);
-    fn();
+    await fn();
     this.currentSuite = null;
   }
 
-  it(testName, fn) {
+  async it(testName, fn) {
     try {
-      fn();
+      await fn();
       this.passed++;
       console.log(`  ✅ ${testName}`);
     } catch (error) {
