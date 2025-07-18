@@ -1,10 +1,7 @@
 //
-const fs = require('fs').promises;
+import { promises as fs } from 'fs';
 
-exports.readyNetwork = readyNetwork;
-exports.getNGraphDist = getNGraphDist;
-exports.populateNGraph = populateNGraph;
-exports.cleanseNetwork = cleanseNetwork;
+export { readyNetwork, getNGraphDist, populateNGraph, cleanseNetwork };
 
 async function readyNetwork() {
 

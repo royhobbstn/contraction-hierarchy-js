@@ -1,3 +1,38 @@
+// Helper function to reconstruct complete node sequence from edges
+function reconstructNodesFromEdges(edgeList, edgeProperties, indexToNodeLookup, startNodeIndex) {
+  if (edgeList.length === 0) {
+    return [indexToNodeLookup[startNodeIndex]];
+  }
+  
+  const nodeSequence = [];
+  let currentNode = startNodeIndex;
+  
+  // Add starting node
+  nodeSequence.push(indexToNodeLookup[currentNode]);
+  
+  // Traverse edges to build complete node sequence
+  for (const edgeIndex of edgeList) {
+    const edge = edgeProperties[edgeIndex];
+    
+    // Determine which direction we're traversing this edge
+    if (currentNode === edge._start_index) {
+      // Going from start to end
+      currentNode = edge._end_index;
+    } else if (currentNode === edge._end_index) {
+      // Going from end to start
+      currentNode = edge._start_index;
+    } else {
+      // Edge doesn't connect to current node - this shouldn't happen in a valid path
+      // but we'll handle it gracefully by using the edge's start node
+      currentNode = edge._end_index;
+    }
+    
+    nodeSequence.push(indexToNodeLookup[currentNode]);
+  }
+  
+  return nodeSequence;
+}
+
 export function buildIdList(options, edgeProperties, edgeGeometry, forward_nodeState, backward_nodeState, tentative_shortest_node, indexToNodeLookup, startNode) {
 
   const pathway = [];
@@ -56,9 +91,8 @@ export function buildIdList(options, edgeProperties, edgeGeometry, forward_nodeS
 
 
   if (options.nodes) {
-    nodes = node_list.map(d => {
-      return indexToNodeLookup[d];
-    });
+    // Use edge-based reconstruction to ensure all nodes are included
+    nodes = reconstructNodesFromEdges(flattened, edgeProperties, indexToNodeLookup, startNode);
   }
 
 

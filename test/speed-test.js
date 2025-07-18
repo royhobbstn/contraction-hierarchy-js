@@ -1,12 +1,12 @@
-const createGraph = require('ngraph.graph');
-const pathNGraph = require('ngraph.path');
-const fs = require('fs');
+import createGraph from 'ngraph.graph';
+import pathNGraph from 'ngraph.path';
+import fs from 'fs';
 
 // load utility functions
-const { readyNetwork, getNGraphDist, populateNGraph } = require('./test-util.js');
+import { readyNetwork, getNGraphDist, populateNGraph } from './test-util.js';
 
 // load contraction hierarchy version bidirectional dijkstra
-const GraphCH = require('../index.js').Graph;
+import { Graph as GraphCH } from '../index.js';
 
 
 const ITERATIONS = 10000;
