@@ -2,7 +2,7 @@
 
 // ContractionHierarchy ========================================
 
-var ContractionHierarchy = exports.ContractionHierarchy = {};
+var ContractionHierarchy = {};
 
 ContractionHierarchy.read = function (pbf, end) {
     return pbf.readFields(ContractionHierarchy._readField, {_locked: false, _geoJsonFlag: false, adjacency_list: [], reverse_adjacency_list: [], _nodeToIndexLookup: {}, _edgeProperties: [], _edgeGeometry: []}, end);
@@ -101,3 +101,6 @@ ContractionHierarchy._FieldEntry5.write = function (obj, pbf) {
     if (obj.key) pbf.writeStringField(1, obj.key);
     if (obj.value) pbf.writeVarintField(2, obj.value);
 };
+
+// Export for ESM
+export { ContractionHierarchy };

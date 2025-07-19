@@ -1,8 +1,9 @@
-const assert = require('assert');
+import assert from 'assert';
+import { Graph } from '../index.js';
+import fs from 'fs';
 
 // simple directed graph, start to end
 (function() {
-  const Graph = require('../index.js').Graph;
   const graph = new Graph();
 
   // start_node, end_node, edge_properties, edge_geometry
@@ -18,7 +19,6 @@ const assert = require('assert');
 
 // simple directed graph, end to start: No Path
 (function() {
-  const Graph = require('../index.js').Graph;
   const graph = new Graph();
 
   // start_node, end_node, edge_properties, edge_geometry
@@ -35,7 +35,6 @@ const assert = require('assert');
 
 // undirected graph, forward path
 (function() {
-  const Graph = require('../index.js').Graph;
   const graph = new Graph();
 
   // start_node, end_node, edge_properties, edge_geometry
@@ -59,7 +58,6 @@ const assert = require('assert');
 
 // undirected graph, backward path
 (function() {
-  const Graph = require('../index.js').Graph;
   const graph = new Graph();
 
   // start_node, end_node, edge_properties, edge_geometry
@@ -86,9 +84,7 @@ const assert = require('assert');
 
 // undirected graph, forward path, geojson
 (function() {
-  const fs = require('fs');
   const geojson = JSON.parse(fs.readFileSync('../networks/basic.geojson'));
-  const Graph = require('../index.js').Graph;
   const graph = new Graph(geojson);
 
   graph.contractGraph();
@@ -145,9 +141,7 @@ const assert = require('assert');
 
 // undirected graph, backward path, geojson
 (function() {
-  const fs = require('fs');
   const geojson = JSON.parse(fs.readFileSync('../networks/basic.geojson'));
-  const Graph = require('../index.js').Graph;
   const graph = new Graph(geojson);
 
   graph.contractGraph();
@@ -215,7 +209,6 @@ const assert = require('assert');
 
 // undirected graph, backward path, geojson
 (function() {
-  const Graph = require('../index.js').Graph;
   const g = new Graph();
   g.addEdge("n:24", "n:76", { "_id": 44, "_cost": 0.002 }, null, false);
   g.addEdge("n:76", "n:24", { "_id": 45, "_cost": 0.002 }, null, false);

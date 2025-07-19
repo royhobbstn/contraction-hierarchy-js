@@ -1,5 +1,5 @@
 import kdbush from 'kdbush';
-import geokdbush from 'geokdbush';
+import * as geokdbush from 'geokdbush';
 
 
 export function CoordinateLookup(graph) {
@@ -20,11 +20,17 @@ export function CoordinateLookup(graph) {
     coordinate_list.push(pt_str.split(',').map(d => Number(d)));
   });
 
-  this.index = kdbush(coordinate_list, (p) => p[0], (p) => p[1]);
+  this.coordinate_list = coordinate_list; // Store for lookup
+  this.index = new kdbush(coordinate_list.length);
+  for (const coord of coordinate_list) {
+    this.index.add(coord[0], coord[1]);
+  }
+  this.index.finish();
 }
 
 CoordinateLookup.prototype.getClosestNetworkPt = function(lng, lat) {
-  return geokdbush.around(this.index, lng, lat, 1)[0];
+  const closestIndex = geokdbush.around(this.index, lng, lat, 1)[0];
+  return this.coordinate_list[closestIndex];
 };
 
 export const __geoindex = geokdbush;

@@ -63,21 +63,30 @@ export const loadPbfCH = function(buffer) {
   this._edgeProperties = obj._edgeProperties; // TODO... misc user properties
   this._edgeGeometry = obj._edgeGeometry;
 
+  // Rebuild _indexToNodeLookup from _nodeToIndexLookup since it's not serialized in PBF
+  this._indexToNodeLookup = {};
+  for (const [node, index] of Object.entries(this._nodeToIndexLookup)) {
+    this._indexToNodeLookup[index] = node;
+  }
+
   console.log(`done loading pbf`);
 
 };
 
-export const savePbfCH = function(path) {
-
-  if (!require) {
-    console.log('saving as PBF only works in NodeJS');
-    return;
-  }
-
-  const fs = require("fs");
+export const savePbfCH = async function(path) {
 
   if (!this._locked) {
     throw new Error('No sense in saving network before it is contracted.');
+  }
+
+  // Check if we're in Node.js environment
+  let fs;
+  try {
+    // Use dynamic import for ES modules
+    fs = await import('fs');
+  } catch (e) {
+    console.log('saving as PBF only works in NodeJS');
+    return;
   }
 
   const data = {
@@ -127,7 +136,7 @@ export const savePbfCH = function(path) {
 
   var buffer = pbf.finish();
 
-  fs.writeFileSync(path, buffer, null);
+  fs.writeFileSync(path, buffer);
 
   console.log(`done saving ${path}`);
 
