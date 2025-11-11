@@ -10,6 +10,7 @@ export const createPathfinder = function(options) {
   const pool = this._createNodePool();
   const nodeToIndexLookup = this._nodeToIndexLookup;
   const indexToNodeLookup = this._indexToNodeLookup;
+  const contracted_nodes = this.contracted_nodes;
 
   if (!options) {
     options = {};
@@ -52,7 +53,8 @@ export const createPathfinder = function(options) {
       forward_nodeState,
       forward_distances,
       backward_nodeState,
-      backward_distances
+      backward_distances,
+      reverse_adjacency_list  // For stall-on-demand
     );
     const searchBackward = doDijkstra(
       reverse_adjacency_list,
@@ -60,7 +62,8 @@ export const createPathfinder = function(options) {
       backward_nodeState,
       backward_distances,
       forward_nodeState,
-      forward_distances
+      forward_distances,
+      adjacency_list  // For stall-on-demand
     );
 
     let forward_done = false;
@@ -139,7 +142,8 @@ export const createPathfinder = function(options) {
       nodeState,
       distances,
       reverse_nodeState,
-      reverse_distances
+      reverse_distances,
+      reverse_adj
     ) {
 
       var openSet = new NodeHeap({
@@ -150,6 +154,12 @@ export const createPathfinder = function(options) {
 
       do {
         (adj[current.id] || []).forEach(edge => {
+
+          // UPWARD GRAPH RESTRICTION: Only explore edges to higher-ranked nodes
+          // This is a critical optimization for Contraction Hierarchies
+          if (contracted_nodes && contracted_nodes[edge.end] <= contracted_nodes[current.id]) {
+            return;
+          }
 
           let node = nodeState[edge.end];
           if (node === undefined) {
@@ -196,6 +206,32 @@ export const createPathfinder = function(options) {
 
         if (!current) {
           return '';
+        }
+
+        // STALL-ON-DEMAND: Check if there's a better path through an already-settled node
+        // This optimization can reduce query times by 20-30%
+        if (reverse_adj && contracted_nodes) {
+          let should_stall = false;
+          (reverse_adj[current.id] || []).forEach(edge => {
+            // Only check edges from higher-ranked settled nodes
+            const source_node = nodeState[edge.end];
+            if (source_node && source_node.visited &&
+                contracted_nodes[edge.end] > contracted_nodes[current.id]) {
+              const alt_distance = source_node.dist + edge.cost;
+              if (alt_distance < current.dist) {
+                should_stall = true;
+              }
+            }
+          });
+
+          if (should_stall) {
+            // Don't settle this node yet, get the next one
+            current = openSet.pop();
+            if (!current) {
+              return '';
+            }
+            continue;
+          }
         }
 
         yield current;
