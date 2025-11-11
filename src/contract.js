@@ -51,18 +51,21 @@ export const contractGraph = function() {
 
   const len = nh.length;
 
+  // Adaptive cleaning frequency: scale with graph size
+  // Small graphs: clean more frequently (every 50 nodes)
+  // Large graphs: clean less frequently (up to every len/100 nodes)
+  const cleanInterval = Math.max(50, Math.floor(len / 100));
+
   // main contraction loop
   while (nh.length > 0) {
 
     const updated_len = nh.length;
 
-    if (updated_len % 50 === 0) {
+    if (updated_len % cleanInterval === 0) {
       if (this.debugMode) {
         console.log(updated_len / len);
       }
-      // prune adj list of no longer valid paths occasionally
-      // theres probably a better formula for determining how often this should run
-      // (bigger networks = less often)
+      // prune adj list of no longer valid paths periodically
       this._cleanAdjList(this.adjacency_list);
       this._cleanAdjList(this.reverse_adjacency_list);
     }
@@ -364,10 +367,15 @@ export const _createChShortcutter = function() {
     current.opened = 1;
     distances[current.id] = 0;
 
-    // quick exit for start === end	
+    // quick exit for start === end
     if (start_index === end_index) {
       current = '';
     }
+
+    // Witness search optimization: limit maximum number of settled nodes
+    // This prevents excessive computation for distant witness searches
+    let settled_count = 0;
+    const MAX_WITNESS_SETTLED = 500;
 
     while (current) {
 
@@ -408,6 +416,7 @@ export const _createChShortcutter = function() {
         });
 
       current.visited = true;
+      settled_count++;
       const settled_amt = current.dist;
 
       // get lowest value from heap
@@ -418,8 +427,13 @@ export const _createChShortcutter = function() {
         current = '';
       }
 
-      // stopping condition
+      // stopping condition: exceeded distance limit
       if (settled_amt > total) {
+        current = '';
+      }
+
+      // stopping condition: exceeded max witness search nodes
+      if (settled_count >= MAX_WITNESS_SETTLED) {
         current = '';
       }
     }
